@@ -1,6 +1,6 @@
 {
     "name":  "FiresRPGClasses",
-    "version_number":  "0.1.19",
+    "version_number":  "0.1.20",
     "website_url":  "https://github.com/fire-VA/FiresRPGClasses",
     "description":  "Part of the Fires mod family for Valheim.",
     "dependencies":  [

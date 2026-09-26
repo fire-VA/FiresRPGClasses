@@ -86,6 +86,13 @@ namespace FiresRPGClasses.UI
             BarController.BarsChanged += OnBarsChanged;
         }
 
+        /// <summary>
+        /// The second and final attempt at the inventory tab. Every plugin Awake has run by the time Start does,
+        /// so VAInventory's assembly is loaded and the reflective lookup can succeed even when BepInEx loaded us
+        /// first. This component only exists on a client, so the retry never runs headless.
+        /// </summary>
+        private void Start() => ClassesInventoryTab.Register(finalAttempt: true);
+
         private void OnDestroy()
         {
             BarController.BarsChanged -= OnBarsChanged;

@@ -16,11 +16,15 @@ namespace FiresRPGClasses
     [BepInPlugin(PluginGUID, PluginName, PluginVersion)]
     [BepInDependency("com.Fire.FiresUnifiedCore", BepInDependency.DependencyFlags.HardDependency)]
     [BepInDependency("com.Fire.FiresRPGmaker", BepInDependency.DependencyFlags.SoftDependency)]
+    // Ordering, not a requirement. ClassesInventoryTab resolves VAInventory's registry by reflection, and
+    // AccessTools.TypeByName only sees assemblies ALREADY LOADED - so without this BepInEx was free to load us
+    // first (it did: FiresRPGClasses at log line 218, VAInventory at 280) and the lookup came back null.
+    [BepInDependency("com.Fire.VAInventory", BepInDependency.DependencyFlags.SoftDependency)]
     public class FiresRPGClassesPlugin : BaseUnityPlugin
     {
         public const string PluginGUID = "com.Fire.FiresRPGClasses";
         public const string PluginName = "FiresRPGClasses";
-        public const string PluginVersion = "0.1.19";
+        public const string PluginVersion = "0.1.20";
 
         private const string HostObjectName = "FiresRPGClasses_Host";
 
@@ -55,8 +59,10 @@ namespace FiresRPGClasses
             {
                 _host.AddComponent<ClassesPanel>();
                 _host.AddComponent<ClassesHud>();
-                // Safe this early: VAInventory replays registrations the next time the inventory opens, so
-                // this waits on neither InventoryGui nor load order. A no-op without VAInventory.
+                // First of two attempts. VAInventory replays registrations when the inventory next opens, so
+                // this does not wait on InventoryGui - but it DOES depend on VAInventory's assembly already
+                // being loaded, which is why the soft dependency above exists and why ClassesPanel.Start
+                // retries. A no-op without VAInventory.
                 ClassesInventoryTab.Register();
             }
 

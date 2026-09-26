@@ -30,14 +30,34 @@ namespace FiresRPGClasses.UI
         private static readonly ClassesPrefabView View = new ClassesPrefabView();
         private static bool _registered;
 
-        internal static void Register()
+        /// <summary>
+        /// Idempotent, and called TWICE on purpose: once from plugin Awake, then again from
+        /// <see cref="ClassesPanel"/>.Start with <paramref name="finalAttempt"/> set.
+        ///
+        /// <para>The Awake call alone was not enough. `AccessTools.TypeByName` only sees assemblies that are
+        /// already loaded, and BepInEx loaded us BEFORE VAInventory (log line 218 against 280), so the lookup
+        /// returned null and the tab never existed. The soft dependency on the plugin fixes the ordinary case;
+        /// this retry means load order cannot hide the tab even if that attribute is ever dropped. Start is the
+        /// right second point because every plugin Awake has run by then, and the component hosting it is only
+        /// added on a client, so nothing new is patched or run headless.</para>
+        /// </summary>
+        internal static void Register(bool finalAttempt = false)
         {
             if (_registered) return;
 
             try
             {
                 Type tabs = AccessTools.TypeByName(TabsType);
-                if (tabs == null) return;   // VAInventory absent - nothing to say, this is the normal case.
+                if (tabs == null)
+                {
+                    // Saying nothing here is what let a non-registering tab pass verification by two sessions and
+                    // the user: the log held zero [Classes] lines, so there was nothing to notice. Absence of a
+                    // complaint is not evidence it worked.
+                    if (finalAttempt)
+                        FiresRPGClassesPlugin.Log?.LogInfo($"[Classes] {TabsType} not found, so no inventory tab this "
+                            + "session - VAInventory is not installed or did not load. The standalone window is unaffected.");
+                    return;
+                }
 
                 _registered = RegisterAsTab(tabs) || RegisterByArgs(tabs);
                 if (_registered) FiresRPGClassesPlugin.Log?.LogInfo("[Classes] registered the Classes tab in the inventory.");
