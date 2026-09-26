@@ -20,7 +20,7 @@ namespace FiresRPGClasses
     {
         public const string PluginGUID = "com.Fire.FiresRPGClasses";
         public const string PluginName = "FiresRPGClasses";
-        public const string PluginVersion = "0.1.18";
+        public const string PluginVersion = "0.1.19";
 
         private const string HostObjectName = "FiresRPGClasses_Host";
 

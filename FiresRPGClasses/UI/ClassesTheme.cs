@@ -77,10 +77,18 @@ namespace FiresRPGClasses.UI
             UnityEngine.Events.UnityAction onClick) =>
             UIBuilderHelper.CreateParchmentButton(parent, label, anchorMin, anchorMax, onClick);
 
+        /// <summary>
+        /// DestroyImmediate, not Destroy. Every board calls this at the top of Refresh and then repopulates
+        /// in the SAME call, and Object.Destroy is deferred to end of frame - so the old rows were still
+        /// alive and still drawing while the new ones were added on top of them, at identical positions
+        /// because Row() places by index. The result reads as wrong DATA (stale numbers, doubled rows)
+        /// rather than as the lifetime bug it is, which is exactly how it was misdiagnosed elsewhere in the
+        /// family. This matters more since the inventory tab refreshes on every open.
+        /// </summary>
         public static void ClearChildren(Transform parent)
         {
             for (int i = parent.childCount - 1; i >= 0; i--)
-                Object.Destroy(parent.GetChild(i).gameObject);
+                Object.DestroyImmediate(parent.GetChild(i).gameObject);
         }
     }
 }
