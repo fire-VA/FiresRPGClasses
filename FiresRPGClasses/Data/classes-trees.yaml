@@ -1,0 +1,2327 @@
+# FiresRPGClasses - combat bars, weapons, targeting and skill trees.
+# Schema 5: adds the counters section and node rankEffects (doc 21's class-kit gaps). Schema 4 added
+# progression and keys; schema 3 added ultimates and luck.
+# Existing nodes reference Core ClassAbility ids; their numbers live in Core.
+schema: 5
+combat:
+  bars: {count: 2, slots: 8, weaponSlot: 1, skillSlots: [2, 3, 4, 5, 6, 7], ultimateSlot: 8}
+  keys:
+    skillsNeedDrawnWeapon: true      # true: 1-8 are skills only while a weapon is drawn
+    skillModifier: None              # None | Alt | Ctrl | Shift (Alt recommended; Shift runs and Ctrl crouches in vanilla)
+    slots: {1: Alpha1, 2: Alpha2, 3: Alpha3, 4: Alpha4, 5: Alpha5, 6: Alpha6, 7: Alpha7, 8: Alpha8}   # each a Core KeyBinding
+    barSwap: Mouse3                  # Unity KeyCode for mouse button 4
+    slot1SwapsBars: true
+    itemHotbarModifier: Alt          # only when skillsNeedDrawnWeapon is false and skillModifier is None
+    suppressVanillaHotbar: "while the skill modifier is held, or while a weapon is drawn in the drawn-weapon scheme; declared to the conflict registry"
+  swap: {lockoutSeconds: 0.5, blockedWhileCasting: true, equipsFromInventory: true}
+  ultimates: {see: ultimates}
+  passives: "passives and automatic abilities are equipped in the passive grid and always on (their own conditions still apply); dodge follows the active bar's archetype; the hybrid works while both bars hold its pair"
+  weaponChange: "archetype and skills the new weapon cannot drive are greyed out until the player picks an allowed archetype"
+  restoreLastBarPerWeapon: false   # setting; off matches the design, on re-slots the last bar used with that weapon
+targeting:
+  castStyle: {default: quickWithIndicator, options: [normal, quick, quickWithIndicator]}
+  smartHeal: true
+  modes:
+    - {mode: "Placed", means: "Hold the key: a reticle appears where you aim; release (or click) to place it. Right-click cancels."}
+    - {mode: "Ally", means: "Heals or buffs the ally under your crosshair; with nobody targeted, the most injured ally in range, else you."}
+    - {mode: "Aimed", means: "Fires along your crosshair: a projectile, beam or mark."}
+    - {mode: "Melee", means: "Uses your weapon swing, in the direction you face."}
+    - {mode: "Around you", means: "Instant, centred on you."}
+    - {mode: "Self", means: "Instant buff or stance on you."}
+    - {mode: "Next attack", means: "Empowers your next weapon attack."}
+    - {mode: "Dash", means: "Moves you along your crosshair."}
+    - {mode: "Dodge", means: "Not slotted: replaces your dodge roll while that archetype is on the active bar."}
+    - {mode: "Automatic", means: "Not slotted: always on while the archetype is on the active bar."}
+weapons:
+  - {weapon: "Sword, with shield", archetypes: ["Paladin", "Tank"]}   # first = default
+  - {weapon: "Axe, with shield", archetypes: ["Tank", "Paladin", "Berserker"]}   # first = default
+  - {weapon: "Club or mace, with shield", archetypes: ["Paladin", "Tank", "Healer"]}   # first = default
+  - {weapon: "Spear, with shield", archetypes: ["Tank", "Ranger"]}   # first = default
+  - {weapon: "Sword, no shield", archetypes: ["Rogue", "Berserker"]}   # first = default
+  - {weapon: "Axe, no shield (incl. dual axes)", archetypes: ["Berserker", "Rogue"]}   # first = default
+  - {weapon: "Club or mace, no shield", archetypes: ["Monk", "Berserker"]}   # first = default
+  - {weapon: "Knives (incl. dual knives)", archetypes: ["Rogue", "Monk"]}   # first = default
+  - {weapon: "Two-handed sword", archetypes: ["Berserker", "Paladin"]}   # first = default
+  - {weapon: "Battleaxe", archetypes: ["Berserker", "Tank"]}   # first = default
+  - {weapon: "Sledge", archetypes: ["Berserker", "Monk"]}   # first = default
+  - {weapon: "Atgeir", archetypes: ["Tank", "Berserker", "Monk"]}   # first = default
+  - {weapon: "Unarmed or fist weapons", archetypes: ["Monk", "Berserker"]}   # first = default
+  - {weapon: "Spear, no shield", archetypes: ["Ranger", "Rogue"]}   # first = default
+  - {weapon: "Bow", archetypes: ["Ranger", "Rogue"]}   # first = default
+  - {weapon: "Crossbow", archetypes: ["Ranger", "Rogue"]}   # first = default
+  - {weapon: "Elemental staff", archetypes: ["Mage", "Healer"]}   # first = default
+  - {weapon: "Blood-magic staff", archetypes: ["Healer", "Mage"]}   # first = default
+progression:
+  characterLevels: 100
+  hoursToLevel100: 120
+  hoursPerLevel: "0.15 + 0.00260 * level^1.5"   # re-fit the XP table to measured XP per hour
+  talentPoints: {perLevel: 3, bonusEveryTenthLevel: 1, atLevel100: 307, allTrees: 612}
+  valor: {startsAfterLevel: 100, hoursPerLevel: 5, xpVsLevel100: 1.8, pointsPerLevel: 4, treesFullAt: 77, keepsCounting: true}
+  rankCost: [1, 2, 3]
+  levelGates: "node levels are character levels"
+  masterNeedsPointsInPath: 10
+  ultimates: {slot8AtLevel: 10, ultimateINeedsPointsInTree: 10, ultimateIINeedsPointsInOnePath: 20, hybridNeedsLevel: 25, hybridNeedsPointsInEachArchetype: 10}
+  passiveSlots:
+    pool: "40 tree passives + 10 automatic abilities"
+    unlocks: {level5: 2, level15: 3, level30: 4, level45: 5, level60: 6, level80: 7, level100: 8, valor15: 9, valor35: 10, valor55: 11, valor75: 12}
+  attributes: {pointEveryLevels: 2, thenPointEveryValorLevels: 2, max: 80}
+  respec: "refunds every point in one archetype's tree"
+  serverSettings:                # FiresRPGClasses.Progression; synced, admin-only
+    xpMultiplier: 1.0
+    killXpMultiplier: 1.0
+    nonCombatXpMultiplier: 1.0
+    questXpMultiplier: 1.0         # includes EpicMMO_Exp
+    skillPointsPerLevel: 3
+    extraSkillPointsEveryTenthLevel: 1
+    skillPointsPerValorLevel: 4
+    valorLevelXp: 1.8              # x the XP of level 100
+    attributePointsPerLevel: 0.5   # fractions accumulate
+    attributePointsPerValorLevel: 0.5
+    attributePointsMax: 80
+    whenPointsDrop: Keep           # Keep | Refund
+  earnedPoints: "computed from level, Valor and the current settings; only spending is stored"
+  xp:                            # doc 20
+    kills: {perHealth: 0.1, minHealth: 10, stars: "x star level", bossMultiplier: 5, rangeMeters: 50, activeInFightSeconds: 30, companionDamageCountsForOwner: true, groupShare: 1.0, pvp: false, overrides: "synced table: prefab -> XP, 0 = none"}
+    discoveryPercentOfLevel: {newBiome: 25, bossFirstKill: 50, newLocationType: 10, newCreatureKilled: 3, newItem: 1, newRecipeOrPiece: 1}
+    repeatable:
+      hourlyCapPercentOfLevel: 20
+      tree: "2 x (1 + tool tier)"
+      rockOrOre: "1 x (1 + tool tier) per piece broken off"
+      destructible: "1 x (1 + tool tier)"
+      pick: 1
+      fish: "5 x fish quality"
+      tame: "3 x the creature's kill XP"
+      craft: "2 x (1 + station level)"
+      collectFromStation: 1
+    building: "new piece types only, as a discovery"
+    skillLevelUpPercentOfLevel: 2
+    quests: "as authored; quest multiplier applies"
+    restedBonus: 0.10
+    deathLossOfLevelProgress: 0.0  # never removes a level
+    consumables:
+      xpStones: {tiers: [Meadows, BlackForest, Swamp, Mountains, Plains, Mistlands, Ashlands], needsLevel: [1, 10, 25, 40, 55, 70, 85], worth: "1/3 of a level at the middle of its biome band", afterLevel100: "adds Valor XP", dropChance: {normal: 0.01, elite: 0.05, champion: 0.15}, bossDrops: 3, boostsApply: false}
+      meadsOfInsight: {minor: 0.25, medium: 0.50, greater: 1.00, minutes: 30, stacking: "one at a time; stronger replaces weaker; same refreshes", addsWithRested: true, boosts: [kills, repeatable work and its cap, skill level-ups]}
+    biomeBands: {Meadows: [1, 10], BlackForest: [10, 25], Swamp: [25, 40], Mountains: [40, 55], Plains: [55, 70], Mistlands: [70, 85], Ashlands: [85, 100]}
+    never: [tamed or player-owned creatures, summons, training dummies, other players unless pvp, kills with no active player in range, creatures under 10 health, repeat building, item pickups, repeatable work beyond the hourly cap]
+rules:
+  prerequisite: "one learned node in the previous tier of the same path (the starter counts for every path)"
+  variant: "nodes sharing a variant id can both be learned; a bar slots only one of them"
+  after: "a node with after: X requires X"
+  rankEffects: "riders a node gains at a given rank and keeps above it; they never change a node's rank count or point cost"
+counters:
+  purpose: "doc 21's monster affixes each need an answer in the class kits; every counter below lives in at least two archetypes"
+  keywords:
+    - id: Wounded
+      applies: enemy
+      effect: "Receives 50% less healing from every source, its own Mending Aura and Vampiric affixes included."
+      core: "WoundedEffect (new): a healing-received multiplier every heal path reads"
+    - id: Sundered
+      applies: enemy
+      effect: "25% less armor for 8 s."
+      core: "SunderedEffect (new): an armor multiplier in the damage calculation"
+    - id: Breach
+      applies: hit
+      effect: "Damage this hit deals to an absorb shield counts three times, and a shield left under 10% of its capacity breaks outright."
+      core: "HitData breach flag (new), read by ArcaneShieldEffect and by the Shielded affix and ward totems in FiresMonsters"
+    - id: Silenced
+      applies: enemy
+      effect: "Cannot begin a cast for its duration, and a cast already running is cancelled unless it is uninterruptible (a grey cast bar)."
+      core: "SilencedEffect (new), over the cast state FiresMonsters publishes on the creature's ZDO"
+    - id: Cleanse
+      applies: ally
+      effect: "Removes debuffs, strongest first."
+      core: "PurifyEffect's debuff classifier, lifted into one shared cleanse helper"
+  matrix:
+    - counter: interrupt
+      affixes: ["Mending Aura", "Summoner", "Shaman and Caster roles"]
+      everyPlayer: "a parry staggers, and a stagger interrupts"
+      archetypes:
+        - {archetype: Tank, via: "tank_shield_bash (full stagger damage), tank_earthshaker (staggers every target)"}
+        - {archetype: Paladin, via: "paladin_hammer_of_justice (2 s stun)"}
+        - {archetype: Rogue, via: "rogue_feint (ignores block and staggers)"}
+        - {archetype: Monk, via: "monk_pressure_points (staggers on the combo hit), monk_palm_of_the_storm (stuns)"}
+        - {archetype: Mage, via: "mage_ice_lance rank 3 (Silenced, 40 m), mage_arcane_torrent (Silenced on the first tick)"}
+        - {archetype: Ranger, via: "ranger_piercing_shot rank 3 (Concussive stagger)"}
+    - counter: antiHeal
+      affixes: ["Mending Aura", "Vampiric"]
+      archetypes:
+        - {archetype: Rogue, via: "rogue_virulence rank 3 (Wounded while poisoned)"}
+        - {archetype: Berserker, via: "berserker_cleave rank 3 (Wounded for 6 s)"}
+    - counter: shieldBreak
+      affixes: ["Shielded", "Warded"]
+      archetypes:
+        - {archetype: Tank, via: "tank_shield_bash rank 3 (Breach)"}
+        - {archetype: Ranger, via: "ranger_piercing_shot rank 2 (Breach)"}
+    - counter: cleanse
+      affixes: ["Hexer", "Molten", "Frostbound", "Plagued"]
+      archetypes:
+        - {archetype: Healer, via: "healer_purify, healer_purify_circle, Avatar of Life's Mending attunement"}
+        - {archetype: Paladin, via: "paladin_mending_light rank 3, Avatar of Light's Sunrise capstone"}
+        - {archetype: Monk, via: "monk_inner_peace - promised by its Core description but not implemented; pending the Core fix"}
+    - counter: taunt
+      affixes: ["Blink", "Pack Leader", "Mending Aura", "Brute role"]
+      archetypes:
+        - {archetype: Tank, via: "tank_taunt, tank_immortal_stance, Hold the Line's Advancing Line morph"}
+        - {archetype: Paladin, via: "paladin_shield_wall rank 3 (8 m frontal taunt)"}
+      companions: "a tank companion holds a pack for a solo player; companions build threat like players"
+    - counter: sunder
+      affixes: ["not an affix counter; doc 21's gaps table asks for armor breaking alongside shield breaking"]
+      archetypes:
+        - {archetype: Tank, via: "tank_breakwall (everything it knocks down)"}
+        - {archetype: Berserker, via: "berserker_cleave rank 2"}
+    - counter: crowdControl
+      affixes: ["Blink", "Frenzied", "Skirmisher role"]
+      archetypes:
+        - {archetype: Mage, via: "mage_absolute_zero, mage_blizzard, mage_ice_lance, mage_glacial_ward"}
+        - {archetype: Ranger, via: "ranger_trapper (root), Volley's Pinning Volley morph"}
+        - {archetype: Tank, via: "tank_earthshaker (slow)"}
+        - {archetype: Rogue, via: "rogue_toxic_cloud, rogue_caltrops"}
+        - {archetype: Berserker, via: "berserker_horn_of_valhalla (flee)"}
+        - {archetype: Paladin, via: "paladin_hammer_of_justice (stun)"}
+    - counter: stagger
+      affixes: ["Stoneskin"]
+      everyPlayer: "a parry staggers"
+      archetypes:
+        - {archetype: Tank, via: "tank_shield_bash, tank_earthshaker, tank_parry_restore"}
+        - {archetype: Monk, via: "monk_pressure_points, monk_palm_of_the_storm"}
+        - {archetype: Rogue, via: "rogue_feint"}
+        - {archetype: Paladin, via: "paladin_hammer_of_justice, Avatar of Judgement (staggers undead)"}
+    - counter: burst
+      affixes: ["Shielded", "Spirit-linked", "Enrage"]
+      archetypes:
+        - {archetype: Berserker, via: "berserker_execute, berserker_bloodbath, berserker_headtaker"}
+        - {archetype: Rogue, via: "rogue_assassinate, rogue_death_mark"}
+        - {archetype: Ranger, via: "ranger_killshot, ranger_perfect_shot"}
+        - {archetype: Mage, via: "mage_meteor, mage_overcharge"}
+        - {archetype: Monk, via: "monk_chi_explosion, monk_thousand_steps"}
+        - {archetype: Paladin, via: "paladin_wrath_of_the_aesir, paladin_hammer_of_justice"}
+    - counter: aoe
+      affixes: ["Warded (the totem)", "Splitting", "Summoner (the adds)"]
+      archetypes:
+        - {archetype: Tank, via: "tank_earthshaker, tank_breakwall"}
+        - {archetype: Paladin, via: "paladin_consecration, paladin_wrath_of_the_aesir"}
+        - {archetype: Berserker, via: "berserker_cleave, berserker_leap"}
+        - {archetype: Rogue, via: "rogue_toxic_cloud, rogue_plague_burst"}
+        - {archetype: Monk, via: "monk_chi_explosion, monk_mountain_s_patience"}
+        - {archetype: Ranger, via: "ranger_multishot, ranger_rain_arrows, ranger_volley"}
+        - {archetype: Mage, via: "mage_blizzard, mage_meteor, mage_firestorm"}
+    - counter: kiting
+      affixes: ["Vampiric", "Frenzied", "Brute role"]
+      archetypes:
+        - {archetype: Ranger, via: "ranger_kiting, ranger_disengage"}
+        - {archetype: Monk, via: "monk_swift_feet, monk_tailwind, monk_wind_step"}
+        - {archetype: Mage, via: "mage_blink, mage_ice_lance (slow)"}
+        - {archetype: Rogue, via: "rogue_shadow_escape, rogue_quickstep"}
+    - counter: mobility
+      affixes: ["Molten", "Frostbound", "Plagued", "Death Burst", "Reflective", "every telegraphed ring"]
+      everyPlayer: "the vanilla dodge, and each archetype's emergency evasion, which is never slotted"
+      archetypes:
+        - {archetype: Tank, via: "tank_shield_charge"}
+        - {archetype: Paladin, via: "paladin_divine_retreat"}
+        - {archetype: Berserker, via: "berserker_leap"}
+        - {archetype: Rogue, via: "rogue_shadow_escape"}
+        - {archetype: Monk, via: "monk_wind_step, monk_swift_feet, monk_leaf_on_the_wind"}
+        - {archetype: Ranger, via: "ranger_disengage"}
+        - {archetype: Mage, via: "mage_blink"}
+        - {archetype: Healer, via: "healer_fade"}
+  companionAi: "companions cannot yet pick these riders on purpose: SkillDecisionSystem.SkillTrigger has no EnemyCasting, EnemyHealing or EnemyShielded, so a rider fires only when its base skill does"
+  coreGaps:                      # effects Core promises in text but does not implement; the keywords above should be their one implementation
+    - "monk_inner_peace: ClassAbilityRegistry says it cleanses debuffs; InnerPeaceEffect only heals and buffs. Implementing Cleanse there is doc 21's Monk self-cleanse."
+    - "Spellthief (Rogue + Mage) Mana Drain: ManaDrainEffect carries SilenceDuration = 3 s and a description promising a silence, but applies none. It should use SilencedEffect."
+classes:
+  - class: Tank
+    paths:
+      - {id: guardian, name: "Guardian", theme: "Protect allies"}
+      - {id: ironclad, name: "Ironclad", theme: "Take the hits"}
+      - {id: vanguard, name: "Vanguard", theme: "Break their line"}
+    nodes:
+      - id: tank_block
+        name: "Shield Block"
+        tier: starter
+        path: all
+        level: 1
+        ranks: 3
+        kind: active
+        source: core
+        slot: auto
+        targeting: {mode: "Automatic"}
+      - id: tank_hold_the_line
+        name: "Hold the Line"
+        tier: starter
+        path: all
+        level: 10
+        ranks: 3
+        kind: active
+        source: new
+        slot: ultimate
+        targeting: {mode: "Around you", radius: 6}
+        cost: "40 stamina"
+        values:
+          dr: ["15%", "20%", "25%"]
+        text: "Plant your feet for 8 s: you and allies within 6 m can't be staggered and take {dr} less damage."
+        ai: {category: Reactive, trigger: Surrounded}
+        builtOn: "FortifyEffect (party) + stagger-immunity flag"
+      - id: tank_taunt
+        name: "Taunt"
+        tier: basic
+        path: guardian
+        level: 5
+        ranks: 3
+        kind: active
+        source: core
+        slot: skill
+        targeting: {mode: "Around you", radius: 10}
+      - id: tank_fortify
+        name: "Fortify"
+        tier: basic
+        path: ironclad
+        level: 10
+        ranks: 3
+        kind: active
+        source: core
+        slot: skill
+        targeting: {mode: "Self"}
+      - id: tank_shield_bash
+        name: "Shield Bash"
+        tier: basic
+        path: vanguard
+        level: 5
+        ranks: 3
+        kind: active
+        source: new
+        slot: skill
+        targeting: {mode: "Melee"}
+        cost: "25 stamina"
+        cooldown: 8
+        values:
+          blunt: [20, 30, 40]
+        text: "Bash the enemy in front: {blunt} blunt damage, full stagger damage, knockback."
+        ai: {category: Opener, trigger: EnemyInRange}
+        builtOn: "HitData blunt + stagger"
+        rankEffects:
+          - {rank: 3, counter: shieldBreak, effect: "The bash carries Breach: it shatters absorb shields and wards."}
+      - id: tank_intercept
+        name: "Intercept"
+        tier: advanced
+        path: guardian
+        level: 20
+        ranks: 3
+        kind: passive
+        source: core
+      - id: tank_parry_restore
+        name: "Parry Mastery"
+        tier: advanced
+        path: ironclad
+        level: 15
+        ranks: 3
+        kind: passive
+        source: core
+        variant: tank_adv
+      - id: tank_thick_hide
+        name: "Thick Hide"
+        tier: advanced
+        path: ironclad
+        level: 15
+        ranks: 3
+        kind: passive
+        source: new
+        values:
+          armor: ["5%", "10%", "15%"]
+          stagger: ["10%", "15%", "20%"]
+        text: "+{armor} armor. {stagger} less stagger damage taken."
+        builtOn: "BuffEffect"
+        variant: tank_adv
+      - id: tank_shield_charge
+        name: "Shield Charge"
+        tier: advanced
+        path: vanguard
+        level: 20
+        ranks: 3
+        kind: active
+        source: core
+        slot: dodge
+        targeting: {mode: "Dodge"}
+      - id: tank_rallying_banner
+        name: "Rallying Banner"
+        tier: expert
+        path: guardian
+        level: 40
+        ranks: 3
+        kind: active
+        source: new
+        slot: skill
+        targeting: {mode: "Placed", range: 15, radius: 8}
+        cost: "30 stamina"
+        cooldown: 60
+        duration: 15
+        values:
+          dr: ["10%", "15%", "20%"]
+          regen: ["25%", "40%", "50%"]
+        text: "Plant a war banner within 15 m. Allies within 8 m of it take {dr} less damage and regain stamina {regen} faster."
+        ai: {category: Sustained, trigger: CombatStart}
+        builtOn: "DivineProtectionEffect (aura) + stamina regen"
+      - id: tank_iron_wall
+        name: "Iron Wall"
+        tier: expert
+        path: ironclad
+        level: 40
+        ranks: 3
+        kind: passive
+        source: core
+      - id: tank_earthshaker
+        name: "Earthshaker"
+        tier: expert
+        path: vanguard
+        level: 45
+        ranks: 3
+        kind: active
+        source: new
+        slot: skill
+        targeting: {mode: "Around you", radius: 5}
+        cost: "40 stamina"
+        cooldown: 25
+        values:
+          blunt: [30, 45, 60]
+        text: "Slam the ground: {blunt} blunt damage to enemies within 5 m, stagger them all, 30% slow for 4 s."
+        ai: {category: Reactive, trigger: Surrounded}
+        builtOn: "TauntEffect shockwave pattern + SlowdownEffect"
+        variant: tank_exp
+      - id: tank_immovable
+        name: "Immovable"
+        tier: expert
+        path: vanguard
+        level: 45
+        ranks: 3
+        kind: passive
+        source: new
+        values:
+          block: ["10%", "20%", "30%"]
+        text: "You can't be staggered or knocked back while blocking or charging. Blocking costs {block} less stamina."
+        builtOn: "BuffEffect (stagger immunity flag, new)"
+        variant: tank_exp
+      - id: tank_guardian_s_oath
+        name: "Guardian's Oath"
+        tier: master
+        path: guardian
+        level: 75
+        ranks: 1
+        kind: active
+        source: new
+        slot: skill
+        targeting: {mode: "Ally", range: 20}
+        cost: "40 stamina"
+        cooldown: 90
+        duration: 20
+        values:
+          share: ["30%"]
+        text: "Bind to an ally for 20 s: {share} of the damage they take is dealt to you instead, reduced by your armor."
+        ai: {category: Reactive, trigger: AllyCritical}
+        builtOn: "Damage-redirect hook on Character.Damage (new; Intercept is related)"
+      - id: tank_unyielding
+        name: "Unyielding"
+        tier: master
+        path: ironclad
+        level: 75
+        ranks: 1
+        kind: active
+        source: core
+        slot: auto
+        targeting: {mode: "Automatic"}
+      - id: tank_breakwall
+        name: "Breakwall"
+        tier: master
+        path: vanguard
+        level: 75
+        ranks: 1
+        kind: active
+        source: new
+        slot: skill
+        targeting: {mode: "Dash", range: 10}
+        cost: "50 stamina"
+        cooldown: 45
+        values:
+          blunt: [60]
+        text: "Charge 10 m through enemies: knock down everything in your path for {blunt} blunt damage. You take 50% less damage while charging."
+        ai: {category: Opener, trigger: HighValueTarget}
+        builtOn: "Shield Charge movement + knockdown"
+        rankEffects:
+          - {rank: 1, counter: sunder, effect: "Everything it knocks down is Sundered."}
+      - id: tank_immortal_stance
+        name: "Immortal Stance"
+        tier: ultimate
+        path: all
+        level: 100
+        ranks: 1
+        kind: active
+        source: core
+        slot: ultimate
+        targeting: {mode: "Around you", radius: 10}
+    capstoneByDeepestPath:
+      guardian: "Taunt reaches 20 m, and allies within 10 m take 30% less damage."
+      ironclad: "Lasts 8 s instead of 5."
+      vanguard: "Ends in a shockwave that staggers every taunted enemy."
+    companionDefaults:
+      tank_adv: tank_thick_hide
+      tank_exp: tank_immovable
+    hybrids:   # this archetype on the front bar, the key on the back bar
+      Paladin: {name: "Crusader", ability: "Divine Bulwark"}
+      Berserker: {name: "Juggernaut", ability: "Unstoppable Charge"}
+      Rogue: {name: "Shadow Guardian", ability: "Counter Shadow"}
+      Ranger: {name: "Warden", ability: "Guardian's Volley"}
+      Mage: {name: "Spellbreaker", ability: "Arcane Fortress"}
+      Healer: {name: "Bastion", ability: "Protective Aura"}
+      Monk: {name: "Iron Monk", ability: "Iron Stance"}
+  - class: Paladin
+    paths:
+      - {id: bulwark, name: "Bulwark", theme: "Shields and defense"}
+      - {id: radiance, name: "Radiance", theme: "Healing and auras"}
+      - {id: crusade, name: "Crusade", theme: "Holy offense"}
+    nodes:
+      - id: paladin_block
+        name: "Blessed Shield"
+        tier: starter
+        path: all
+        level: 1
+        ranks: 3
+        kind: active
+        source: core
+        slot: auto
+        targeting: {mode: "Automatic"}
+      - id: paladin_beacon_of_light
+        name: "Beacon of Light"
+        tier: starter
+        path: all
+        level: 10
+        ranks: 3
+        kind: active
+        source: new
+        slot: ultimate
+        targeting: {mode: "Placed", range: 20, radius: 8}
+        cost: "40 stamina"
+        values:
+          heal: ["2%", "2.5%", "3%"]
+        text: "Place a beacon within 20 m for 10 s: allies within 8 m of it regenerate {heal} of max health per second."
+        ai: {category: Sustained, trigger: AllyDamaged}
+        builtOn: "SanctuaryEffect (area)"
+      - id: paladin_protection
+        name: "Divine Protection"
+        tier: basic
+        path: bulwark
+        level: 10
+        ranks: 3
+        kind: active
+        source: core
+        slot: skill
+        targeting: {mode: "Around you", radius: 8}
+      - id: paladin_radiant_aura
+        name: "Radiant Aura"
+        tier: basic
+        path: radiance
+        level: 10
+        ranks: 3
+        kind: active
+        source: new
+        slot: skill
+        targeting: {mode: "Around you", radius: 8}
+        cost: "30 stamina"
+        cooldown: 40
+        duration: 12
+        values:
+          heal: ["1%", "1.5%", "2%"]
+        text: "Allies within 8 m regenerate {heal} of max health per second for 12 s."
+        ai: {category: Sustained, trigger: AllyDamaged}
+        builtOn: "SanctuaryEffect (aura heal)"
+      - id: paladin_smite
+        name: "Holy Smite"
+        tier: basic
+        path: crusade
+        level: 5
+        ranks: 3
+        kind: active
+        source: core
+        slot: skill
+        targeting: {mode: "Next attack"}
+      - id: paladin_heal_block
+        name: "Blessed Defense"
+        tier: advanced
+        path: bulwark
+        level: 15
+        ranks: 3
+        kind: passive
+        source: core
+        variant: pal_adv
+      - id: paladin_shield_wall
+        name: "Shield Wall"
+        tier: advanced
+        path: bulwark
+        level: 15
+        ranks: 3
+        kind: active
+        source: new
+        slot: skill
+        targeting: {mode: "Self"}
+        cost: "30 stamina"
+        cooldown: 30
+        duration: 6
+        values:
+          dr: ["40%", "50%", "60%"]
+        text: "Raise your shield for 6 s: frontal attacks on you and allies behind you are reduced by {dr}. You move 30% slower."
+        ai: {category: Reactive, trigger: BeingFocused}
+        builtOn: "FortifyEffect + facing check"
+        rankEffects:
+          - {rank: 3, counter: taunt, effect: "Raising it taunts every enemy within 8 m in front of you for 6 s."}
+        variant: pal_adv
+      - id: paladin_mending_light
+        name: "Mending Light"
+        tier: advanced
+        path: radiance
+        level: 20
+        ranks: 3
+        kind: active
+        source: new
+        slot: skill
+        targeting: {mode: "Ally", range: 25}
+        cost: "30 stamina"
+        cooldown: 20
+        values:
+          heal: ["15%", "22%", "30%"]
+        text: "Heal the ally under your crosshair within 25 m for {heal} of their max health — or the most injured ally in range if none is targeted."
+        ai: {category: Reactive, trigger: AllyLowHealth}
+        builtOn: "HealingEffect"
+        rankEffects:
+          - {rank: 3, counter: cleanse, effect: "The heal also Cleanses one debuff from its target."}
+      - id: paladin_divine_retreat
+        name: "Divine Retreat"
+        tier: advanced
+        path: crusade
+        level: 20
+        ranks: 3
+        kind: active
+        source: core
+        slot: dodge
+        targeting: {mode: "Dodge"}
+      - id: paladin_divine_shield
+        name: "Divine Shield"
+        tier: expert
+        path: bulwark
+        level: 50
+        ranks: 3
+        kind: active
+        source: core
+        slot: skill
+        targeting: {mode: "Self"}
+      - id: paladin_consecration
+        name: "Consecration"
+        tier: expert
+        path: radiance
+        level: 35
+        ranks: 3
+        kind: active
+        source: core
+        slot: skill
+        targeting: {mode: "Placed", range: 20, radius: 6}
+      - id: paladin_hammer_of_justice
+        name: "Hammer of Justice"
+        tier: expert
+        path: crusade
+        level: 40
+        ranks: 3
+        kind: active
+        source: new
+        slot: skill
+        targeting: {mode: "Next attack"}
+        cost: "25 stamina"
+        cooldown: 18
+        values:
+          bonus: ["80%", "110%", "140%"]
+        text: "Your next attack deals {bonus} bonus spirit damage and stuns for 2 s (4 s against undead)."
+        ai: {category: Opener, trigger: HighValueTarget}
+        builtOn: "HolySmiteEffect + RootedEffect"
+        variant: pal_exp
+      - id: paladin_zeal
+        name: "Zeal"
+        tier: expert
+        path: crusade
+        level: 40
+        ranks: 3
+        kind: passive
+        source: new
+        values:
+          stacks: [3, 4, 5]
+        text: "Each hit grants 5% attack speed for 6 s, stacking up to {stacks} times."
+        builtOn: "BuffEffect (stacking)"
+        variant: pal_exp
+      - id: paladin_unbreakable
+        name: "Unbreakable"
+        tier: master
+        path: bulwark
+        level: 75
+        ranks: 1
+        kind: passive
+        source: new
+        text: "Once every 3 minutes, a hit that would drop you below 25% health instead grants Divine Shield for 2 s."
+        builtOn: "InvulnerableEffect + low-health hook (as Unyielding)"
+      - id: paladin_lay_hands
+        name: "Lay on Hands"
+        tier: master
+        path: radiance
+        level: 75
+        ranks: 1
+        kind: active
+        source: core
+        slot: skill
+        targeting: {mode: "Ally", range: 20}
+      - id: paladin_wrath_of_the_aesir
+        name: "Wrath of the Aesir"
+        tier: master
+        path: crusade
+        level: 75
+        ranks: 1
+        kind: active
+        source: new
+        slot: skill
+        targeting: {mode: "Placed", range: 30, radius: 6}
+        cost: "50 stamina"
+        cooldown: 60
+        text: "Call lightning down where you aim, within 30 m: up to 5 enemies within 6 m of that point take 80 lightning and 40 spirit damage each."
+        ai: {category: Situational, trigger: Surrounded}
+        builtOn: "New AoE strike (AbilityFXManager for VFX)"
+      - id: paladin_avatar
+        name: "Avatar of Light"
+        tier: ultimate
+        path: all
+        level: 100
+        ranks: 1
+        kind: active
+        source: core
+        slot: ultimate
+        targeting: {mode: "Self"}
+    capstoneByDeepestPath:
+      bulwark: "Begins with 3 s of Divine Shield."
+      radiance: "Allies within 10 m regenerate 2% health per second."
+      crusade: "+30% spirit damage."
+    companionDefaults:
+      pal_adv: paladin_heal_block
+      pal_exp: paladin_zeal
+    hybrids:   # this archetype on the front bar, the key on the back bar
+      Tank: {name: "Templar", ability: "Sacred Shield"}
+      Berserker: {name: "Zealot", ability: "Holy Fury"}
+      Rogue: {name: "Inquisitor", ability: "Divine Judgment"}
+      Ranger: {name: "Holy Archer", ability: "Radiant Arrow"}
+      Mage: {name: "Battle Priest", ability: "Divine Nova"}
+      Healer: {name: "High Priest", ability: "Mass Restoration"}
+      Monk: {name: "Ascetic Knight", ability: "Enlightened Strike"}
+  - class: Berserker
+    paths:
+      - {id: bloodrage, name: "Bloodrage", theme: "Stronger as you bleed"}
+      - {id: slaughter, name: "Slaughter", theme: "Kills feed kills"}
+      - {id: warchief, name: "Warchief", theme: "Lead the charge"}
+    nodes:
+      - id: berserker_fury
+        name: "Fury"
+        tier: starter
+        path: all
+        level: 1
+        ranks: 3
+        kind: active
+        source: core
+        slot: auto
+        targeting: {mode: "Automatic"}
+      - id: berserker_bloodbath
+        name: "Bloodbath"
+        tier: starter
+        path: all
+        level: 10
+        ranks: 3
+        kind: active
+        source: new
+        slot: ultimate
+        targeting: {mode: "Self"}
+        cost: "15% health"
+        values:
+          as: ["25%", "32%", "40%"]
+        text: "For 10 s: +{as} attack speed, and 15% of the damage you deal heals you."
+        ai: {category: Opener, trigger: CombatStart}
+        builtOn: "BerserkRageEffect + lifesteal"
+      - id: berserker_rage
+        name: "Berserk Rage"
+        tier: basic
+        path: bloodrage
+        level: 10
+        ranks: 3
+        kind: active
+        source: core
+        slot: auto
+        targeting: {mode: "Automatic"}
+      - id: berserker_cleave
+        name: "Cleave"
+        tier: basic
+        path: slaughter
+        level: 5
+        ranks: 3
+        kind: passive
+        source: new
+        values:
+          dmg: ["50%", "65%", "80%"]
+        text: "Heavy attacks also hit every enemy in a 120° arc for {dmg} damage."
+        builtOn: "Extra overlap hits on heavy attacks (new)"
+        rankEffects:
+          - {rank: 2, counter: sunder, effect: "Cleaved enemies are Sundered."}
+          - {rank: 3, counter: antiHeal, effect: "Cleaved enemies are Wounded for 6 s."}
+      - id: berserker_warcry
+        name: "Warcry"
+        tier: basic
+        path: warchief
+        level: 5
+        ranks: 3
+        kind: active
+        source: core
+        slot: skill
+        targeting: {mode: "Around you", radius: 10}
+      - id: berserker_pain_fuels_me
+        name: "Pain Fuels Me"
+        tier: advanced
+        path: bloodrage
+        level: 15
+        ranks: 3
+        kind: passive
+        source: new
+        values:
+          fury: [5, 8, 10]
+        text: "Taking damage builds {fury} Fury per hit."
+        builtOn: "Fury resource (from Fury)"
+        variant: ber_adv
+      - id: berserker_thick_skull
+        name: "Thick Skull"
+        tier: advanced
+        path: bloodrage
+        level: 15
+        ranks: 3
+        kind: passive
+        source: new
+        values:
+          stagger: ["30%", "45%", "60%"]
+        text: "While Berserk Rage is active you take {stagger} less stagger damage."
+        builtOn: "BerserkRageEffect + stagger modifier"
+        variant: ber_adv
+      - id: berserker_bloodlust
+        name: "Bloodlust"
+        tier: advanced
+        path: slaughter
+        level: 15
+        ranks: 3
+        kind: passive
+        source: core
+      - id: berserker_leap
+        name: "Savage Leap"
+        tier: advanced
+        path: warchief
+        level: 20
+        ranks: 3
+        kind: active
+        source: core
+        slot: dodge
+        targeting: {mode: "Dodge"}
+      - id: berserker_blood_for_blood
+        name: "Blood for Blood"
+        tier: expert
+        path: bloodrage
+        level: 40
+        ranks: 3
+        kind: passive
+        source: new
+        values:
+          steal: ["8%", "12%", "16%"]
+        text: "Below 50% health, {steal} of the damage you deal heals you."
+        builtOn: "Lifesteal in a damage postfix"
+      - id: berserker_execute
+        name: "Execute"
+        tier: expert
+        path: slaughter
+        level: 35
+        ranks: 3
+        kind: passive
+        source: core
+        variant: ber_exp
+      - id: berserker_rampage
+        name: "Rampage"
+        tier: expert
+        path: slaughter
+        level: 50
+        ranks: 3
+        kind: passive
+        source: core
+        variant: ber_exp
+      - id: berserker_battle_trance
+        name: "Battle Trance"
+        tier: expert
+        path: warchief
+        level: 45
+        ranks: 3
+        kind: active
+        source: new
+        slot: skill
+        targeting: {mode: "Around you", radius: 10}
+        cost: "30 stamina"
+        cooldown: 45
+        duration: 12
+        values:
+          as: ["10%", "15%", "20%"]
+        text: "You and allies within 10 m gain {as} attack speed, and attacks cost 20% less stamina, for 12 s."
+        ai: {category: Opener, trigger: CombatStart}
+        builtOn: "WarcryEffect"
+      - id: berserker_deathwish
+        name: "Death Wish"
+        tier: master
+        path: bloodrage
+        level: 75
+        ranks: 1
+        kind: active
+        source: core
+        slot: auto
+        targeting: {mode: "Automatic"}
+      - id: berserker_headtaker
+        name: "Headtaker"
+        tier: master
+        path: slaughter
+        level: 75
+        ranks: 1
+        kind: passive
+        source: new
+        text: "Killing blows fully restore stamina and grant 30% attack speed for 5 s."
+        builtOn: "On-kill hook (as Bloodlust)"
+      - id: berserker_horn_of_valhalla
+        name: "Horn of Valhalla"
+        tier: master
+        path: warchief
+        level: 75
+        ranks: 1
+        kind: active
+        source: new
+        slot: skill
+        targeting: {mode: "Around you", radius: 15}
+        cost: "50 stamina"
+        cooldown: 120
+        text: "Sound a war horn: allies within 15 m deal 25% more damage for 15 s, and non-boss enemies within 10 m flee for 4 s."
+        ai: {category: Situational, trigger: Surrounded}
+        builtOn: "WarcryEffect + monster flee (new)"
+      - id: berserker_avatar_war
+        name: "Avatar of War"
+        tier: ultimate
+        path: all
+        level: 100
+        ranks: 1
+        kind: active
+        source: core
+        slot: ultimate
+        targeting: {mode: "Self"}
+    capstoneByDeepestPath:
+      bloodrage: "+1% damage for every 1% of health missing."
+      slaughter: "Each kill adds 2 s."
+      warchief: "Allies within 10 m gain half the bonus."
+    companionDefaults:
+      ber_adv: berserker_thick_skull
+      ber_exp: berserker_execute
+    hybrids:   # this archetype on the front bar, the key on the back bar
+      Tank: {name: "Ravager", ability: "Bloodthirst"}
+      Paladin: {name: "Avenger", ability: "Wrathful Smite"}
+      Rogue: {name: "Reaper", ability: "Frenzy Strike"}
+      Ranger: {name: "Beast Hunter", ability: "Predator's Mark"}
+      Mage: {name: "Blood Mage", ability: "Blood Sacrifice"}
+      Healer: {name: "Blood Knight", ability: "Sanguine Fury"}
+      Monk: {name: "Battle Rager", ability: "Focused Fury"}
+  - class: Rogue
+    paths:
+      - {id: shadow, name: "Shadow", theme: "Strike unseen"}
+      - {id: venom, name: "Venom", theme: "Poison and attrition"}
+      - {id: blade, name: "Blade", theme: "Parry, feint, evade"}
+    nodes:
+      - id: rogue_backstab
+        name: "Backstab"
+        tier: starter
+        path: all
+        level: 1
+        ranks: 3
+        kind: passive
+        source: core
+      - id: rogue_smoke_bomb
+        name: "Smoke Bomb"
+        tier: starter
+        path: all
+        level: 10
+        ranks: 3
+        kind: active
+        source: new
+        slot: ultimate
+        targeting: {mode: "Placed", range: 15, radius: 6}
+        cost: "35 stamina"
+        values:
+          stealth: ["3 s", "4 s", "5 s"]
+        text: "Throw within 15 m: a 6 m smoke cloud for 8 s. Enemies inside lose their target; you and allies leaving it gain Stealth for {stealth}."
+        ai: {category: Reactive, trigger: BeingFocused}
+        builtOn: "StealthEffect + target drop (new)"
+      - id: rogue_stealth
+        name: "Stealth"
+        tier: basic
+        path: shadow
+        level: 10
+        ranks: 3
+        kind: active
+        source: core
+        slot: skill
+        targeting: {mode: "Self"}
+      - id: rogue_poison
+        name: "Poison Blade"
+        tier: basic
+        path: venom
+        level: 5
+        ranks: 3
+        kind: active
+        source: core
+        slot: skill
+        targeting: {mode: "Next attack"}
+      - id: rogue_counterstrike
+        name: "Counterstrike"
+        tier: basic
+        path: blade
+        level: 5
+        ranks: 3
+        kind: passive
+        source: new
+        values:
+          bonus: ["30%", "45%", "60%"]
+        text: "After a parry, your next attack within 3 s deals {bonus} more damage."
+        builtOn: "Parry hook (as Parry Mastery) + BuffEffect"
+      - id: rogue_shadow_escape
+        name: "Shadow Escape"
+        tier: advanced
+        path: shadow
+        level: 20
+        ranks: 3
+        kind: active
+        source: core
+        slot: dodge
+        targeting: {mode: "Dodge"}
+      - id: rogue_caltrops
+        name: "Caltrops"
+        tier: advanced
+        path: venom
+        level: 15
+        ranks: 3
+        kind: active
+        source: core
+        slot: auto
+        targeting: {mode: "Automatic"}
+      - id: rogue_quickstep
+        name: "Quickstep"
+        tier: advanced
+        path: blade
+        level: 15
+        ranks: 3
+        kind: passive
+        source: new
+        values:
+          cost: ["15%", "25%", "35%"]
+        text: "Dodging costs {cost} less stamina."
+        builtOn: "BuffEffect (dodge stamina)"
+        variant: rog_adv
+      - id: rogue_feint
+        name: "Feint"
+        tier: advanced
+        path: blade
+        level: 15
+        ranks: 3
+        kind: active
+        source: new
+        slot: skill
+        targeting: {mode: "Next attack"}
+        cost: "20 stamina"
+        cooldown: [14, 12, 10]
+        values:
+          cd: ["14 s", "12 s", "10 s"]
+        text: "Within 4 s, your next attack ignores block and staggers. Cooldown {cd}."
+        ai: {category: Opener, trigger: EnemyInRange}
+        builtOn: "BuffEffect + block-bypass flag on HitData (new)"
+        variant: rog_adv
+      - id: rogue_assassinate
+        name: "Assassinate"
+        tier: expert
+        path: shadow
+        level: 35
+        ranks: 3
+        kind: passive
+        source: core
+      - id: rogue_virulence
+        name: "Virulence"
+        tier: expert
+        path: venom
+        level: 40
+        ranks: 3
+        kind: passive
+        source: new
+        values:
+          stacks: [2, 3, 4]
+        text: "Poison stacks up to {stacks} times."
+        builtOn: "PoisonEffect (stacking)"
+        rankEffects:
+          - {rank: 3, counter: antiHeal, effect: "Your poison also Wounds: a poisoned enemy stays Wounded while any stack is on it."}
+        variant: rog_exp
+      - id: rogue_toxic_cloud
+        name: "Toxic Cloud"
+        tier: expert
+        path: venom
+        level: 40
+        ranks: 3
+        kind: active
+        source: new
+        slot: skill
+        targeting: {mode: "Placed", range: 20, radius: 5}
+        cost: "30 stamina"
+        cooldown: 30
+        duration: 8
+        values:
+          dps: [10, 15, 20]
+        text: "Throw a vial within 20 m: a 5 m cloud for 8 s deals {dps} poison per second and slows enemies 20%."
+        ai: {category: Situational, trigger: Surrounded}
+        builtOn: "DamageOverTimeEffect + SlowdownEffect (area, as Consecration)"
+        variant: rog_exp
+      - id: rogue_evasion
+        name: "Evasion"
+        tier: expert
+        path: blade
+        level: 50
+        ranks: 3
+        kind: active
+        source: core
+        slot: skill
+        targeting: {mode: "Self"}
+      - id: rogue_unseen
+        name: "Unseen"
+        tier: master
+        path: shadow
+        level: 75
+        ranks: 1
+        kind: passive
+        source: new
+        text: "Your first attack from Stealth does not break it, and attacks from Stealth always critically hit."
+        builtOn: "StealthEffect"
+      - id: rogue_plague_burst
+        name: "Plague Burst"
+        tier: master
+        path: venom
+        level: 75
+        ranks: 1
+        kind: passive
+        source: new
+        text: "Poisoned enemies burst when they die, poisoning enemies within 6 m with half their stacks."
+        builtOn: "On-death hook + PoisonEffect"
+      - id: rogue_death_mark
+        name: "Death Mark"
+        tier: master
+        path: blade
+        level: 75
+        ranks: 1
+        kind: active
+        source: core
+        slot: skill
+        targeting: {mode: "Aimed", range: 30}
+      - id: rogue_shadow_dance
+        name: "Shadow Dance"
+        tier: ultimate
+        path: all
+        level: 100
+        ranks: 1
+        kind: active
+        source: core
+        slot: ultimate
+        targeting: {mode: "Self"}
+    capstoneByDeepestPath:
+      shadow: "Ends in Stealth."
+      venom: "Every hit applies full poison stacks."
+      blade: "Dodges refund their stamina."
+    companionDefaults:
+      rog_adv: rogue_quickstep
+      rog_exp: rogue_virulence
+    hybrids:   # this archetype on the front bar, the key on the back bar
+      Tank: {name: "Duelist", ability: "Perfect Riposte"}
+      Paladin: {name: "Shadow Priest", ability: "Holy Assassination"}
+      Berserker: {name: "Blade Dancer", ability: "Dance of Death"}
+      Ranger: {name: "Scout", ability: "Ambush"}
+      Mage: {name: "Spellthief", ability: "Mana Drain"}
+      Healer: {name: "Medicine Man", ability: "Life Steal"}
+      Monk: {name: "Ninja", ability: "Shadow Step"}
+  - class: Monk
+    paths:
+      - {id: fist, name: "Fist", theme: "Combos and chi"}
+      - {id: stone, name: "Stone", theme: "Endure and recover"}
+      - {id: wind, name: "Wind", theme: "Speed and evasion"}
+    nodes:
+      - id: monk_martial_arts
+        name: "Martial Arts"
+        tier: starter
+        path: all
+        level: 1
+        ranks: 3
+        kind: active
+        source: core
+        slot: auto
+        targeting: {mode: "Automatic"}
+      - id: monk_palm_of_the_storm
+        name: "Palm of the Storm"
+        tier: starter
+        path: all
+        level: 10
+        ranks: 3
+        kind: active
+        source: new
+        slot: ultimate
+        targeting: {mode: "Melee"}
+        cost: "40 stamina"
+        values:
+          dmg: ["60%", "80%", "100%"]
+        text: "Four rapid palm strikes on the enemy in front, {dmg} weapon damage each; the last knocks back and stuns for 2 s."
+        ai: {category: Opener, trigger: HighValueTarget}
+        builtOn: "Flurry of Blows sequence + RootedEffect"
+      - id: monk_chi_strike
+        name: "Chi Strike"
+        tier: basic
+        path: fist
+        level: 5
+        ranks: 3
+        kind: active
+        source: core
+        slot: skill
+        targeting: {mode: "Next attack"}
+      - id: monk_inner_peace
+        name: "Inner Peace"
+        tier: basic
+        path: stone
+        level: 10
+        ranks: 3
+        kind: active
+        source: core
+        slot: skill
+        targeting: {mode: "Self"}
+      - id: monk_swift_feet
+        name: "Swift Feet"
+        tier: basic
+        path: wind
+        level: 5
+        ranks: 3
+        kind: passive
+        source: new
+        values:
+          speed: ["4%", "7%", "10%"]
+          run: ["10%", "15%", "20%"]
+        text: "Unarmed or with clubs: +{speed} movement speed and running costs {run} less stamina."
+        builtOn: "BuffEffect (speed, run stamina)"
+      - id: monk_pressure_points
+        name: "Pressure Points"
+        tier: advanced
+        path: fist
+        level: 15
+        ranks: 3
+        kind: passive
+        source: new
+        values:
+          hits: ["5th", "4th", "3rd"]
+        text: "Every {hits} consecutive hit on the same target staggers it."
+        builtOn: "Combo counter (Martial Arts) + stagger"
+      - id: monk_stamina
+        name: "Endurance Training"
+        tier: advanced
+        path: stone
+        level: 15
+        ranks: 3
+        kind: passive
+        source: core
+        variant: monk_adv
+      - id: monk_stone_skin
+        name: "Stone Skin"
+        tier: advanced
+        path: stone
+        level: 15
+        ranks: 3
+        kind: passive
+        source: new
+        values:
+          dr: ["8%", "12%", "16%"]
+        text: "{dr} less physical damage taken."
+        builtOn: "BuffEffect (resistance)"
+        variant: monk_adv
+      - id: monk_wind_step
+        name: "Wind Step"
+        tier: advanced
+        path: wind
+        level: 20
+        ranks: 3
+        kind: active
+        source: core
+        slot: dodge
+        targeting: {mode: "Dodge"}
+      - id: monk_flurry
+        name: "Flurry of Blows"
+        tier: expert
+        path: fist
+        level: 35
+        ranks: 3
+        kind: active
+        source: core
+        slot: skill
+        targeting: {mode: "Melee"}
+      - id: monk_iron_body
+        name: "Iron Body"
+        tier: expert
+        path: stone
+        level: 50
+        ranks: 3
+        kind: active
+        source: core
+        slot: skill
+        targeting: {mode: "Self"}
+      - id: monk_leaf_on_the_wind
+        name: "Leaf on the Wind"
+        tier: expert
+        path: wind
+        level: 40
+        ranks: 3
+        kind: passive
+        source: new
+        values:
+          chance: ["20%", "30%", "40%"]
+        text: "Dodges have a {chance} chance to cost no stamina and make you untargetable for 1 s."
+        builtOn: "Dodge hook + InvulnerableEffect (short)"
+        variant: monk_exp
+      - id: monk_tailwind
+        name: "Tailwind"
+        tier: expert
+        path: wind
+        level: 40
+        ranks: 3
+        kind: active
+        source: new
+        slot: skill
+        targeting: {mode: "Around you", radius: 10}
+        cost: "25 stamina"
+        cooldown: 40
+        duration: 10
+        values:
+          speed: ["15%", "20%", "25%"]
+        text: "You and allies within 10 m move {speed} faster for 10 s."
+        ai: {category: Situational, trigger: PreCombat}
+        builtOn: "BuffEffect (party)"
+        variant: monk_exp
+      - id: monk_chi_explosion
+        name: "Chi Explosion"
+        tier: master
+        path: fist
+        level: 75
+        ranks: 1
+        kind: active
+        source: core
+        slot: skill
+        targeting: {mode: "Around you", radius: 6}
+      - id: monk_mountain_s_patience
+        name: "Mountain's Patience"
+        tier: master
+        path: stone
+        level: 75
+        ranks: 1
+        kind: active
+        source: new
+        slot: skill
+        targeting: {mode: "Self"}
+        cost: "40 stamina"
+        cooldown: 60
+        text: "Root yourself for 3 s and absorb all damage, then release it as a 6 m shockwave dealing 150% of it as blunt damage."
+        ai: {category: Reactive, trigger: BeingFocused}
+        builtOn: "ArcaneShieldEffect (absorb) + shockwave"
+      - id: monk_thousand_steps
+        name: "Thousand Steps"
+        tier: master
+        path: wind
+        level: 75
+        ranks: 1
+        kind: active
+        source: new
+        slot: skill
+        targeting: {mode: "Aimed", range: 15}
+        cost: "50 stamina"
+        cooldown: 45
+        text: "Dash between up to 5 enemies within 10 m, striking each for 150% weapon damage."
+        ai: {category: Opener, trigger: Surrounded}
+        builtOn: "Dash sequence (Wind Step movement)"
+      - id: monk_perfection
+        name: "Way of Perfection"
+        tier: ultimate
+        path: all
+        level: 100
+        ranks: 1
+        kind: active
+        source: core
+        slot: ultimate
+        targeting: {mode: "Self"}
+    capstoneByDeepestPath:
+      fist: "Every 5th hit releases a small Chi Explosion."
+      stone: "You take 40% less damage."
+      wind: "+30% movement speed, and dodges cost nothing."
+    companionDefaults:
+      monk_adv: monk_stamina
+      monk_exp: monk_leaf_on_the_wind
+    hybrids:   # this archetype on the front bar, the key on the back bar
+      Tank: {name: "Stone Fist", ability: "Stone Stance"}
+      Paladin: {name: "Temple Guardian", ability: "Sacred Fist"}
+      Berserker: {name: "Drunken Master", ability: "Drunken Frenzy"}
+      Rogue: {name: "Ninja", ability: "Vanishing Strike"}
+      Ranger: {name: "Wind Walker", ability: "Wind Step"}
+      Mage: {name: "Elementalist", ability: "Elemental Fist"}
+      Healer: {name: "Chi Healer", ability: "Healing Palm"}
+  - class: Ranger
+    paths:
+      - {id: marksman, name: "Marksman", theme: "One perfect shot"}
+      - {id: hunter, name: "Hunter", theme: "Mark, trap, track"}
+      - {id: skirmisher, name: "Skirmisher", theme: "Keep moving, keep firing"}
+    nodes:
+      - id: ranger_aim
+        name: "Steady Aim"
+        tier: starter
+        path: all
+        level: 1
+        ranks: 3
+        kind: passive
+        source: core
+      - id: ranger_volley
+        name: "Volley"
+        tier: starter
+        path: all
+        level: 10
+        ranks: 3
+        kind: active
+        source: new
+        slot: ultimate
+        targeting: {mode: "Placed", range: 30, radius: 5}
+        cost: "40 stamina"
+        values:
+          pierce: [20, 26, 32]
+        text: "Target a 5 m circle within 30 m: 12 arrows fall over 3 s, {pierce} pierce damage each."
+        ai: {category: Situational, trigger: Surrounded}
+        builtOn: "Rain of Arrows (smaller)"
+      - id: ranger_eagle_eye
+        name: "Eagle Eye"
+        tier: basic
+        path: marksman
+        level: 10
+        ranks: 3
+        kind: active
+        source: core
+        slot: skill
+        targeting: {mode: "Self"}
+      - id: ranger_mark
+        name: "Hunter's Mark"
+        tier: basic
+        path: hunter
+        level: 5
+        ranks: 3
+        kind: active
+        source: core
+        slot: skill
+        targeting: {mode: "Aimed", range: 50}
+      - id: ranger_kiting
+        name: "Kiting Expertise"
+        tier: basic
+        path: skirmisher
+        level: 15
+        ranks: 3
+        kind: passive
+        source: core
+      - id: ranger_piercing_shot
+        name: "Piercing Shot"
+        tier: advanced
+        path: marksman
+        level: 20
+        ranks: 3
+        kind: active
+        source: new
+        slot: skill
+        targeting: {mode: "Next attack"}
+        cost: "20 stamina"
+        cooldown: 10
+        values:
+          targets: [2, 3, 4]
+        text: "Your next arrow passes through up to {targets} enemies and deals 20% more damage."
+        ai: {category: Opener, trigger: EnemyInRange}
+        builtOn: "Projectile pierce flag (new)"
+        rankEffects:
+          - {rank: 2, counter: shieldBreak, effect: "The arrow carries Breach through every enemy it passes."}
+          - {rank: 3, counter: interrupt, effect: "Concussive: the first enemy hit is staggered, which interrupts its cast."}
+        variant: ran_adv
+      - id: ranger_deadeye
+        name: "Deadeye"
+        tier: advanced
+        path: marksman
+        level: 20
+        ranks: 3
+        kind: passive
+        source: new
+        values:
+          crit: ["8%", "12%", "16%"]
+        text: "Fully drawn shots gain {crit} critical chance."
+        builtOn: "EagleEyeEffect crit plumbing"
+        variant: ran_adv
+      - id: ranger_tracker
+        name: "Tracker"
+        tier: advanced
+        path: hunter
+        level: 25
+        ranks: 3
+        kind: active
+        source: new
+        slot: skill
+        targeting: {mode: "Self"}
+        cost: "15 stamina"
+        cooldown: 45
+        duration: 10
+        values:
+          range: ["50 m", "70 m", "90 m"]
+        text: "Reveal creatures within {range} through terrain for 10 s."
+        ai: {category: Situational, trigger: PreCombat}
+        builtOn: "Outline or minimap pins (new)"
+      - id: ranger_disengage
+        name: "Disengage"
+        tier: advanced
+        path: skirmisher
+        level: 20
+        ranks: 3
+        kind: active
+        source: core
+        slot: dodge
+        targeting: {mode: "Dodge"}
+      - id: ranger_headshot
+        name: "Headshot"
+        tier: expert
+        path: marksman
+        level: 50
+        ranks: 3
+        kind: passive
+        source: core
+      - id: ranger_trapper
+        name: "Trapper"
+        tier: expert
+        path: hunter
+        level: 40
+        ranks: 3
+        kind: active
+        source: new
+        slot: skill
+        targeting: {mode: "Placed", range: 15, radius: 3}
+        cost: "20 stamina"
+        cooldown: 20
+        values:
+          root: ["3 s", "4 s", "5 s"]
+        text: "Place a snare within 15 m for 30 s: the first enemy within 3 m of it is rooted for {root} and takes 30 pierce damage."
+        ai: {category: Situational, trigger: BeingFocused}
+        builtOn: "RootedEffect; snare is a periodic overlap check at a stored point"
+        variant: ran_exp
+      - id: ranger_call_of_the_wild
+        name: "Call of the Wild"
+        tier: expert
+        path: hunter
+        level: 40
+        ranks: 3
+        kind: active
+        source: new
+        slot: skill
+        targeting: {mode: "Aimed", range: 30}
+        cost: "30 stamina"
+        cooldown: 120
+        duration: 60
+        values:
+          stars: ["0-star", "1-star", "2-star"]
+        text: "Summon a {stars} tamed wolf for 60 s that attacks your target."
+        ai: {category: Opener, trigger: CombatStart}
+        builtOn: "Spawn Wolf prefab, tame it, despawn timer (new)"
+        variant: ran_exp
+      - id: ranger_multishot
+        name: "Multishot"
+        tier: expert
+        path: skirmisher
+        level: 35
+        ranks: 3
+        kind: active
+        source: core
+        slot: skill
+        targeting: {mode: "Next attack"}
+      - id: ranger_killshot
+        name: "Killshot"
+        tier: master
+        path: marksman
+        level: 75
+        ranks: 1
+        kind: active
+        source: new
+        slot: skill
+        targeting: {mode: "Next attack"}
+        cost: "30 stamina"
+        cooldown: 30
+        text: "Your next shot deals 200% more damage to a target below 30% health."
+        ai: {category: Situational, trigger: EnemyLowHealth}
+        builtOn: "Execute-style threshold check"
+      - id: ranger_apex_predator
+        name: "Apex Predator"
+        tier: master
+        path: hunter
+        level: 75
+        ranks: 1
+        kind: passive
+        source: new
+        text: "25% more damage to marked enemies. When one dies, the mark jumps to the nearest enemy within 15 m."
+        builtOn: "HuntersMarkEffect"
+      - id: ranger_rain_arrows
+        name: "Rain of Arrows"
+        tier: master
+        path: skirmisher
+        level: 75
+        ranks: 1
+        kind: active
+        source: core
+        slot: skill
+        targeting: {mode: "Placed", range: 40, radius: 8}
+      - id: ranger_perfect_shot
+        name: "Perfect Shot"
+        tier: ultimate
+        path: all
+        level: 100
+        ranks: 1
+        kind: active
+        source: core
+        slot: ultimate
+        targeting: {mode: "Next attack"}
+    capstoneByDeepestPath:
+      marksman: "Also pierces every enemy in line."
+      hunter: "Marks every enemy it hits for 15 s."
+      skirmisher: "Applies to your next 3 shots."
+    companionDefaults:
+      ran_adv: ranger_deadeye
+      ran_exp: ranger_trapper
+    hybrids:   # this archetype on the front bar, the key on the back bar
+      Tank: {name: "Sentinel", ability: "Defensive Volley"}
+      Paladin: {name: "Divine Hunter", ability: "Blessed Arrows"}
+      Berserker: {name: "Wild Hunter", ability: "Rain of Fury"}
+      Rogue: {name: "Sniper", ability: "Assassin's Shot"}
+      Mage: {name: "Arcane Archer", ability: "Elemental Arrow"}
+      Healer: {name: "Forest Keeper", ability: "Nature's Blessing"}
+      Monk: {name: "Zen Archer", ability: "Perfect Shot"}
+  - class: Mage
+    paths:
+      - {id: fire, name: "Fire", theme: "Burn it all"}
+      - {id: frost, name: "Frost", theme: "Slow, freeze, control"}
+      - {id: arcane, name: "Arcane", theme: "Barriers and eitr"}
+    nodes:
+      - id: mage_cast
+        name: "Spellcasting"
+        tier: starter
+        path: all
+        level: 1
+        ranks: 3
+        kind: active
+        source: core
+        slot: auto
+        targeting: {mode: "Automatic"}
+      - id: mage_firestorm
+        name: "Firestorm"
+        tier: starter
+        path: all
+        level: 10
+        ranks: 3
+        kind: active
+        source: new
+        slot: ultimate
+        targeting: {mode: "Placed", range: 25, radius: 6}
+        cost: "60 eitr"
+        values:
+          dps: [15, 20, 25]
+        text: "Target a 6 m circle within 25 m: a fire storm for 6 s deals {dps} fire damage per second."
+        ai: {category: Situational, trigger: Surrounded}
+        builtOn: "DamageOverTimeEffect (fire, area)"
+      - id: mage_infusion
+        name: "Elemental Infusion"
+        tier: basic
+        path: fire
+        level: 5
+        ranks: 3
+        kind: active
+        source: core
+        slot: skill
+        targeting: {mode: "Self"}
+      - id: mage_frostbite
+        name: "Frostbite"
+        tier: basic
+        path: frost
+        level: 5
+        ranks: 3
+        kind: passive
+        source: new
+        values:
+          slow: ["10%", "15%", "20%"]
+          dur: ["1 s", "2 s", "3 s"]
+        text: "Frost damage slows {slow} more, and chill lasts {dur} longer."
+        builtOn: "SlowdownEffect"
+      - id: mage_shield
+        name: "Arcane Shield"
+        tier: basic
+        path: arcane
+        level: 10
+        ranks: 3
+        kind: active
+        source: core
+        slot: skill
+        targeting: {mode: "Self"}
+      - id: mage_eitr_regen
+        name: "Eitr Mastery"
+        tier: basic
+        path: arcane
+        level: 15
+        ranks: 3
+        kind: passive
+        source: core
+        after: mage_shield
+      - id: mage_ignite
+        name: "Ignite"
+        tier: advanced
+        path: fire
+        level: 15
+        ranks: 3
+        kind: passive
+        source: new
+        values:
+          dps: [5, 8, 12]
+        text: "Fire spells leave burning ground for 3 s that deals {dps} fire per second."
+        builtOn: "DamageOverTimeEffect (fire, area)"
+      - id: mage_ice_lance
+        name: "Ice Lance"
+        tier: advanced
+        path: frost
+        level: 20
+        ranks: 3
+        kind: active
+        source: new
+        slot: skill
+        targeting: {mode: "Aimed", range: 40}
+        cost: "25 eitr"
+        cooldown: 8
+        values:
+          frost: [40, 55, 70]
+        text: "A piercing frost bolt: {frost} frost damage and a 40% slow for 3 s."
+        ai: {category: Opener, trigger: EnemyInRange}
+        builtOn: "Projectile + SlowdownEffect"
+        rankEffects:
+          - {rank: 3, counter: interrupt, effect: "The bolt Silences what it hits for 2 s."}
+        variant: mag_adv
+      - id: mage_glacial_ward
+        name: "Glacial Ward"
+        tier: advanced
+        path: frost
+        level: 20
+        ranks: 3
+        kind: active
+        source: new
+        slot: skill
+        targeting: {mode: "Self"}
+        cost: "25 eitr"
+        cooldown: 30
+        duration: 10
+        values:
+          res: ["20%", "30%", "40%"]
+        text: "Frost armor for 10 s: {res} frost resistance, and melee attackers are slowed 30%."
+        ai: {category: Reactive, trigger: BeingFocused}
+        builtOn: "BuffEffect + SlowdownEffect on attackers"
+        variant: mag_adv
+      - id: mage_blink
+        name: "Arcane Blink"
+        tier: advanced
+        path: arcane
+        level: 20
+        ranks: 3
+        kind: active
+        source: core
+        slot: dodge
+        targeting: {mode: "Dodge"}
+      - id: mage_overcharge
+        name: "Overcharge"
+        tier: expert
+        path: fire
+        level: 35
+        ranks: 3
+        kind: active
+        source: core
+        slot: skill
+        targeting: {mode: "Self"}
+      - id: mage_blizzard
+        name: "Blizzard"
+        tier: expert
+        path: frost
+        level: 45
+        ranks: 3
+        kind: active
+        source: new
+        slot: skill
+        targeting: {mode: "Placed", range: 30, radius: 8}
+        cost: "45 eitr"
+        cooldown: 40
+        duration: 8
+        values:
+          dps: [10, 15, 20]
+        text: "Aim an 8 m storm within 30 m for 8 s: {dps} frost damage per second and a 30% slow."
+        ai: {category: Situational, trigger: Surrounded}
+        builtOn: "DamageOverTimeEffect + SlowdownEffect (area)"
+      - id: mage_chain
+        name: "Chain Casting"
+        tier: expert
+        path: arcane
+        level: 50
+        ranks: 3
+        kind: passive
+        source: core
+        variant: mag_exp
+      - id: mage_eitr_well
+        name: "Eitr Well"
+        tier: expert
+        path: arcane
+        level: 45
+        ranks: 3
+        kind: active
+        source: new
+        slot: skill
+        targeting: {mode: "Placed", range: 20, radius: 6}
+        cost: "30 eitr"
+        cooldown: 60
+        duration: 12
+        values:
+          regen: ["100%", "150%", "200%"]
+        text: "Conjure a well within 20 m for 12 s: allies within 6 m of it regenerate eitr {regen} faster."
+        ai: {category: Sustained, trigger: CooldownReady}
+        builtOn: "SanctuaryEffect aura pattern (eitr regen)"
+        variant: mag_exp
+      - id: mage_meteor
+        name: "Meteor"
+        tier: master
+        path: fire
+        level: 75
+        ranks: 1
+        kind: active
+        source: core
+        slot: skill
+        targeting: {mode: "Placed", range: 40, radius: 8}
+      - id: mage_absolute_zero
+        name: "Absolute Zero"
+        tier: master
+        path: frost
+        level: 75
+        ranks: 1
+        kind: active
+        source: new
+        slot: skill
+        targeting: {mode: "Around you", radius: 8}
+        cost: "60 eitr"
+        cooldown: 90
+        text: "Freeze every enemy within 8 m solid for 3 s. Bosses are slowed 60% instead."
+        ai: {category: Reactive, trigger: Surrounded}
+        builtOn: "RootedEffect + SlowdownEffect for bosses"
+      - id: mage_arcane_torrent
+        name: "Arcane Torrent"
+        tier: master
+        path: arcane
+        level: 75
+        ranks: 1
+        kind: active
+        source: new
+        slot: skill
+        targeting: {mode: "Aimed", range: 25}
+        cost: "15 eitr per second"
+        cooldown: 30
+        text: "Channel a beam for up to 4 s: 30 lightning damage every 0.5 s to the first enemy it hits."
+        ai: {category: Sustained, trigger: HighValueTarget}
+        builtOn: "Channelled beam (new)"
+        rankEffects:
+          - {rank: 1, counter: interrupt, effect: "The beam's first tick Silences its target for 1.5 s."}
+      - id: mage_arcane_form
+        name: "Arcane Form"
+        tier: ultimate
+        path: all
+        level: 100
+        ranks: 1
+        kind: active
+        source: core
+        slot: ultimate
+        targeting: {mode: "Self"}
+    capstoneByDeepestPath:
+      fire: "Spells leave burning ground."
+      frost: "Spells slow 50%."
+      arcane: "Lasts 22 s instead of 15."
+    companionDefaults:
+      mag_adv: mage_ice_lance
+      mag_exp: mage_chain
+    hybrids:   # this archetype on the front bar, the key on the back bar
+      Tank: {name: "Battlemage", ability: "Arcane Armor"}
+      Paladin: {name: "Hierophant", ability: "Divine Wrath"}
+      Berserker: {name: "Pyromancer", ability: "Inferno"}
+      Rogue: {name: "Shadowcaster", ability: "Shadow Clone"}
+      Ranger: {name: "Storm Caller", ability: "Chain Lightning"}
+      Healer: {name: "Sage", ability: "Balance"}
+      Monk: {name: "Mystic", ability: "Arcane Meditation"}
+  - class: Healer
+    paths:
+      - {id: mending, name: "Mending", theme: "Direct healing"}
+      - {id: warding, name: "Warding", theme: "Shields and cleansing"}
+      - {id: spirit, name: "Spirit", theme: "Eitr, hymns, revival"}
+    nodes:
+      - id: healer_heal
+        name: "Healing Staff"
+        tier: starter
+        path: all
+        level: 1
+        ranks: 3
+        kind: active
+        source: core
+        slot: auto
+        targeting: {mode: "Automatic"}
+      - id: healer_spirit_link
+        name: "Spirit Link"
+        tier: starter
+        path: all
+        level: 10
+        ranks: 3
+        kind: active
+        source: new
+        slot: ultimate
+        targeting: {mode: "Around you", radius: 12}
+        cost: "50 eitr"
+        values:
+          regen: ["1.5%", "2%", "2.5%"]
+        text: "Link allies within 12 m for 8 s: damage taken is shared evenly, and everyone regenerates {regen} of max health per second."
+        ai: {category: Reactive, trigger: AllyCritical}
+        builtOn: "Damage share (new) + HealingEffect"
+      - id: healer_purify
+        name: "Purify"
+        tier: basic
+        path: mending
+        level: 5
+        ranks: 3
+        kind: active
+        source: core
+        slot: skill
+        targeting: {mode: "Ally", range: 20}
+      - id: healer_sanctuary
+        name: "Sanctuary"
+        tier: basic
+        path: warding
+        level: 10
+        ranks: 3
+        kind: active
+        source: core
+        slot: skill
+        targeting: {mode: "Placed", range: 20, radius: 8}
+      - id: healer_renew
+        name: "Renew"
+        tier: basic
+        path: spirit
+        level: 5
+        ranks: 3
+        kind: active
+        source: new
+        slot: skill
+        targeting: {mode: "Ally", range: 25}
+        cost: "15 eitr"
+        cooldown: 12
+        duration: 8
+        values:
+          hot: ["2%", "3%", "4%"]
+        text: "An ally regenerates {hot} of max health per second for 8 s."
+        ai: {category: Sustained, trigger: AllyDamaged}
+        builtOn: "HealingEffect (over time)"
+      - id: healer_swift_mend
+        name: "Swift Mend"
+        tier: advanced
+        path: mending
+        level: 15
+        ranks: 3
+        kind: active
+        source: new
+        slot: skill
+        targeting: {mode: "Ally", range: 30}
+        cost: "20 eitr"
+        cooldown: 8
+        values:
+          heal: ["12%", "18%", "24%"]
+        text: "Instantly heal an ally within 20 m for {heal} of their max health."
+        ai: {category: Reactive, trigger: AllyLowHealth}
+        builtOn: "HealingEffect"
+        variant: hea_adv
+      - id: healer_overflow
+        name: "Overflow"
+        tier: advanced
+        path: mending
+        level: 15
+        ranks: 3
+        kind: passive
+        source: new
+        values:
+          cap: ["5%", "8%", "12%"]
+        text: "Overhealing becomes a shield worth up to {cap} of max health for 10 s."
+        builtOn: "ArcaneShieldEffect"
+        variant: hea_adv
+      - id: healer_fade
+        name: "Sanctuary Fade"
+        tier: advanced
+        path: warding
+        level: 20
+        ranks: 3
+        kind: active
+        source: core
+        slot: dodge
+        targeting: {mode: "Dodge"}
+      - id: healer_purify_circle
+        name: "Purifying Circle"
+        tier: advanced
+        path: warding
+        level: 25
+        ranks: 3
+        kind: active
+        source: core
+        slot: skill
+        targeting: {mode: "Placed", range: 20, radius: 6}
+        after: healer_fade
+      - id: healer_eitr_regen
+        name: "Spiritual Connection"
+        tier: advanced
+        path: spirit
+        level: 15
+        ranks: 3
+        kind: passive
+        source: core
+      - id: healer_emergency
+        name: "Emergency Heal"
+        tier: expert
+        path: mending
+        level: 35
+        ranks: 3
+        kind: passive
+        source: core
+        variant: hea_exp
+      - id: healer_lifeline
+        name: "Lifeline"
+        tier: expert
+        path: mending
+        level: 40
+        ranks: 3
+        kind: active
+        source: new
+        slot: skill
+        targeting: {mode: "Ally", range: 25}
+        cost: "25 eitr"
+        cooldown: 45
+        duration: 15
+        values:
+          heal: ["20%", "30%", "40%"]
+        text: "Tether an ally for 15 s: the first time they drop below 30% health, they are healed for {heal}."
+        ai: {category: Reactive, trigger: AllyCritical}
+        builtOn: "HealingEffect + health-threshold hook"
+        variant: hea_exp
+      - id: healer_warding_totem
+        name: "Warding Totem"
+        tier: expert
+        path: warding
+        level: 40
+        ranks: 3
+        kind: active
+        source: new
+        slot: skill
+        targeting: {mode: "Placed", range: 20, radius: 6}
+        cost: "30 eitr"
+        cooldown: 45
+        duration: 15
+        values:
+          dr: ["10%", "15%", "20%"]
+        text: "Place a totem within 20 m for 15 s: allies within 6 m of it take {dr} less damage."
+        ai: {category: Sustained, trigger: CombatStart}
+        builtOn: "DivineProtectionEffect (area)"
+      - id: healer_resurrection
+        name: "Resurrection"
+        tier: expert
+        path: spirit
+        level: 50
+        ranks: 3
+        kind: active
+        source: core
+        slot: skill
+        targeting: {mode: "Ally", range: 10}
+      - id: healer_miracle
+        name: "Miracle"
+        tier: master
+        path: mending
+        level: 75
+        ranks: 1
+        kind: active
+        source: new
+        slot: skill
+        targeting: {mode: "Around you", radius: 15}
+        cost: "60 eitr"
+        cooldown: 180
+        text: "Heal every ally within 15 m to at least 50% health."
+        ai: {category: Reactive, trigger: AllyCritical}
+        builtOn: "HealingEffect (party)"
+      - id: healer_aegis
+        name: "Aegis"
+        tier: master
+        path: warding
+        level: 75
+        ranks: 1
+        kind: active
+        source: new
+        slot: skill
+        targeting: {mode: "Around you", radius: 10}
+        cost: "50 eitr"
+        cooldown: 90
+        text: "Allies within 10 m gain a shield that absorbs 25% of their max health for 10 s."
+        ai: {category: Reactive, trigger: AllyDamaged}
+        builtOn: "ArcaneShieldEffect (party)"
+      - id: healer_divine_hymn
+        name: "Divine Hymn"
+        tier: master
+        path: spirit
+        level: 75
+        ranks: 1
+        kind: active
+        source: core
+        slot: skill
+        targeting: {mode: "Around you", radius: 12}
+      - id: healer_avatar_life
+        name: "Avatar of Life"
+        tier: ultimate
+        path: all
+        level: 100
+        ranks: 1
+        kind: active
+        source: core
+        slot: ultimate
+        targeting: {mode: "Self"}
+    capstoneByDeepestPath:
+      mending: "Your heals also cleanse."
+      warding: "Allies within 10 m cannot drop below 1 health."
+      spirit: "Spells cost no eitr."
+    companionDefaults:
+      hea_adv: healer_overflow
+      hea_exp: healer_emergency
+    hybrids:   # this archetype on the front bar, the key on the back bar
+      Tank: {name: "War Cleric", ability: "Divine Protection"}
+      Paladin: {name: "Oracle", ability: "Divine Foresight"}
+      Berserker: {name: "Pain Shaman", ability: "Blood Pact"}
+      Rogue: {name: "Shadow Healer", ability: "Phantom Touch"}
+      Ranger: {name: "Nature Priest", ability: "Regrowth"}
+      Mage: {name: "Arcane Healer", ability: "Mana Transfusion"}
+      Monk: {name: "Chi Master", ability: "Chi Restoration"}
+ultimates:
+  slot: 8
+  unlock: {ultimateI: 10, ultimateII: 20, hybrid: 25}
+  resources: [stamina, eitr, adrenaline, health]
+  adrenaline: {buildWithoutTrinketWhenSlotted: true, maxWithoutTrinket: 100, trinketThresholdStillFires: true}
+  leveling: {levels: 100, xpPerCast: "base + per target affected", shareWhileSlotted: 0.1, pointsNeeded: false}
+  tree:
+    - {level: 1, node: "Base", effect: "the ultimate at half strength"}
+    - {level: 10, node: "Empowered", effect: "+25% potency"}
+    - {level: 25, node: "Morph", effect: "both morphs unlock; slot one per bar, switch out of combat"}
+    - {level: 40, node: "Refine", effect: "cost -15% (per morph)"}
+    - {level: 55, node: "Extend", effect: "duration or radius +25% (per morph)"}
+    - {level: 70, node: "Hasten", effect: "cooldown -15% (per morph)"}
+    - {level: 85, node: "Capstone", effect: "the morph's signature change"}
+    - {level: 100, node: "Mastery", effect: "full strength (Core's own values for its capstones); attuned to your deepest talent path"}
+  archetypes:
+    Tank:
+      - id: tank_hold_the_line
+        name: "Hold the Line"
+        source: new
+        unlock: 10
+        cost: {resource: stamina, amount: 40}
+        cooldown: 120
+        morphs:
+          - {name: "Unbroken Line", effect: "Radius grows to 10 m and allies gain 20% block power.", capstone: {name: "Last Stand", effect: "Allies inside cannot drop below 10% health, once each."}}
+          - {name: "Advancing Line", effect: "The zone moves with you at full speed; enemies entering it are slowed 30%.", capstone: {name: "Crushing Advance", effect: "Enemies inside when it ends are knocked down."}}
+      - id: tank_immortal_stance
+        name: "Immortal Stance"
+        source: core
+        unlock: 20
+        cost: {resource: adrenaline, amount: 60}
+        cooldown: 240
+        morphs:
+          - {name: "Stone Sentinel", effect: "Reflects 30% of the damage you block as blunt damage.", capstone: {name: "Mountain Heart", effect: "Lasts 2 s longer and heals you 3% per second."}}
+          - {name: "Undying Roar", effect: "Taunt reaches 20 m and allies within 10 m take 20% less damage.", capstone: {name: "Rally the Fallen", effect: "When it ends, allies within 10 m heal 15%."}}
+    Paladin:
+      - id: paladin_beacon_of_light
+        name: "Beacon of Light"
+        source: new
+        unlock: 10
+        cost: {resource: stamina, amount: 40}
+        cooldown: 90
+        morphs:
+          - {name: "Lighthouse", effect: "The beacon follows the most injured ally.", capstone: {name: "Guiding Light", effect: "Allies inside receive 15% more healing from every source."}}
+          - {name: "Searing Beacon", effect: "Also burns enemies inside for 10 spirit damage per second.", capstone: {name: "Radiant Nova", effect: "When it ends it detonates: 60 spirit damage, and allies heal 10%."}}
+      - id: paladin_avatar
+        name: "Avatar of Light"
+        source: core
+        unlock: 20
+        cost: {resource: adrenaline, amount: 60}
+        cooldown: 240
+        morphs:
+          - {name: "Avatar of Dawn", effect: "Your heals and auras are 40% stronger.", capstone: {name: "Sunrise", effect: "On activation, cleanses every ally within 15 m."}}
+          - {name: "Avatar of Judgement", effect: "+40% spirit damage, and your hits stagger undead.", capstone: {name: "Hammerfall", effect: "Your first attack calls down Wrath of the Aesir for free."}}
+    Berserker:
+      - id: berserker_bloodbath
+        name: "Bloodbath"
+        source: new
+        unlock: 10
+        cost: {resource: health, amount: 15, percent: true}
+        cooldown: 90
+        morphs:
+          - {name: "Blood Frenzy", effect: "Each kill adds 2 s.", capstone: {name: "Red Mist", effect: "Immune to stagger while it lasts."}}
+          - {name: "Crimson Tide", effect: "Your lifesteal also heals allies within 8 m for half as much.", capstone: {name: "Sanguine Pact", effect: "Three kills while it lasts refund its health cost."}}
+      - id: berserker_avatar_war
+        name: "Avatar of War"
+        source: core
+        unlock: 20
+        cost: {resource: adrenaline, amount: 70}
+        cooldown: 240
+        morphs:
+          - {name: "Unstoppable Wrath", effect: "+30% movement speed, and you charge through enemies.", capstone: {name: "Warpath", effect: "Each hit adds 0.5 s, up to 10 s."}}
+          - {name: "Warlord", effect: "Allies within 12 m gain half your damage bonus.", capstone: {name: "Horn of Ragnarok", effect: "On activation, non-boss enemies within 10 m flee for 3 s."}}
+    Rogue:
+      - id: rogue_smoke_bomb
+        name: "Smoke Bomb"
+        source: new
+        unlock: 10
+        cost: {resource: stamina, amount: 35}
+        cooldown: 90
+        morphs:
+          - {name: "Choking Smoke", effect: "Enemies inside are poisoned.", capstone: {name: "Blinding Powder", effect: "Enemies inside cannot attack for 2 s when it lands."}}
+          - {name: "Vanishing Act", effect: "You appear at its centre and gain Stealth at once.", capstone: {name: "Ambusher", effect: "Leaving the smoke makes your next hit deal 50% more damage."}}
+      - id: rogue_shadow_dance
+        name: "Shadow Dance"
+        source: core
+        unlock: 20
+        cost: {resource: adrenaline, amount: 50}
+        cooldown: 180
+        morphs:
+          - {name: "Dance of Blades", effect: "Every attack you dodge answers with an automatic counter-attack.", capstone: {name: "Thousand Cuts", effect: "Your final hit applies Death Mark."}}
+          - {name: "Dance of Shadows", effect: "A shadow copy mimics your attacks at 40% damage.", capstone: {name: "Encore", effect: "Ends in Stealth and refunds half the cooldown."}}
+    Monk:
+      - id: monk_palm_of_the_storm
+        name: "Palm of the Storm"
+        source: new
+        unlock: 10
+        cost: {resource: stamina, amount: 40}
+        cooldown: 60
+        morphs:
+          - {name: "Thunder Palm", effect: "Each strike chains lightning to 2 nearby enemies.", capstone: {name: "Storm's Eye", effect: "The last strike stuns every enemy within 4 m."}}
+          - {name: "Flowing Palm", effect: "Each strike restores 5% stamina and 2% health.", capstone: {name: "River Unbroken", effect: "If all four strikes land, the cooldown is halved."}}
+      - id: monk_perfection
+        name: "Way of Perfection"
+        source: core
+        unlock: 20
+        cost: {resource: adrenaline, amount: 60}
+        cooldown: 240
+        morphs:
+          - {name: "Way of the Fist", effect: "Critical hits release small chi explosions.", capstone: {name: "Perfect Form", effect: "Each critical hit adds 1 s, up to 8 s."}}
+          - {name: "Way of the Wind", effect: "+40% movement speed, and dodges cost nothing.", capstone: {name: "Empty Mind", effect: "Immune to crowd control while it lasts."}}
+    Ranger:
+      - id: ranger_volley
+        name: "Volley"
+        source: new
+        unlock: 10
+        cost: {resource: stamina, amount: 40}
+        cooldown: 90
+        morphs:
+          - {name: "Fire Volley", effect: "Arrows set the ground alight.", capstone: {name: "Scorched Earth", effect: "The burning ground lasts 5 s longer."}}
+          - {name: "Pinning Volley", effect: "The first 3 enemies hit are rooted for 2 s.", capstone: {name: "Killing Field", effect: "Marked enemies in the area are hit twice as often."}}
+      - id: ranger_perfect_shot
+        name: "Perfect Shot"
+        source: core
+        unlock: 20
+        cost: {resource: adrenaline, amount: 40}
+        cooldown: 120
+        morphs:
+          - {name: "Ballista Shot", effect: "Pierces every enemy in line and knocks them back.", capstone: {name: "Split Arrow", effect: "Splits into three on the first hit."}}
+          - {name: "Hunter's Culling", effect: "+100% damage to marked or wounded targets, refunded on a kill.", capstone: {name: "Apex Shot", effect: "A kill resets Hunter's Mark and halves this cooldown."}}
+    Mage:
+      - id: mage_firestorm
+        name: "Firestorm"
+        source: new
+        unlock: 10
+        cost: {resource: eitr, amount: 60}
+        cooldown: 90
+        morphs:
+          - {name: "Inferno Ring", effect: "Becomes a ring of fire that blocks movement.", capstone: {name: "Phoenix Ash", effect: "Enemies that die inside explode for 40 fire damage."}}
+          - {name: "Frost Storm", effect: "Turns to frost and slows 40%.", capstone: {name: "Shatter", effect: "Frozen enemies take 50% more from your next spell."}}
+      - id: mage_arcane_form
+        name: "Arcane Form"
+        source: core
+        unlock: 20
+        cost: {resource: adrenaline, amount: 60}
+        cooldown: 240
+        morphs:
+          - {name: "Arcane Surge", effect: "+30% cast speed.", capstone: {name: "Overflow", effect: "Leaving the form restores 50% of your eitr."}}
+          - {name: "Astral Projection", effect: "Untargetable while you channel.", capstone: {name: "Singularity", effect: "On activation, pulls enemies within 8 m together."}}
+    Healer:
+      - id: healer_spirit_link
+        name: "Spirit Link"
+        source: new
+        unlock: 10
+        cost: {resource: eitr, amount: 50}
+        cooldown: 120
+        morphs:
+          - {name: "Soul Bond", effect: "Shared damage is reduced by 25%.", capstone: {name: "Lifebond", effect: "Linked allies can't die while another link is above 50% health."}}
+          - {name: "Mending Chain", effect: "Regeneration doubles for allies below 50% health.", capstone: {name: "Echo of Life", effect: "When it ends, each ally heals 15% of the damage they shared."}}
+      - id: healer_avatar_life
+        name: "Avatar of Life"
+        source: core
+        unlock: 20
+        cost: {resource: health, amount: 25, percent: true}
+        cooldown: 240
+        morphs:
+          - {name: "Avatar of Mercy", effect: "Healing triples, but you move 30% slower.", capstone: {name: "Lifebloom", effect: "Every heal also heals the target's neighbours for 30% of it."}}
+          - {name: "Avatar of Sacrifice", effect: "Costs 40% health, and instantly revives a fallen companion.", capstone: {name: "Martyr's Grace", effect: "The health you spent returns as a team heal when it ends."}}
+  hybrids:
+    default: {resource: adrenaline, amount: 50, cooldown: 180}
+    healthCost: {amount: 20, percent: true, hybrids: [Ravager, Blood Mage, Blood Knight, Pain Shaman]}
+    morphs: {frontLeaning: "adds the front archetype's aspect", backLeaning: "adds the back archetype's aspect"}
+    capstones: {Resonance: "also triggers the front archetype's Ultimate I at 50%", Echo: "also triggers the back archetype's Ultimate I at 50%"}
+    aspects:
+      Tank: "damage reduction and taunts"
+      Paladin: "spirit damage and protection"
+      Berserker: "attack speed and lifesteal"
+      Rogue: "stealth and poison"
+      Monk: "stagger and stamina"
+      Ranger: "range and marks"
+      Mage: "elemental damage and slows"
+      Healer: "healing and cleansing"
+    offer: "the ordered pair's own hybrid ability plus its mirror's (see classes[].hybrids)"
+luck:
+  neutral: 50
+  formula: {chance: "1 - (1 - p)^(1 + (luck - 50) / 100)", amount: "roll 1 + (luck - 50) / 100 times, keep the best"}
+  playerBase: 50
+  rollPlayerBase: false          # true: roll like companions (average of three 0-100 rolls)
+  companionBase: rolled
+  effectiveCap: none            # base stays 0-100; effective luck is uncapped
+  companionScalingAbove100: 0.5 # level scaling keeps growing past 100 at half rate
+  partyRuleForCreatureDrops: killer   # killer | highestNearby | average
+  excluded: [boss trophies, guaranteed drops]
+  systems:
+    creatureDrops: {enabled: true, maxAttempts: 3, multiplier: 1.0}
+    lootTables: {enabled: true, maxAttempts: 3, multiplier: 1.0}
+    gathering: {enabled: true, maxAttempts: 3, multiplier: 1.0}
+    foraging: {enabled: true, maxAttempts: 2, multiplier: 1.0}
+    fishing: {enabled: true, maxAttempts: 2, multiplier: 1.0}
+    crafting: {enabled: true, maxAttempts: 2, multiplier: 1.0}
+    processing: {enabled: true, maxAttempts: 2, multiplier: 1.0}
+    tamingBreeding: {enabled: true, maxAttempts: 2, multiplier: 1.0}
+    durability: {enabled: true, maxAttempts: 2, multiplier: 1.0}
+    classCrits: {enabled: true, maxAttempts: 2, multiplier: 1.0}
+  sources: {consumables: "item data: luck bonus + duration", armor: "item data", weapons: "item data, active bar only", trinkets: "item data", tasks: "achievement and quest rewards, permanent", curses: "negative, from debuffs or events"}
