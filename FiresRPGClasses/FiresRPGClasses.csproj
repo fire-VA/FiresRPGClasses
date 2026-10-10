@@ -1,0 +1,608 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{7C41B2D8-5E93-4A17-8B62-0D4F9A3E6C15}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>FiresRPGClasses</RootNamespace>
+    <AssemblyName>FiresRPGClasses</AssemblyName>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
+    <LangVersion>latest</LangVersion>
+    <FileAlignment>512</FileAlignment>
+    <Deterministic>true</Deterministic>
+    <PathMap>$(MSBuildProjectDirectory)=/_/</PathMap>
+    <CodePage>65001</CodePage>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <Choose>
+    <When Condition="($(OS) == 'Unix' OR $(OS) == 'OSX') AND $(GamePath) == ''">
+      <PropertyGroup>
+        <GamePath Condition="!Exists('$(GamePath)')">$(HOME)/.steam/steam/steamapps/common/Valheim</GamePath>
+        <GamePath Condition="!Exists('$(GamePath)')">$(HOME)/Library/Application Support/Steam/steamapps/common/Valheim/Contents/MacOS</GamePath>
+      </PropertyGroup>
+    </When>
+    <When Condition="($(OS) == 'Windows_NT') AND $(GamePath) == ''">
+      <PropertyGroup>
+        <GamePath Condition="!Exists('$(GamePath)')">$([MSBuild]::GetRegistryValueFromView('HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Steam App 892970', 'InstallLocation', null, RegistryView.Registry64, RegistryView.Registry32))</GamePath>
+        <_SteamLibraryPath>$([MSBuild]::GetRegistryValueFromView('HKEY_CURRENT_USER\SOFTWARE\Valve\Steam', 'SteamPath', null, RegistryView.Registry32))</_SteamLibraryPath>
+        <GamePath Condition="!Exists('$(GamePath)') AND '$(_SteamLibraryPath)' != ''">$(_SteamLibraryPath)\steamapps\common\Valheim</GamePath>
+        <GamePath Condition="!Exists('$(GamePath)')">C:\Program Files\Steam\steamapps\common\Valheim</GamePath>
+        <GamePath Condition="!Exists('$(GamePath)')">C:\Program Files (x86)\Steam\steamapps\common\Valheim</GamePath>
+      </PropertyGroup>
+    </When>
+  </Choose>
+  <ItemGroup>
+    <Reference Include="0Harmony">
+      <HintPath>..\..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Valheim dedicated server\BepInEx\core\0Harmony.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="BepInEx">
+      <HintPath>..\..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Valheim dedicated server\BepInEx\core\BepInEx.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="assembly_valheim">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Valheim\valheim_Data\Managed\publicized_assemblies\assembly_valheim_publicized.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="assembly_utils">
+      <HintPath>$(GamePath)\valheim_Data\Managed\assembly_utils.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="assembly_guiutils">
+      <HintPath>..\..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Valheim\valheim_Data\Managed\assembly_guiutils.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Splatform">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Valheim\valheim_Data\Managed\Splatform.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="FiresUnifiedCore">
+      <HintPath>..\..\FiresUnifiedCore\FiresUnifiedCore\bin\Release\FiresUnifiedCore.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Newtonsoft.Json">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\FiresNPCs\packages\Newtonsoft.Json.13.0.4\lib\net45\Newtonsoft.Json.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <!-- Supplied at runtime by the ValheimModding-YamlDotNet plugin package, which the manifest must
+         declare as a dependency. Private=False so we never ship a second copy: two YamlDotNet
+         assemblies in one process is an identity conflict. -->
+    <Reference Include="YamlDotNet, Version=16.0.0.0, Culture=neutral, PublicKeyToken=ec19458f3c15af5e, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\FiresAdminPrefabs\packages\YamlDotNet.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine">
+      <HintPath>..\..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Valheim\valheim_Data\Managed\UnityEngine.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.CoreModule">
+      <HintPath>..\..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Valheim\valheim_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.InputLegacyModule">
+      <HintPath>..\..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Valheim\valheim_Data\Managed\UnityEngine.InputLegacyModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.AnimationModule">
+      <HintPath>..\..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Valheim\valheim_Data\Managed\UnityEngine.AnimationModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.PhysicsModule">
+      <HintPath>..\..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Valheim\valheim_Data\Managed\UnityEngine.PhysicsModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.UI">
+      <HintPath>..\..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Valheim\valheim_Data\Managed\UnityEngine.UI.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.UIModule">
+      <HintPath>..\..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Valheim\valheim_Data\Managed\UnityEngine.UIModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.TextRenderingModule">
+      <HintPath>..\..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Valheim\valheim_Data\Managed\UnityEngine.TextRenderingModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.IMGUIModule">
+      <HintPath>..\..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Valheim\valheim_Data\Managed\UnityEngine.IMGUIModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.AssetBundleModule">
+      <HintPath>..\..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Valheim\valheim_Data\Managed\UnityEngine.AssetBundleModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.TextMeshPro">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Valheim\valheim_Data\Managed\Unity.TextMeshPro.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="Microsoft.CSharp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Ascend.cs" />
+    <Compile Include="Utilities\FiresRPGClassesBanner.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Data\ClassTreeModel.cs" />
+    <Compile Include="Hints\ClassRavenHints.cs" />
+    <Compile Include="UI\ClassesHelp.cs" />
+    <Compile Include="Data\CoreAbilityTargeting.cs" />
+    <Compile Include="Data\RegistryTreeSource.cs" />
+    <Compile Include="Data\YamlClassTreeSource.cs" />
+    <Compile Include="Data\VanillaAchievements.cs" />
+    <Compile Include="Data\ClassTreeLoader.cs" />
+    <Compile Include="Data\WeaponArchetypes.cs" />
+    <Compile Include="Data\UltimateCatalog.cs" />
+    <Compile Include="State\BarLayout.cs" />
+    <Compile Include="State\ClassPlayerData.cs" />
+    <Compile Include="State\ClassPlayerStore.cs" />
+    <Compile Include="Input\ClassKeys.cs" />
+    <Compile Include="Input\HotbarHandoffPatches.cs" />
+    <Compile Include="Combat\CooldownTracker.cs" />
+    <Compile Include="Integration\LoreBooksRewards.cs" />
+    <Compile Include="Combat\BarController.cs" />
+    <Compile Include="Combat\DruidNecroPassives.cs" />
+    <Compile Include="Combat\DruidNecroKit.cs" />
+    <Compile Include="Combat\TargetingController.cs" />
+    <Compile Include="Combat\ClassCastNetwork.cs" />
+    <Compile Include="Combat\ClassCastExecutor.cs" />
+    <Compile Include="Combat\ClassXp.cs" />
+    <Compile Include="Combat\ClassXpHooks.cs" />
+    <Compile Include="Combat\ClassXpActivity.cs" />
+    <Compile Include="Combat\ClassKillNetwork.cs" />
+    <Compile Include="Combat\ClassSkillKit.cs" />
+    <Compile Include="Combat\CoreSkillKit.cs" />
+    <Compile Include="Combat\UltimateController.cs" />
+    <Compile Include="Combat\AdrenalinePatches.cs" />
+    <Compile Include="Combat\EvasionController.cs" />
+    <Compile Include="Combat\PassiveLoadout.cs" />
+    <Compile Include="Combat\PassiveKit.cs" />
+    <Compile Include="Combat\PassiveHooks.cs" />
+    <Compile Include="Combat\DesignKit.cs" />
+    <Compile Include="Combat\ZoneKit.cs" />
+    <Compile Include="Combat\ClassSkillOptions.cs" />
+    <Compile Include="Combat\CcKit.cs" />
+    <Compile Include="Combat\MageKit.cs" />
+    <Compile Include="Combat\PossessionKit.cs" />
+    <Compile Include="Combat\SummonKit.cs" />
+    <Compile Include="Combat\ClassWeaponHook.cs" />
+    <Compile Include="Combat\CorePlacement.cs" />
+    <Compile Include="Combat\AttributeEffects.cs" />
+    <Compile Include="Combat\ClassAdminCommands.cs" />
+    <Compile Include="Combat\ClassCombatDriver.cs" />
+    <Compile Include="UI\ClassesTheme.cs" />
+    <Compile Include="UI\ClassesPanel.cs" />
+    <Compile Include="UI\CharacterView.cs" />
+    <Compile Include="UI\ClassPickerView.cs" />
+    <Compile Include="UI\TalentsView.cs" />
+    <Compile Include="UI\UltimatesView.cs" />
+    <Compile Include="UI\BarsView.cs" />
+    <Compile Include="UI\AchievementsView.cs" />
+    <Compile Include="UI\PassivesView.cs" />
+    <Compile Include="UI\SkillsView.cs" />
+    <Compile Include="UI\SkillsButtonPatch.cs" />
+    <Compile Include="UI\ClassesUiDump.cs" />
+    <Compile Include="UI\ClassesPanelHandles.cs" />
+    <Compile Include="UI\ClassesBarDragHandler.cs" />
+    <Compile Include="UI\ClassesBarWeaponDrop.cs" />
+    <Compile Include="UI\ClassIcons.cs" />
+    <Compile Include="UI\ClassesHud.cs" />
+    <Compile Include="UI\ClassesUiBundle.cs" />
+    <Compile Include="UI\ClassesPrefabView.cs" />
+    <Compile Include="UI\ClassesInventoryTab.cs" />
+    <Compile Include="UI\ClassesStyle.cs" />
+    <Compile Include="UI\UILineGraphic.cs" />
+    <Compile Include="UI\TalentRules.cs" />
+    <Compile Include="UI\ClassCrests.cs" />
+    <Compile Include="UI\ClassesPossessionHud.cs" />
+    <Compile Include="UI\SummonsView.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Seeds BepInEx\config\FiresRPGmaker\Classes\ on first run. ClassTreeLoader reads the resource
+         by the name RootNamespace.Folder.File, so moving or renaming either breaks the seed. -->
+    <EmbeddedResource Include="Data\classes-trees.yaml" />
+    <EmbeddedResource Include="firesrpgclassesui" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_berserker_avatar_war.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_berserker_battle_trance.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_berserker_blood_for_blood.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_berserker_bloodbath.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_berserker_bloodlust.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_berserker_cleave.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_berserker_deathwish.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_berserker_execute.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_berserker_fury.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_berserker_headtaker.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_berserker_horn_of_valhalla.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_berserker_leap.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_berserker_pain_fuels_me.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_berserker_rage.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_berserker_rampage.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_berserker_thick_skull.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_berserker_warcry.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_healer_aegis.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_healer_avatar_life.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_healer_divine_hymn.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_healer_eitr_regen.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_healer_emergency.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_healer_fade.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_healer_heal.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_healer_lifeline.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_healer_miracle.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_healer_overflow.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_healer_purify.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_healer_purify_circle.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_healer_renew.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_healer_resurrection.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_healer_sanctuary.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_healer_spirit_link.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_healer_swift_mend.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_healer_warding_totem.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_mage_absolute_zero.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_mage_arcane_form.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_mage_arcane_torrent.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_mage_blink.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_mage_blizzard.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_mage_cast.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_mage_chain.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_mage_eitr_regen.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_mage_eitr_well.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_mage_firestorm.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_mage_frostbite.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_mage_glacial_ward.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_mage_ice_lance.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_mage_ignite.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_mage_infusion.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_mage_meteor.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_mage_overcharge.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_mage_shield.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_monk_chi_explosion.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_monk_chi_strike.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_monk_flurry.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_monk_inner_peace.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_monk_iron_body.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_monk_leaf_on_the_wind.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_monk_martial_arts.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_monk_mountain_s_patience.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_monk_palm_of_the_storm.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_monk_perfection.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_monk_pressure_points.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_monk_stamina.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_monk_stone_skin.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_monk_swift_feet.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_monk_tailwind.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_monk_thousand_steps.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_monk_wind_step.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_paladin_avatar.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_paladin_beacon_of_light.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_paladin_block.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_paladin_consecration.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_paladin_divine_retreat.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_paladin_divine_shield.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_paladin_hammer_of_justice.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_paladin_heal_block.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_paladin_lay_hands.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_paladin_mending_light.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_paladin_protection.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_paladin_radiant_aura.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_paladin_shield_wall.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_paladin_smite.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_paladin_unbreakable.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_paladin_wrath_of_the_aesir.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_paladin_zeal.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_ranger_aim.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_ranger_apex_predator.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_ranger_call_of_the_wild.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_ranger_deadeye.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_ranger_disengage.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_ranger_eagle_eye.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_ranger_headshot.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_ranger_killshot.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_ranger_kiting.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_ranger_mark.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_ranger_multishot.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_ranger_perfect_shot.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_ranger_piercing_shot.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_ranger_rain_arrows.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_ranger_tracker.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_ranger_trapper.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_ranger_volley.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_rogue_assassinate.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_rogue_backstab.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_rogue_caltrops.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_rogue_counterstrike.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_rogue_death_mark.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_rogue_evasion.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_rogue_feint.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_rogue_plague_burst.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_rogue_poison.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_rogue_quickstep.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_rogue_shadow_dance.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_rogue_shadow_escape.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_rogue_smoke_bomb.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_rogue_stealth.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_rogue_toxic_cloud.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_rogue_unseen.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_rogue_virulence.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_tank_block.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_tank_breakwall.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_tank_earthshaker.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_tank_fortify.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_tank_guardian_s_oath.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_tank_hold_the_line.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_tank_immortal_stance.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_tank_immovable.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_tank_intercept.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_tank_iron_wall.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_tank_parry_restore.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_tank_rallying_banner.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_tank_shield_bash.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_tank_shield_charge.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_tank_taunt.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_tank_thick_hide.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_tank_unyielding.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_druid_alpha_howl.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_druid_barkskin.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_druid_beast_pounce.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_druid_beast_tongue.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_druid_call_asksvin.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_druid_call_bear.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_druid_call_lox.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_druid_call_unbjorn.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_druid_entangling_roots.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_druid_forager.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_druid_form_library.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_druid_great_bear.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_druid_heart_of_the_grove.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_druid_lasting_form.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_druid_partial_form.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_druid_primal_avatar.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_druid_regrowth.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_druid_thick_hide.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_druid_thornfield.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_druid_wild_hunt.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_druid_wildshape.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_druid_wolf_pack.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_necromancer_army_of_the_dead.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_necromancer_bind_dead.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_necromancer_bone_harvest.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_necromancer_bone_wall.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_necromancer_deathless_ward.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_necromancer_deep_link.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_necromancer_ghostwalk.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_necromancer_grave_chill.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_necromancer_grave_pestilence.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_necromancer_grave_sense.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_necromancer_legion.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_necromancer_lich_form.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_necromancer_life_tap.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_necromancer_plague_bearer.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_necromancer_raise_archer.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_necromancer_raise_charred.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_necromancer_raise_draugr.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_necromancer_raise_skeleton.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_necromancer_raise_wraith.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_necromancer_shadow_step.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_necromancer_twin_link.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_necromancer_wither.png" />
+    <EmbeddedResource Include="Icons\Line\cls_berserker_avatar_war.png" />
+    <EmbeddedResource Include="Icons\Line\cls_berserker_battle_trance.png" />
+    <EmbeddedResource Include="Icons\Line\cls_berserker_blood_for_blood.png" />
+    <EmbeddedResource Include="Icons\Line\cls_berserker_bloodbath.png" />
+    <EmbeddedResource Include="Icons\Line\cls_berserker_bloodlust.png" />
+    <EmbeddedResource Include="Icons\Line\cls_berserker_cleave.png" />
+    <EmbeddedResource Include="Icons\Line\cls_berserker_deathwish.png" />
+    <EmbeddedResource Include="Icons\Line\cls_berserker_execute.png" />
+    <EmbeddedResource Include="Icons\Line\cls_berserker_fury.png" />
+    <EmbeddedResource Include="Icons\Line\cls_berserker_headtaker.png" />
+    <EmbeddedResource Include="Icons\Line\cls_berserker_horn_of_valhalla.png" />
+    <EmbeddedResource Include="Icons\Line\cls_berserker_leap.png" />
+    <EmbeddedResource Include="Icons\Line\cls_berserker_pain_fuels_me.png" />
+    <EmbeddedResource Include="Icons\Line\cls_berserker_rage.png" />
+    <EmbeddedResource Include="Icons\Line\cls_berserker_rampage.png" />
+    <EmbeddedResource Include="Icons\Line\cls_berserker_thick_skull.png" />
+    <EmbeddedResource Include="Icons\Line\cls_berserker_warcry.png" />
+    <EmbeddedResource Include="Icons\Line\cls_healer_aegis.png" />
+    <EmbeddedResource Include="Icons\Line\cls_healer_avatar_life.png" />
+    <EmbeddedResource Include="Icons\Line\cls_healer_divine_hymn.png" />
+    <EmbeddedResource Include="Icons\Line\cls_healer_eitr_regen.png" />
+    <EmbeddedResource Include="Icons\Line\cls_healer_emergency.png" />
+    <EmbeddedResource Include="Icons\Line\cls_healer_fade.png" />
+    <EmbeddedResource Include="Icons\Line\cls_healer_heal.png" />
+    <EmbeddedResource Include="Icons\Line\cls_healer_lifeline.png" />
+    <EmbeddedResource Include="Icons\Line\cls_healer_miracle.png" />
+    <EmbeddedResource Include="Icons\Line\cls_healer_overflow.png" />
+    <EmbeddedResource Include="Icons\Line\cls_healer_purify.png" />
+    <EmbeddedResource Include="Icons\Line\cls_healer_purify_circle.png" />
+    <EmbeddedResource Include="Icons\Line\cls_healer_renew.png" />
+    <EmbeddedResource Include="Icons\Line\cls_healer_resurrection.png" />
+    <EmbeddedResource Include="Icons\Line\cls_healer_sanctuary.png" />
+    <EmbeddedResource Include="Icons\Line\cls_healer_spirit_link.png" />
+    <EmbeddedResource Include="Icons\Line\cls_healer_swift_mend.png" />
+    <EmbeddedResource Include="Icons\Line\cls_healer_warding_totem.png" />
+    <EmbeddedResource Include="Icons\Line\cls_mage_absolute_zero.png" />
+    <EmbeddedResource Include="Icons\Line\cls_mage_arcane_form.png" />
+    <EmbeddedResource Include="Icons\Line\cls_mage_arcane_torrent.png" />
+    <EmbeddedResource Include="Icons\Line\cls_mage_blink.png" />
+    <EmbeddedResource Include="Icons\Line\cls_mage_blizzard.png" />
+    <EmbeddedResource Include="Icons\Line\cls_mage_cast.png" />
+    <EmbeddedResource Include="Icons\Line\cls_mage_chain.png" />
+    <EmbeddedResource Include="Icons\Line\cls_mage_eitr_regen.png" />
+    <EmbeddedResource Include="Icons\Line\cls_mage_eitr_well.png" />
+    <EmbeddedResource Include="Icons\Line\cls_mage_firestorm.png" />
+    <EmbeddedResource Include="Icons\Line\cls_mage_frostbite.png" />
+    <EmbeddedResource Include="Icons\Line\cls_mage_glacial_ward.png" />
+    <EmbeddedResource Include="Icons\Line\cls_mage_ice_lance.png" />
+    <EmbeddedResource Include="Icons\Line\cls_mage_ignite.png" />
+    <EmbeddedResource Include="Icons\Line\cls_mage_infusion.png" />
+    <EmbeddedResource Include="Icons\Line\cls_mage_meteor.png" />
+    <EmbeddedResource Include="Icons\Line\cls_mage_overcharge.png" />
+    <EmbeddedResource Include="Icons\Line\cls_mage_shield.png" />
+    <EmbeddedResource Include="Icons\Line\cls_monk_chi_explosion.png" />
+    <EmbeddedResource Include="Icons\Line\cls_monk_chi_strike.png" />
+    <EmbeddedResource Include="Icons\Line\cls_monk_flurry.png" />
+    <EmbeddedResource Include="Icons\Line\cls_monk_inner_peace.png" />
+    <EmbeddedResource Include="Icons\Line\cls_monk_iron_body.png" />
+    <EmbeddedResource Include="Icons\Line\cls_monk_leaf_on_the_wind.png" />
+    <EmbeddedResource Include="Icons\Line\cls_monk_martial_arts.png" />
+    <EmbeddedResource Include="Icons\Line\cls_monk_mountain_s_patience.png" />
+    <EmbeddedResource Include="Icons\Line\cls_monk_palm_of_the_storm.png" />
+    <EmbeddedResource Include="Icons\Line\cls_monk_perfection.png" />
+    <EmbeddedResource Include="Icons\Line\cls_monk_pressure_points.png" />
+    <EmbeddedResource Include="Icons\Line\cls_monk_stamina.png" />
+    <EmbeddedResource Include="Icons\Line\cls_monk_stone_skin.png" />
+    <EmbeddedResource Include="Icons\Line\cls_monk_swift_feet.png" />
+    <EmbeddedResource Include="Icons\Line\cls_monk_tailwind.png" />
+    <EmbeddedResource Include="Icons\Line\cls_monk_thousand_steps.png" />
+    <EmbeddedResource Include="Icons\Line\cls_monk_wind_step.png" />
+    <EmbeddedResource Include="Icons\Line\cls_paladin_avatar.png" />
+    <EmbeddedResource Include="Icons\Line\cls_paladin_beacon_of_light.png" />
+    <EmbeddedResource Include="Icons\Line\cls_paladin_block.png" />
+    <EmbeddedResource Include="Icons\Line\cls_paladin_consecration.png" />
+    <EmbeddedResource Include="Icons\Line\cls_paladin_divine_retreat.png" />
+    <EmbeddedResource Include="Icons\Line\cls_paladin_divine_shield.png" />
+    <EmbeddedResource Include="Icons\Line\cls_paladin_hammer_of_justice.png" />
+    <EmbeddedResource Include="Icons\Line\cls_paladin_heal_block.png" />
+    <EmbeddedResource Include="Icons\Line\cls_paladin_lay_hands.png" />
+    <EmbeddedResource Include="Icons\Line\cls_paladin_mending_light.png" />
+    <EmbeddedResource Include="Icons\Line\cls_paladin_protection.png" />
+    <EmbeddedResource Include="Icons\Line\cls_paladin_radiant_aura.png" />
+    <EmbeddedResource Include="Icons\Line\cls_paladin_shield_wall.png" />
+    <EmbeddedResource Include="Icons\Line\cls_paladin_smite.png" />
+    <EmbeddedResource Include="Icons\Line\cls_paladin_unbreakable.png" />
+    <EmbeddedResource Include="Icons\Line\cls_paladin_wrath_of_the_aesir.png" />
+    <EmbeddedResource Include="Icons\Line\cls_paladin_zeal.png" />
+    <EmbeddedResource Include="Icons\Line\cls_ranger_aim.png" />
+    <EmbeddedResource Include="Icons\Line\cls_ranger_apex_predator.png" />
+    <EmbeddedResource Include="Icons\Line\cls_ranger_call_of_the_wild.png" />
+    <EmbeddedResource Include="Icons\Line\cls_ranger_deadeye.png" />
+    <EmbeddedResource Include="Icons\Line\cls_ranger_disengage.png" />
+    <EmbeddedResource Include="Icons\Line\cls_ranger_eagle_eye.png" />
+    <EmbeddedResource Include="Icons\Line\cls_ranger_headshot.png" />
+    <EmbeddedResource Include="Icons\Line\cls_ranger_killshot.png" />
+    <EmbeddedResource Include="Icons\Line\cls_ranger_kiting.png" />
+    <EmbeddedResource Include="Icons\Line\cls_ranger_mark.png" />
+    <EmbeddedResource Include="Icons\Line\cls_ranger_multishot.png" />
+    <EmbeddedResource Include="Icons\Line\cls_ranger_perfect_shot.png" />
+    <EmbeddedResource Include="Icons\Line\cls_ranger_piercing_shot.png" />
+    <EmbeddedResource Include="Icons\Line\cls_ranger_rain_arrows.png" />
+    <EmbeddedResource Include="Icons\Line\cls_ranger_tracker.png" />
+    <EmbeddedResource Include="Icons\Line\cls_ranger_trapper.png" />
+    <EmbeddedResource Include="Icons\Line\cls_ranger_volley.png" />
+    <EmbeddedResource Include="Icons\Line\cls_rogue_assassinate.png" />
+    <EmbeddedResource Include="Icons\Line\cls_rogue_backstab.png" />
+    <EmbeddedResource Include="Icons\Line\cls_rogue_caltrops.png" />
+    <EmbeddedResource Include="Icons\Line\cls_rogue_counterstrike.png" />
+    <EmbeddedResource Include="Icons\Line\cls_rogue_death_mark.png" />
+    <EmbeddedResource Include="Icons\Line\cls_rogue_evasion.png" />
+    <EmbeddedResource Include="Icons\Line\cls_rogue_feint.png" />
+    <EmbeddedResource Include="Icons\Line\cls_rogue_plague_burst.png" />
+    <EmbeddedResource Include="Icons\Line\cls_rogue_poison.png" />
+    <EmbeddedResource Include="Icons\Line\cls_rogue_quickstep.png" />
+    <EmbeddedResource Include="Icons\Line\cls_rogue_shadow_dance.png" />
+    <EmbeddedResource Include="Icons\Line\cls_rogue_shadow_escape.png" />
+    <EmbeddedResource Include="Icons\Line\cls_rogue_smoke_bomb.png" />
+    <EmbeddedResource Include="Icons\Line\cls_rogue_stealth.png" />
+    <EmbeddedResource Include="Icons\Line\cls_rogue_toxic_cloud.png" />
+    <EmbeddedResource Include="Icons\Line\cls_rogue_unseen.png" />
+    <EmbeddedResource Include="Icons\Line\cls_rogue_virulence.png" />
+    <EmbeddedResource Include="Icons\Line\cls_tank_block.png" />
+    <EmbeddedResource Include="Icons\Line\cls_tank_breakwall.png" />
+    <EmbeddedResource Include="Icons\Line\cls_tank_earthshaker.png" />
+    <EmbeddedResource Include="Icons\Line\cls_tank_fortify.png" />
+    <EmbeddedResource Include="Icons\Line\cls_tank_guardian_s_oath.png" />
+    <EmbeddedResource Include="Icons\Line\cls_tank_hold_the_line.png" />
+    <EmbeddedResource Include="Icons\Line\cls_tank_immortal_stance.png" />
+    <EmbeddedResource Include="Icons\Line\cls_tank_immovable.png" />
+    <EmbeddedResource Include="Icons\Line\cls_tank_intercept.png" />
+    <EmbeddedResource Include="Icons\Line\cls_tank_iron_wall.png" />
+    <EmbeddedResource Include="Icons\Line\cls_tank_parry_restore.png" />
+    <EmbeddedResource Include="Icons\Line\cls_tank_rallying_banner.png" />
+    <EmbeddedResource Include="Icons\Line\cls_tank_shield_bash.png" />
+    <EmbeddedResource Include="Icons\Line\cls_tank_shield_charge.png" />
+    <EmbeddedResource Include="Icons\Line\cls_tank_taunt.png" />
+    <EmbeddedResource Include="Icons\Line\cls_tank_thick_hide.png" />
+    <EmbeddedResource Include="Icons\Line\cls_tank_unyielding.png" />
+    <EmbeddedResource Include="Icons\Line\cls_druid_alpha_howl.png" />
+    <EmbeddedResource Include="Icons\Line\cls_druid_barkskin.png" />
+    <EmbeddedResource Include="Icons\Line\cls_druid_beast_pounce.png" />
+    <EmbeddedResource Include="Icons\Line\cls_druid_beast_tongue.png" />
+    <EmbeddedResource Include="Icons\Line\cls_druid_call_asksvin.png" />
+    <EmbeddedResource Include="Icons\Line\cls_druid_call_bear.png" />
+    <EmbeddedResource Include="Icons\Line\cls_druid_call_lox.png" />
+    <EmbeddedResource Include="Icons\Line\cls_druid_call_unbjorn.png" />
+    <EmbeddedResource Include="Icons\Line\cls_druid_entangling_roots.png" />
+    <EmbeddedResource Include="Icons\Line\cls_druid_forager.png" />
+    <EmbeddedResource Include="Icons\Line\cls_druid_form_library.png" />
+    <EmbeddedResource Include="Icons\Line\cls_druid_great_bear.png" />
+    <EmbeddedResource Include="Icons\Line\cls_druid_heart_of_the_grove.png" />
+    <EmbeddedResource Include="Icons\Line\cls_druid_lasting_form.png" />
+    <EmbeddedResource Include="Icons\Line\cls_druid_partial_form.png" />
+    <EmbeddedResource Include="Icons\Line\cls_druid_primal_avatar.png" />
+    <EmbeddedResource Include="Icons\Line\cls_druid_regrowth.png" />
+    <EmbeddedResource Include="Icons\Line\cls_druid_thick_hide.png" />
+    <EmbeddedResource Include="Icons\Line\cls_druid_thornfield.png" />
+    <EmbeddedResource Include="Icons\Line\cls_druid_wild_hunt.png" />
+    <EmbeddedResource Include="Icons\Line\cls_druid_wildshape.png" />
+    <EmbeddedResource Include="Icons\Line\cls_druid_wolf_pack.png" />
+    <EmbeddedResource Include="Icons\Line\cls_necromancer_army_of_the_dead.png" />
+    <EmbeddedResource Include="Icons\Line\cls_necromancer_bind_dead.png" />
+    <EmbeddedResource Include="Icons\Line\cls_necromancer_bone_harvest.png" />
+    <EmbeddedResource Include="Icons\Line\cls_necromancer_bone_wall.png" />
+    <EmbeddedResource Include="Icons\Line\cls_necromancer_deathless_ward.png" />
+    <EmbeddedResource Include="Icons\Line\cls_necromancer_deep_link.png" />
+    <EmbeddedResource Include="Icons\Line\cls_necromancer_ghostwalk.png" />
+    <EmbeddedResource Include="Icons\Line\cls_necromancer_grave_chill.png" />
+    <EmbeddedResource Include="Icons\Line\cls_necromancer_grave_pestilence.png" />
+    <EmbeddedResource Include="Icons\Line\cls_necromancer_grave_sense.png" />
+    <EmbeddedResource Include="Icons\Line\cls_necromancer_legion.png" />
+    <EmbeddedResource Include="Icons\Line\cls_necromancer_lich_form.png" />
+    <EmbeddedResource Include="Icons\Line\cls_necromancer_life_tap.png" />
+    <EmbeddedResource Include="Icons\Line\cls_necromancer_plague_bearer.png" />
+    <EmbeddedResource Include="Icons\Line\cls_necromancer_raise_archer.png" />
+    <EmbeddedResource Include="Icons\Line\cls_necromancer_raise_charred.png" />
+    <EmbeddedResource Include="Icons\Line\cls_necromancer_raise_draugr.png" />
+    <EmbeddedResource Include="Icons\Line\cls_necromancer_raise_skeleton.png" />
+    <EmbeddedResource Include="Icons\Line\cls_necromancer_raise_wraith.png" />
+    <EmbeddedResource Include="Icons\Line\cls_necromancer_shadow_step.png" />
+    <EmbeddedResource Include="Icons\Line\cls_necromancer_twin_link.png" />
+    <EmbeddedResource Include="Icons\Line\cls_necromancer_wither.png" />
+    <EmbeddedResource Include="Icons\Crests\crest_tank.png" />
+    <EmbeddedResource Include="Icons\Crests\crest_paladin.png" />
+    <EmbeddedResource Include="Icons\Crests\crest_berserker.png" />
+    <EmbeddedResource Include="Icons\Crests\crest_rogue.png" />
+    <EmbeddedResource Include="Icons\Crests\crest_monk.png" />
+    <EmbeddedResource Include="Icons\Crests\crest_ranger.png" />
+    <EmbeddedResource Include="Icons\Crests\crest_mage.png" />
+    <EmbeddedResource Include="Icons\Crests\crest_healer.png" />
+    <EmbeddedResource Include="Icons\Crests\crest_druid.png" />
+    <EmbeddedResource Include="Icons\Crests\crest_necromancer.png" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>
