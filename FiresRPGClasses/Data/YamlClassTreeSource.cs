@@ -1,4 +1,5 @@
 using System;
+using System.Text.RegularExpressions;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -152,7 +153,40 @@ namespace FiresRPGClasses.Data
 
             node.Targeting = ReadTargeting(map, node);
             ReadRankEffects(map, node);
+            ReadValues(map, node);
             return node;
+        }
+
+        /// <summary>
+        /// The node's `values:` block, one list per key with an entry per rank ("15%" reads as 0.15). A single value serves
+        /// every rank.
+        /// </summary>
+        private static readonly Regex LeadingNumber = new Regex(@"^[+-]?\d+(\.\d+)?", RegexOptions.CultureInvariant);
+
+        private void ReadValues(Dictionary<object, object> map, ClassTreeNode node)
+        {
+            var values = AsMap(Read(map, "values"));
+            if (values == null) return;
+            foreach (KeyValuePair<object, object> entry in values)
+            {
+                string key = entry.Key?.ToString() ?? "";
+                if (key.Length == 0) continue;
+                List<object> list = entry.Value as List<object> ?? new List<object> { entry.Value };
+                var parsed = new List<float>();
+                foreach (object item in list)
+                {
+                    string text = (item?.ToString() ?? "").Trim();
+                    bool percent = text.EndsWith("%", StringComparison.Ordinal);
+                    // The leading number, whatever the unit after it: "15%" -> 0.15, "3 s" -> 3, and (0.1.91, Fire #11) "50 m" -> 50,
+                    // "0-star" -> 0, "5th" -> 5. Before 0.1.91 only % and s were stripped, and the rest were dropped with a warning.
+                    Match lead = LeadingNumber.Match(text);
+                    if (lead.Success && float.TryParse(lead.Value, NumberStyles.Float, CultureInfo.InvariantCulture, out float number))
+                        parsed.Add(percent ? number / 100f : number);
+                    else
+                        Warnings.Add($"{node.Id}: value '{item}' of '{key}' is not a number - dropped.");
+                }
+                if (parsed.Count > 0) node.Values[key] = parsed.ToArray();
+            }
         }
 
         private TargetingSpec ReadTargeting(Dictionary<object, object> map, ClassTreeNode node)
@@ -268,6 +302,7 @@ namespace FiresRPGClasses.Data
             ClassTreeNode placed = FindNode(tree, id);
             if (placed != null)
             {
+                KeepUltimate(placed, cost, map);
                 if (costText.Length > 0) placed.CostText = costText;
                 if (cooldown > 0f) placed.Cooldown = cooldown;
                 placed.MinLevel = unlock;
@@ -277,7 +312,7 @@ namespace FiresRPGClasses.Data
             }
 
             Warnings.Add($"{id}: an ultimate that no tree node places - added at the edge of {archetype}'s tree.");
-            return new ClassTreeNode
+            var added = new ClassTreeNode
             {
                 Id = id,
                 DisplayName = ReadString(map, "name"),
@@ -291,6 +326,28 @@ namespace FiresRPGClasses.Data
                 Cooldown = cooldown,
                 CostText = costText,
             };
+            KeepUltimate(added, cost, map);
+            return added;
+        }
+
+        // 0.1.104: the ultimate's resource, amount and morph names for UltimateCatalog.
+        private static void KeepUltimate(ClassTreeNode node, Dictionary<object, object> cost, Dictionary<object, object> map)
+        {
+            if (cost != null)
+            {
+                node.UltimateResource = ReadString(cost, "resource");
+                node.UltimateAmount = ReadInt(cost, "amount", 0);
+                object percent = Read(cost, "percent");
+                node.UltimatePercent = percent != null && percent.ToString().Equals("true", StringComparison.OrdinalIgnoreCase);
+            }
+            node.UltimateMorphs.Clear();
+            foreach (object m in AsList(Read(map, "morphs")))
+            {
+                Dictionary<object, object> morph = AsMap(m);
+                if (morph == null) continue;
+                Dictionary<object, object> cap = AsMap(Read(morph, "capstone"));
+                node.UltimateMorphs.Add((ReadString(morph, "name"), cap != null ? ReadString(cap, "name") : ""));
+            }
         }
 
         #endregion
@@ -313,9 +370,8 @@ namespace FiresRPGClasses.Data
 
         private static bool TryParseArchetype(string name, out ArchetypeClass archetype)
         {
-            archetype = ArchetypeClass.None;
-            if (string.IsNullOrEmpty(name)) return false;
-            return TryParseEnumLabel(name, out archetype) && archetype != ArchetypeClass.None;
+            // WerewolfClass knows "Werewolf" (11, which Core's enum has no name for) as well as Core's names. And "Vampire" (12).
+            return WerewolfClass.TryParse(name, out archetype);
         }
 
         private NodeTier ParseTier(string tier, string nodeId)

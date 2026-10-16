@@ -1,9 +1,11 @@
 {
     "name":  "FiresRPGClasses",
-    "version_number":  "0.1.20",
+    "version_number": "0.1.174",
     "website_url":  "https://github.com/fire-VA/FiresRPGClasses",
-    "description":  "Part of the Fires mod family for Valheim.",
+    "description":  "RPG classes for Valheim: ten archetypes, talent trees, two ability bars, ultimates and a character sheet.",
     "dependencies":  [
-                         "denikson-BepInExPack_Valheim-5.4.2202"
+                         "denikson-BepInExPack_Valheim-5.4.2350",
+                         "ValheimModding-YamlDotNet-16.3.1",
+                         "VerdantsAscent-FiresUnifiedCore-0.2.580"
                      ]
 }

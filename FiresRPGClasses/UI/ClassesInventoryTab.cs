@@ -26,6 +26,10 @@ namespace FiresRPGClasses.UI
         private const string TabLabel = "Classes";
         /// <summary>Lower sorts left. VAInventory ships Character at 10 and Backpack at 20.</summary>
         private const int TabOrder = 30;
+        // VAInventory's Character tab (Managers\StatsPanel.cs), taken over by id: same label, same place in the row.
+        private const string CharacterTabId = "vainventory.character";
+        private const string CharacterTabLabel = "Character";
+        private const int CharacterTabOrder = 10;
 
         private static readonly ClassesPrefabView View = new ClassesPrefabView();
         private static bool _registered;
@@ -61,6 +65,7 @@ namespace FiresRPGClasses.UI
 
                 _registered = RegisterAsTab(tabs) || RegisterByArgs(tabs);
                 if (_registered) FiresRPGClassesPlugin.Log?.LogInfo("[Classes] registered the Classes tab in the inventory.");
+                if (_registered) TakeOverCharacterTab(tabs);
             }
             catch (Exception ex)
             {
@@ -95,6 +100,10 @@ namespace FiresRPGClasses.UI
             if (!Set(tabType, tab, "Id", TabId)) return false;
             if (!Set(tabType, tab, "Label", TabLabel)) return false;
             if (!Set(tabType, tab, "Build", (Action<RectTransform>)Build)) return false;
+            // A LAUNCHER (VAInventory 1.0.35+, where Open wins over Build): the tab opens the full Classes window on the tree,
+            // not a view clamped into the 570x650 crafting panel (Fire, 2026-09-29). Older VAInventory keeps the inline view.
+            if (Set(tabType, tab, "Open", (Action)OpenFullWindow))
+                FiresRPGClassesPlugin.Log?.LogInfo("[Classes] the inventory tab opens the full Classes window.");
             // Optional extras: a missing one costs ordering or refresh-on-open, not the tab itself.
             Set(tabType, tab, "IsAvailable", (Func<bool>)IsAvailable);
             Set(tabType, tab, "OnVisibility", (Action<bool>)OnVisibility);
@@ -102,6 +111,51 @@ namespace FiresRPGClasses.UI
 
             register.Invoke(null, new[] { tab });
             return true;
+        }
+
+        /// <summary>
+        /// VAInventory's own Character tab shows a stats list clamped into the crafting panel. With Classes installed it opens
+        /// the full Classes window on its Character board instead (Fire, popup 2026-09-29). InventoryTabs.Register replaces a
+        /// tab by Id, so this re-registers VAInventory's id, label and slot as a launcher; without Classes, VAInventory's tab
+        /// stays as it is. Needs the launcher form (VAInventory 1.0.35+); an older VAInventory keeps its tab.
+        /// </summary>
+        private static void TakeOverCharacterTab(Type tabs)
+        {
+            try
+            {
+                Type tabType = tabs.GetNestedType("Tab", BindingFlags.Public | BindingFlags.NonPublic);
+                MethodInfo register = tabType != null ? tabs.GetMethod("Register", new[] { tabType }) : null;
+                if (register == null || tabType.GetField("Open", BindingFlags.Public | BindingFlags.Instance) == null) return;
+
+                object tab = Activator.CreateInstance(tabType, nonPublic: true);
+                if (!Set(tabType, tab, "Id", CharacterTabId) || !Set(tabType, tab, "Label", CharacterTabLabel)
+                    || !Set(tabType, tab, "Open", (Action)OpenCharacterBoard)) return;
+                Set(tabType, tab, "Order", CharacterTabOrder);
+                // Fire 10-14: Character and Classes opened the same window, so the Character slot is freed (FiresGuilds puts
+                // Guilds there). The launcher stays registered so VAInventory's StatsPanel doesn't re-add its own tab
+                // (it skips the id while HasLauncher is true); IsAvailable = false keeps it out of the row.
+                if (!Set(tabType, tab, "IsAvailable", (Func<bool>)(() => false))) return;
+                register.Invoke(null, new[] { tab });
+                FiresRPGClassesPlugin.Log?.LogInfo("[Classes] the inventory's Character tab is hidden; the Classes tab opens the Classes window.");
+            }
+            catch (Exception ex)
+            {
+                FiresRPGClassesPlugin.Log?.LogWarning($"[Classes] could not take over the Character tab ({ex.GetType().Name}: {ex.Message}); "
+                    + "VAInventory's own stays.");
+            }
+        }
+
+        private static void OpenCharacterBoard()
+        {
+            try
+            {
+                if (ClassesPanel.Instance != null) ClassesPanel.Instance.Open(ClassesTab.Character);
+            }
+            catch (Exception ex)
+            {
+                FiresRPGClassesPlugin.Log?.LogWarning($"[Classes] the Character tab could not open the Classes window "
+                    + $"({ex.GetType().Name}: {ex.Message}).");
+            }
         }
 
         /// <summary>The flat overload, for a VAInventory whose Tab shape has moved. No OnVisibility, so the
@@ -135,6 +189,19 @@ namespace FiresRPGClasses.UI
             if (info == null) return false;
             info.SetValue(tab, value);
             return true;
+        }
+
+        private static void OpenFullWindow()
+        {
+            try
+            {
+                if (ClassesPanel.Instance != null) ClassesPanel.Instance.Open(ClassesTab.Talents);
+            }
+            catch (Exception ex)
+            {
+                FiresRPGClassesPlugin.Log?.LogWarning($"[Classes] the inventory tab could not open the Classes window "
+                    + $"({ex.GetType().Name}: {ex.Message}).");
+            }
         }
 
         private static void OnVisibility(bool shown)

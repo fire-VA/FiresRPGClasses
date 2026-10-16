@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using FiresCore.Classes;
 using FiresCore.Npc.Archetypes;
 
 namespace FiresRPGClasses.Data
@@ -74,6 +75,11 @@ namespace FiresRPGClasses.Data
         public string RequiresNodeId = "";
         public float Cooldown;
         public string CostText = "";
+        // 0.1.104: an ultimate's yaml "ultimates:" entry, kept for UltimateCatalog (the catalog's data gap: only 18 were hand-written).
+        public string UltimateResource = "";
+        public float UltimateAmount;
+        public bool UltimatePercent;
+        public readonly System.Collections.Generic.List<(string morph, string capstone)> UltimateMorphs = new System.Collections.Generic.List<(string, string)>();
         public string IconColor = "#FFFFFF";
 
         /// <summary>Core status-effect name this node applies. Empty until the tree data names one.</summary>
@@ -99,6 +105,65 @@ namespace FiresRPGClasses.Data
         /// <summary>Every rider a node has earned by this rank, lowest rank first.</summary>
         public IEnumerable<NodeRankEffect> RankEffectsUpTo(int rank) =>
             RankEffects.Where(rider => rider.Rank <= rank).OrderBy(rider => rider.Rank);
+
+        /// <summary>The yaml's `values:` per key, an entry per rank; a percentage is already a fraction (15% = 0.15).</summary>
+        public readonly Dictionary<string, float[]> Values = new Dictionary<string, float[]>();
+
+        /// <summary>A value at a rank (1-based; past the list, the last entry), or the fallback when the node has no such key.</summary>
+        public float Value(string key, int rank, float fallback = 0f)
+        {
+            if (!Values.TryGetValue(key, out float[] ranks) || ranks.Length == 0) return fallback;
+            if (rank > ranks.Length && ranks.Length >= 2) return Extrapolate(ranks, rank);   // 0.1.132: Paragon ranks past the table
+            int index = System.Math.Max(0, System.Math.Min(rank, ranks.Length) - 1);
+            return ranks[index];
+        }
+
+        /// <summary>
+        /// 0.1.132 (plan §3): a rank past the yaml table extends the last step through Core's SoftCap. The first extra rank gets
+        /// the full step, later ones less (logarithmic, never nothing). A value falling toward zero (a cooldown, a cost) instead
+        /// approaches 10 % of its last value asymptotically and never crosses zero.
+        /// </summary>
+        internal static float Extrapolate(float[] ranks, int rank)
+        {
+            float last = ranks[ranks.Length - 1], step = last - ranks[ranks.Length - 2];
+            if (step == 0f || float.IsNaN(step)) return last;
+            float extra = System.Math.Abs(step) * (rank - ranks.Length);
+            bool towardZero = last != 0f && System.Math.Sign(step) != System.Math.Sign(last);
+            if (towardZero)
+            {
+                float room = System.Math.Abs(last) * 0.9f;
+                float knee = System.Math.Min(System.Math.Abs(step), room * 0.5f);
+                return last - System.Math.Sign(last) * FiresCore.Curves.SoftCap.Asymptote(extra, knee, room);
+            }
+            return last + System.Math.Sign(step) * FiresCore.Curves.SoftCap.Soft(extra, System.Math.Abs(step));
+        }
+
+        private static readonly System.Text.RegularExpressions.Regex ValueSlot =
+            new System.Text.RegularExpressions.Regex(@"\{([A-Za-z_][A-Za-z0-9_]*)\}");
+
+        /// <summary>
+        /// The yaml text with each {key} filled in from `values:` at this rank (an unlearned node reads rank 1), written the way the
+        /// cards' rank table writes it. A {key} the node has no values for stays as written. (Fire 10-01: the cards showed "{stagger}".)
+        /// </summary>
+        public string DescriptionAt(int rank)
+        {
+            if (string.IsNullOrEmpty(Description) || Description.IndexOf('{') < 0) return Description;
+            int at = System.Math.Max(1, rank);
+            return ValueSlot.Replace(Description, slot =>
+            {
+                string key = slot.Groups[1].Value;
+                return Values.TryGetValue(key, out float[] ranks) && ranks.Length > 0 ? FormatValue(key, Value(key, at)) : slot.Value;
+            });
+        }
+
+        /// <summary>A value as the Classes window writes it: a fraction (or a pct/percent/chance key) as a percentage, else a number.</summary>
+        public static string FormatValue(string key, float value)
+        {
+            string lower = (key ?? "").ToLowerInvariant();
+            bool percent = lower.Contains("pct") || lower.Contains("percent") || lower.Contains("chance")
+                           || (value > 0f && value < 1f && !lower.Contains("second") && !lower.Contains("duration"));
+            return percent ? UnityEngine.Mathf.RoundToInt(value * 100f) + "%" : value.ToString("0.##");
+        }
 
         public const string AllPaths = "all";
 
@@ -138,7 +203,9 @@ namespace FiresRPGClasses.Data
             foreach (ClassTreeNode node in Nodes)
             {
                 if (node.Slot == NodeSlot.Ultimate) continue;
-                for (int rank = 0; rank < node.MaxRank; rank++)
+                // 0.1.132: ranks from ParagonTalentFromRank up are paid in Paragon points, not talent points.
+                int talentRanks = System.Math.Min(node.MaxRank, ClassProgressState.ParagonTalentFromRank - 1);
+                for (int rank = 0; rank < talentRanks; rank++)
                     total += rankCosts[rank < rankCosts.Count ? rank : rankCosts.Count - 1];
             }
             return total;
@@ -157,7 +224,8 @@ namespace FiresRPGClasses.Data
 
     public static class ClassTrees
     {
-        public static readonly int[] RankCosts = { 1, 2, 3 };
+        // Core owns the prices (Fire 2026-09-29: ranks cost 1/2/3, as the board shows); the board and Core must agree.
+        public static int[] RankCosts => ClassProgressState.RankCosts;
 
         public const int MasterPointsRequiredInPath = 10;
 
@@ -181,9 +249,33 @@ namespace FiresRPGClasses.Data
             {
                 Trees[tree.Archetype] = tree;
                 foreach (ClassTreeNode node in tree.Nodes)
+                {
                     NodesById[node.Id] = node;
+                    if (node.IsActive && node.Cooldown <= 0f && node.Targeting.Mode != TargetingMode.Dodge
+                        && node.Targeting.Mode != TargetingMode.Automatic)
+                        node.Cooldown = CoreCompanionCooldown(node);
+                }
             }
             LoadedFrom = source.SourceName;
+        }
+
+        /// <summary>
+        /// A Core-backed skill's yaml node carries no cooldown (its numbers live in Core), so it had NONE for players and could be
+        /// cast every frame (class_test class_drill, R63: Inner Peace on consecutive ticks). It takes Core's own companion
+        /// cooldown for its kind (ArchetypeAbilitySystem's defaults: self buff 20 s, group 30 s, utility 8 s, expert 45 s, master
+        /// 120 s, ultimate 300 s) - Fire's rule that Core-backed numbers come from Core. Listed in CLASS_KIT_DESIGN_GAPS.md.
+        /// </summary>
+        private static float CoreCompanionCooldown(ClassTreeNode node)
+        {
+            if (node.Slot == NodeSlot.Ultimate || node.Tier == NodeTier.Ultimate) return 300f;
+            if (node.Tier == NodeTier.Master) return 120f;
+            if (node.Tier == NodeTier.Expert) return 45f;
+            switch (node.Targeting.Mode)
+            {
+                case TargetingMode.Self: return 20f;
+                case TargetingMode.AroundYou: return 30f;
+                default: return 8f;
+            }
         }
 
         public static ClassTree Tree(ArchetypeClass archetype) =>
@@ -197,8 +289,12 @@ namespace FiresRPGClasses.Data
         public static int TotalPointCostOfEveryTree() =>
             Trees.Values.Sum(tree => tree.TotalPointCost(RankCosts));
 
+        /// <summary>Talent points a rank costs; 0 for a rank paid in Paragon points (0.1.132: ParagonTalentFromRank and up).</summary>
         public static int RankCost(int nextRank) =>
-            RankCosts[nextRank - 1 < RankCosts.Length ? nextRank - 1 : RankCosts.Length - 1];
+            nextRank >= ClassProgressState.ParagonTalentFromRank ? 0 : ClassProgressState.RankCost(nextRank);
+
+        /// <summary>0.1.132: buying <paramref name="nextRank"/> costs 1 Paragon point instead of talent points.</summary>
+        public static bool IsParagonRank(int nextRank) => nextRank >= ClassProgressState.ParagonTalentFromRank;
 
         public static IEnumerable<ClassTreeNode> ActivesFor(ArchetypeClass archetype)
         {

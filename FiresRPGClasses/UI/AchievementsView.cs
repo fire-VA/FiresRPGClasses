@@ -1,197 +1,241 @@
 using System.Collections.Generic;
+using System.Linq;
 using FiresCore.Bridge;
 using FiresCore.UI;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace FiresRPGClasses.UI
 {
     /// <summary>
-    /// Doc 12's Achievements board. Shows every achievement catalogue registered with Core's
-    /// <see cref="AchievementBridge"/> - RPG Maker's when that mod is loaded, Valheim's own always - under
-    /// one filter, so a player sees one list rather than three screens.
-    /// Plan: Docs/PLAN_AchievementsBoard.md
+    /// The Achievements tab, from Fire's board Achievements. On the left, the categories with their counts: each
+    /// catalogue's own groups, "All" first. On the right, "N of M completed" with a bar, then a row per achievement:
+    /// icon, name, description, then "Completed" or a progress bar with "6 / 10", and the score on the right. It shows
+    /// every catalogue registered with Core's <see cref="AchievementBridge"/>: Valheim's own always, RPG Maker's when
+    /// that mod is loaded.
+    ///
+    /// Names: categories "Cat_&lt;name&gt;", rows "Ach_&lt;source&gt;_&lt;index&gt;" (as before). Plan: Tools\CLASSES_UI_PLAN.md
     /// </summary>
     public class AchievementsView : IClassesView
     {
-        private const float HeaderTextHeight = 34f;
-        private const float FilterHeight = 26f;
-        private const float RowHeight = 38f;
-        private const float SectionHeight = 26f;
-        private const string AllSources = "";
+        private const float Pad = 16f;
+        private const float ListWidth = 210f;
+        private const float RowHeight = 99f;
+        private const float DoneRowHeight = 86f;
+        private const string All = "All";
 
         public ClassesTab Tab => ClassesTab.Achievements;
 
         public string Title => "Achievements";
 
         private RectTransform _page;
-        private RectTransform _filters;
-        private UIBuilderHelper.ScrollAreaResult _scroll;
-        private TextMeshProUGUI _header;
-        private string _source = AllSources;
+        private RectTransform _categories;
+        private RectTransform _summary;
+        private UIBuilderHelper.ScrollAreaResult _list;
+        private string _category = All;
+
+        private sealed class Entry
+        {
+            public string Source;
+            public int Index;
+            public string Category;
+            public AchievementRow Row;
+        }
 
         public void Build(RectTransform page)
         {
             _page = page;
+            _categories = ClassesStyle.Rect(page, "Categories", new Vector2(0f, 0f), new Vector2(0f, 1f));
+            _categories.pivot = new Vector2(0f, 0.5f);
+            _categories.offsetMin = new Vector2(Pad, 12f);
+            _categories.offsetMax = new Vector2(Pad + ListWidth, -8f);
 
-            _header = ClassesTheme.Text(page, "AchievementHeader", "", UIFontConfig.Colors.Gold,
-                new Vector2(0.02f, 1f), new Vector2(0.98f, 1f), ClassesTheme.RowFontSize);
-            _header.rectTransform.Fill(-6f, HeaderTextHeight);
+            _summary = ClassesStyle.Rect(page, "Summary", new Vector2(0f, 1f), new Vector2(1f, 1f));
+            _summary.pivot = new Vector2(0.5f, 1f);
+            _summary.offsetMin = new Vector2(Pad + ListWidth + 28f, -58f);
+            _summary.offsetMax = new Vector2(-Pad - 12f, -8f);
 
-            GameObject filters = UIBuilderHelper.CreatePanel(page, "AchievementFilters",
-                new Vector2(0.02f, 1f), new Vector2(0.98f, 1f), UIFontConfig.Colors.TabBarBackground);
-            _filters = filters.GetComponent<RectTransform>();
-            _filters.pivot = new Vector2(0.5f, 1f);
-            _filters.anchoredPosition = new Vector2(0f, -HeaderTextHeight);
-            _filters.sizeDelta = new Vector2(0f, FilterHeight);
-
-            _scroll = UIBuilderHelper.CreateScrollArea(page, "AchievementScroll",
-                new Vector2(0.02f, 0.02f), new Vector2(0.98f, 1f), UIFontConfig.Colors.SectionBackgroundDark);
-            _scroll.Root.GetComponent<RectTransform>().offsetMax =
-                new Vector2(0f, -(HeaderTextHeight + FilterHeight + 10f));
+            _list = UIBuilderHelper.CreateScrollArea(page, "AchievementList", Vector2.zero, Vector2.one, Color.clear);
+            RectTransform list = _list.Root.GetComponent<RectTransform>();
+            list.offsetMin = new Vector2(Pad + ListWidth + 16f - 5f, 8f);
+            list.offsetMax = new Vector2(-Pad + 18f - 12f, -66f);
         }
 
         public void Refresh()
         {
             if (_page == null) return;
+            List<Entry> entries = Entries();
+            List<string> categories = entries.Select(e => e.Category).Distinct().ToList();
+            if (_category != All && !categories.Contains(_category)) _category = All;
 
-            List<string> sources = new List<string>(AchievementBridge.SourceIds);
-            if (!string.IsNullOrEmpty(_source) && !sources.Contains(_source)) _source = AllSources;
-
-            BuildFilters(sources);
-            BuildRows(sources);
+            BuildCategories(entries, categories);
+            List<Entry> shown = entries.Where(e => _category == All || e.Category == _category).ToList();
+            BuildSummary(shown, entries.Count == 0);
+            BuildRows(shown);
         }
 
-        private void BuildFilters(List<string> sources)
+        /// <summary>Every row of every catalogue; a row's category is its group, else its catalogue's name.</summary>
+        private static List<Entry> Entries()
         {
-            ClassesTheme.ClearChildren(_filters);
-            if (sources.Count <= 1) return;
-
-            int count = sources.Count + 1;
-            float width = 1f / count;
-            FilterButton(0, width, "All", AllSources);
-            for (int i = 0; i < sources.Count; i++)
-                FilterButton(i + 1, width, AchievementBridge.DisplayNameOf(sources[i]), sources[i]);
-        }
-
-        private void FilterButton(int index, float width, string label, string source)
-        {
-            string chosen = source;
-            ClassesTheme.Button(_filters, _source == source ? "> " + label + " <" : label,
-                new Vector2(index * width + 0.004f, 0.06f), new Vector2((index + 1) * width - 0.004f, 0.94f),
-                () => { _source = chosen; Refresh(); });
-        }
-
-        private void BuildRows(List<string> sources)
-        {
-            ClassesTheme.ClearChildren(_scroll.Content);
-
-            int earned = 0;
-            int total = 0;
-            float offset = 0f;
-
-            foreach (string source in sources)
+            var entries = new List<Entry>();
+            foreach (string source in AchievementBridge.SourceIds)
             {
-                if (!string.IsNullOrEmpty(_source) && source != _source) continue;
-
                 IReadOnlyList<AchievementRow> rows = AchievementBridge.Read(source);
-                int sourceEarned = 0;
-                for (int i = 0; i < rows.Count; i++)
-                    if (rows[i] != null && rows[i].Earned) sourceEarned++;
-
-                earned += sourceEarned;
-                total += rows.Count;
-
-                offset = Section(offset, AchievementBridge.DisplayNameOf(source)
-                    + "   " + sourceEarned + " / " + rows.Count, BlockedNoteFor(source, rows));
-
+                string fallback = AchievementBridge.DisplayNameOf(source);
                 for (int i = 0; i < rows.Count; i++)
                 {
                     if (rows[i] == null) continue;
-                    offset = Row(offset, source, i, rows[i]);
+                    entries.Add(new Entry
+                    {
+                        Source = source,
+                        Index = i,
+                        Category = string.IsNullOrEmpty(rows[i].Group) ? fallback : rows[i].Group,
+                        Row = rows[i],
+                    });
                 }
             }
-
-            _scroll.Content.sizeDelta = new Vector2(_scroll.Content.sizeDelta.x, offset + ClassesTheme.RowGap);
-            _header.text = sources.Count == 0
-                ? "No achievement source is loaded."
-                : "Earned " + earned + " / " + total;
+            return entries;
         }
 
-        private static string BlockedNoteFor(string source, IReadOnlyList<AchievementRow> rows)
+        // ---- categories -------------------------------------------------------------------------------------
+
+        private void BuildCategories(List<Entry> entries, List<string> categories)
         {
-            for (int i = 0; i < rows.Count; i++)
-                if (rows[i] != null && !string.IsNullOrEmpty(rows[i].Blocked)) return rows[i].Blocked;
-            return string.Empty;
+            ClassesStyle.Clear(_categories);
+            float y = 0f;
+            Category(All, entries, ref y);
+            foreach (string category in categories)
+                Category(category, entries.Where(e => e.Category == category).ToList(), ref y);
         }
 
-        private float Section(float offset, string title, string note)
+        private void Category(string name, List<Entry> entries, ref float y)
         {
-            RectTransform row = StackedRow(_scroll.Content, "Section_" + title, offset, SectionHeight);
-            ClassesTheme.Text(row, "Title", title, UIFontConfig.Colors.BrightGold,
-                new Vector2(0.02f, 0f), new Vector2(0.45f, 1f), ClassesTheme.RowFontSize);
-            if (!string.IsNullOrEmpty(note))
+            bool on = name == _category;
+            RectTransform row = ClassesStyle.Rect(_categories, "Cat_" + name.Replace(" ", ""), new Vector2(0f, 1f), new Vector2(1f, 1f));
+            row.offsetMin = new Vector2(0f, -y - ClassesStyle.Target);
+            row.offsetMax = new Vector2(0f, -y);
+            Image face = ClassesStyle.Fill(row, on ? ClassesStyle.Box(6, ClassesStyle.Selected, ClassesStyle.Gold, 1)
+                : ClassesStyle.Box(6, new Color(0f, 0f, 0f, 0.001f)), Color.white, true);
+            Button button = row.gameObject.AddComponent<Button>();
+            button.targetGraphic = face;
+            string chosen = name;
+            button.onClick.AddListener(() => { _category = chosen; Refresh(); });
+
+            // The name is the button's first text.
+            TextMeshProUGUI label = ClassesStyle.Label(row, "Name", name, 16f, on ? ClassesStyle.Gold : ClassesStyle.Text,
+                Vector2.zero, new Vector2(0.72f, 1f));
+            label.rectTransform.offsetMin = new Vector2(13f, 0f);
+            label.textWrappingMode = TextWrappingModes.NoWrap;
+            TextMeshProUGUI count = ClassesStyle.Label(row, "Count", entries.Count(e => e.Row.Earned) + " / " + entries.Count, 14f,
+                ClassesStyle.Muted, new Vector2(0.6f, 0f), Vector2.one, TextAlignmentOptions.MidlineRight);
+            count.rectTransform.offsetMax = new Vector2(-13f, 0f);
+            y += ClassesStyle.Target + 4f;
+        }
+
+        // ---- summary + rows ---------------------------------------------------------------------------------
+
+        private void BuildSummary(List<Entry> shown, bool nothingLoaded)
+        {
+            ClassesStyle.Clear(_summary);
+            int done = shown.Count(e => e.Row.Earned);
+            ClassesStyle.Label(_summary, "Completed",
+                nothingLoaded ? "No achievement source is loaded." : done + " of " + shown.Count + " completed", 18f, ClassesStyle.Text,
+                new Vector2(0f, 1f), new Vector2(0.7f, 1f)).rectTransform.offsetMin = new Vector2(0f, -26f);
+            string blocked = shown.Select(e => e.Row.Blocked).FirstOrDefault(b => !string.IsNullOrEmpty(b));
+            if (!string.IsNullOrEmpty(blocked))
             {
-                ClassesTheme.Text(row, "Note", "none can be earned: " + note, ClassesTheme.Locked,
-                    new Vector2(0.45f, 0f), new Vector2(0.99f, 1f), ClassesTheme.SmallFontSize);
+                TextMeshProUGUI note = ClassesStyle.Label(_summary, "Blocked", "None can be earned: " + blocked, 13f,
+                    ClassesStyle.Orange, new Vector2(0.45f, 1f), new Vector2(1f, 1f), TextAlignmentOptions.MidlineRight);
+                note.rectTransform.offsetMin = new Vector2(0f, -26f);
             }
-            return offset + SectionHeight + ClassesTheme.RowGap;
+            ClassesStyle.Bar(_summary, "Progress", new Vector2(0f, 0f), new Vector2(1f, 0f), shown.Count > 0 ? (float)done / shown.Count : 0f)
+                .parent.GetComponent<RectTransform>().offsetMax = new Vector2(0f, 12f);
         }
 
-        private float Row(float offset, string source, int index, AchievementRow data)
+        private void BuildRows(List<Entry> shown)
         {
-            RectTransform row = StackedRow(_scroll.Content, "Ach_" + source + "_" + index, offset, RowHeight);
-
-            UIBuilderHelper.CreateImage(row, "Accent", new Vector2(0.02f, 0.15f), new Vector2(0.032f, 0.85f),
-                data.Earned ? data.Accent : Faded(data.Accent));
-
-            ClassesTheme.Text(row, "Name", data.Name,
-                data.Earned ? ClassesTheme.Good : ClassesTheme.Ready,
-                new Vector2(0.045f, 0.48f), new Vector2(0.80f, 1f), ClassesTheme.RowFontSize);
-
-            ClassesTheme.Text(row, "Description", data.Description, ClassesTheme.Dim,
-                new Vector2(0.045f, 0f), new Vector2(0.80f, 0.52f), ClassesTheme.SmallFontSize);
-
-            ClassesTheme.Text(row, "Status", StatusTextFor(data), StatusColorFor(data),
-                new Vector2(0.80f, 0f), new Vector2(0.98f, 1f), ClassesTheme.RowFontSize,
-                TextAlignmentOptions.MidlineRight);
-
-            return offset + RowHeight + ClassesTheme.RowGap;
+            RectTransform content = _list.Content;
+            ClassesStyle.Clear(content);
+            float y = 0f;
+            foreach (Entry entry in shown)
+                y = Row(content, entry, y);
+            content.sizeDelta = new Vector2(0f, y);
         }
 
-        private static string StatusTextFor(AchievementRow data)
+        private static float Row(RectTransform content, Entry entry, float y)
         {
-            if (data.Earned) return "Earned";
-            if (data.HasProgress) return data.Progress + " / " + data.Target;
-            return string.IsNullOrEmpty(data.Blocked) ? "Locked" : "Unreachable";
+            AchievementRow data = entry.Row;
+            bool hidden = data.Secret && !data.Earned;
+            bool showBar = !data.Earned && data.HasProgress;
+            float height = showBar ? RowHeight : DoneRowHeight;
+
+            RectTransform row = ClassesStyle.Rect(content, "Ach_" + entry.Source + "_" + entry.Index, new Vector2(0f, 1f), new Vector2(1f, 1f));
+            row.offsetMin = new Vector2(0f, -y - height);
+            row.offsetMax = new Vector2(0f, -y);
+            RectTransform rule = ClassesStyle.Rect(row, "Rule", Vector2.zero, new Vector2(1f, 0f));
+            rule.sizeDelta = new Vector2(0f, 1f);
+            ClassesStyle.Fill(rule, null, ClassesStyle.Line);
+
+            RectTransform frame = ClassesStyle.Fixed(row, "Frame", new Vector2(0f, 0.5f), new Vector2(56f, 56f));
+            frame.anchoredPosition = new Vector2(12f + 28f, 0f);
+            Color accent = data.Earned ? ClassesStyle.Gold : ClassesStyle.Line;
+            ClassesStyle.Fill(frame, ClassesStyle.Box(10, ClassesStyle.Well, accent, 2), Color.white);
+            if (data.Icon != null && !hidden)
+            {
+                RectTransform glyph = ClassesStyle.Fixed(frame, "icon", new Vector2(0.5f, 0.5f), new Vector2(36f, 36f));
+                Image icon = ClassesStyle.Fill(glyph, data.Icon, data.Earned ? Color.white : new Color(1f, 1f, 1f, 0.45f));
+                icon.preserveAspect = true;
+            }
+            else
+            {
+                RectTransform dot = ClassesStyle.Fixed(frame, "Accent", new Vector2(0.5f, 0.5f), new Vector2(18f, 18f));
+                Color tint = data.Earned ? data.Accent : new Color(data.Accent.r, data.Accent.g, data.Accent.b, 0.35f);
+                ClassesStyle.Fill(dot, ClassesStyle.Circle(18, tint, tint, 0f), Color.white);
+            }
+
+            float top = (height - (showBar ? 74f : 61f)) / 2f;
+            Line(row, "Name", hidden ? "Hidden achievement" : data.Name, 17f, ClassesStyle.Text, top, 21f);
+            Line(row, "Description", hidden ? "Keep playing to find this one." : data.Description, 14f, ClassesStyle.Muted, top + 25f, 16f);
+            if (data.Earned)
+            {
+                Line(row, "Status", "Completed", 14f, ClassesStyle.Gold, top + 45f, 16f);
+            }
+            else if (showBar)
+            {
+                RectTransform bar = ClassesStyle.Bar(row, "Progress", new Vector2(0f, 1f), new Vector2(1f, 1f),
+                    data.Target > 0 ? (float)data.Progress / data.Target : 0f).parent as RectTransform;
+                bar.offsetMin = new Vector2(70f, -top - 55f);
+                bar.offsetMax = new Vector2(-156f, -top - 45f);
+                Line(row, "Status", data.Progress + " / " + data.Target, 13f, ClassesStyle.Muted, top + 58f, 16f);
+            }
+            else
+            {
+                Line(row, "Status", string.IsNullOrEmpty(data.Blocked) ? "Not yet" : "Can't be earned here", 14f,
+                    ClassesStyle.LockedText, top + 45f, 16f);
+            }
+
+            if (data.Score > 0)
+            {
+                TextMeshProUGUI caption = ClassesStyle.Label(row, "RewardCaption", "Score", 12f, ClassesStyle.Muted,
+                    new Vector2(1f, 0.5f), new Vector2(1f, 0.5f));
+                caption.rectTransform.pivot = new Vector2(1f, 0f);
+                caption.rectTransform.sizeDelta = new Vector2(130f, 15f);
+                caption.rectTransform.anchoredPosition = new Vector2(-12f, 1f);
+                TextMeshProUGUI value = ClassesStyle.Label(row, "Reward", "+" + data.Score, 15f,
+                    data.Earned ? ClassesStyle.Muted : ClassesStyle.Gold, new Vector2(1f, 0.5f), new Vector2(1f, 0.5f));
+                value.rectTransform.pivot = new Vector2(1f, 1f);
+                value.rectTransform.sizeDelta = new Vector2(130f, 18f);
+                value.rectTransform.anchoredPosition = new Vector2(-12f, 0f);
+            }
+            return y + height;
         }
 
-        private static Color StatusColorFor(AchievementRow data)
+        private static void Line(RectTransform row, string name, string text, float size, Color color, float top, float height)
         {
-            if (data.Earned) return ClassesTheme.Good;
-            if (!string.IsNullOrEmpty(data.Blocked)) return ClassesTheme.Locked;
-            return data.HasProgress && data.Progress > 0 ? ClassesTheme.Cooling : ClassesTheme.Dim;
-        }
-
-        private static Color Faded(Color color) => new Color(color.r, color.g, color.b, 0.35f);
-
-        /// <summary>
-        /// A row placed at an explicit pixel offset, because this board stacks two row heights rather than
-        /// the uniform grid <see cref="ClassesTheme.Row"/> assumes.
-        /// </summary>
-        private static RectTransform StackedRow(RectTransform content, string name, float offset, float height)
-        {
-            GameObject row = new GameObject(name);
-            row.transform.SetParent(content, false);
-            RectTransform rect = row.AddComponent<RectTransform>();
-            rect.anchorMin = new Vector2(0f, 1f);
-            rect.anchorMax = new Vector2(1f, 1f);
-            rect.pivot = new Vector2(0.5f, 1f);
-            rect.offsetMin = Vector2.zero;
-            rect.offsetMax = Vector2.zero;
-            rect.anchoredPosition = new Vector2(0f, -offset);
-            rect.sizeDelta = new Vector2(0f, height);
-            return rect;
+            TextMeshProUGUI label = ClassesStyle.Label(row, name, text, size, color, new Vector2(0f, 1f), new Vector2(1f, 1f));
+            label.rectTransform.offsetMin = new Vector2(82f, -top - height);
+            label.rectTransform.offsetMax = new Vector2(-156f, -top);
         }
     }
 }

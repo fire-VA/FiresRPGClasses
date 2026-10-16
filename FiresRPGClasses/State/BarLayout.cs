@@ -30,6 +30,14 @@ namespace FiresRPGClasses.State
 
         public readonly List<string> SkillNodeIds = NewSkillSlots();
 
+        /// <summary>
+        /// The list starts with six empty slots and is read-only, so Json.NET fills it by APPENDING the saved six after them;
+        /// EnsureSlotCount then trimmed the end - the saved skills - and every load came back with an empty bar
+        /// (class_test migrate, R58: "the bar lost 'tank_taunt' although nothing was refunded"). Empty it before Json.NET fills it.
+        /// </summary>
+        [System.Runtime.Serialization.OnDeserializing]
+        internal void BeforeLoad(System.Runtime.Serialization.StreamingContext context) => SkillNodeIds.Clear();
+
         public static List<string> NewSkillSlots()
         {
             List<string> slots = new List<string>(SkillSlotCount);

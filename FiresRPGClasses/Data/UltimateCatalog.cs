@@ -102,6 +102,10 @@ namespace FiresRPGClasses.Data
                 { ArchetypeClass.Ranger, "range and marks" },
                 { ArchetypeClass.Mage, "elemental damage and slows" },
                 { ArchetypeClass.Healer, "healing and cleansing" },
+                { ArchetypeClass.Druid, "beast forms and the pack" },
+                { ArchetypeClass.Necromancer, "undead thralls and curses" },
+                { WerewolfClass.Archetype, "the wolf form and the howl" },
+                { VampireClass.Archetype, "the bat form and the blood" },
             };
 
         private static readonly Dictionary<string, UltimateDefinition> Definitions =
@@ -116,6 +120,30 @@ namespace FiresRPGClasses.Data
                 Definitions[definition.Id] = definition;
             foreach (UltimateDefinition definition in HybridDefinitions())
                 Definitions[definition.Id] = definition;
+            // 0.1.104 (R-1012L: tank_hold_the_line, paladin_beacon_of_light, ... "UltimateCatalog has no ..."): every ultimate the class
+            // trees place and the hand-written list above doesn't cover, from its yaml "ultimates:" entry (cost, cooldown, unlock, morphs).
+            int fromTree = 0;
+            foreach (ClassTreeNode node in ClassTrees.AllNodes)
+            {
+                if (node == null || node.Slot != NodeSlot.Ultimate || Definitions.ContainsKey(node.Id)) continue;
+                UltimateResource resource = UltimateResource.Adrenaline;
+                if (!string.IsNullOrEmpty(node.UltimateResource)) System.Enum.TryParse(node.UltimateResource, true, out resource);
+                float amount = node.UltimateAmount > 0f ? node.UltimateAmount : 60f;
+                var definition = new UltimateDefinition
+                {
+                    Id = node.Id,
+                    DisplayName = node.DisplayName,
+                    Archetype = node.Archetype,
+                    UnlockLevel = node.MinLevel > 0 ? node.MinLevel : UltimateOneLevel,
+                    Cost = new UltimateCost(resource, amount, node.UltimatePercent),
+                    Cooldown = node.Cooldown > 0f ? node.Cooldown : 180f,
+                };
+                foreach (var m in node.UltimateMorphs) definition.Morphs.Add(new UltimateMorph { Name = m.morph, CapstoneName = m.capstone });
+                while (definition.Morphs.Count < 2) definition.Morphs.Add(new UltimateMorph { Name = node.DisplayName + " " + (definition.Morphs.Count + 1), CapstoneName = "" });
+                Definitions[definition.Id] = definition;
+                fromTree++;
+            }
+            FiresRPGClassesPlugin.Log?.LogDebug($"[Ultimates] catalog: {Definitions.Count} ultimate(s), {fromTree} of them from the class trees' ultimates list");
         }
 
         public static void Register(UltimateDefinition definition)
@@ -202,6 +230,27 @@ namespace FiresRPGClasses.Data
             yield return Capstone("healer_avatar_life", "Avatar of Life", ArchetypeClass.Healer,
                 new UltimateCost(UltimateResource.Health, 25f, true), 240f,
                 "Avatar of Mercy", "Lifebloom", "Avatar of Sacrifice", "Martyr's Grace");
+
+            // 0.1.83 (round 22: "could not slot it (ultimate)"): the Druid and Necromancer ultimates, from the yaml's ultimates list
+            // (costs, cooldowns, unlock levels, morph names). Their handlers are DruidNecroKit's / PossessionKit's.
+            yield return Unlocks(Capstone("druid_primal_avatar", "Primal Avatar", ArchetypeClass.Druid,
+                new UltimateCost(UltimateResource.Eitr, 60f), 180f,
+                "Elder Beast", "Ancient Hide", "Pack Avatar", "Rally the Wild"), 10);
+            yield return Unlocks(Capstone("druid_wild_hunt", "Wild Hunt", ArchetypeClass.Druid,
+                new UltimateCost(UltimateResource.Adrenaline, 60f), 240f,
+                "Hunt Mark", "Run Them Down", "Stampede", "Trampled"), 20);
+            yield return Unlocks(Capstone("necromancer_lich_form", "Lich Form", ArchetypeClass.Necromancer,
+                new UltimateCost(UltimateResource.Eitr, 60f), 180f,
+                "Bone Lich", "Phylactery", "Plague Lich", "Pall of Death"), 10);
+            yield return Unlocks(Capstone("necromancer_legion", "Legion", ArchetypeClass.Necromancer,
+                new UltimateCost(UltimateResource.Adrenaline, 70f), 240f,
+                "Endless Legion", "March of the Dead", "Soul Harvest", "Death's Due"), 20);
+        }
+
+        private static UltimateDefinition Unlocks(UltimateDefinition definition, int level)
+        {
+            definition.UnlockLevel = level;
+            return definition;
         }
 
         private static UltimateDefinition Capstone(string id, string name, ArchetypeClass archetype,

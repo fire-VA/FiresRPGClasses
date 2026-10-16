@@ -11,7 +11,8 @@ namespace FiresRPGClasses.Input
         None,
         Alt,
         Ctrl,
-        Shift
+        Shift,
+        ShiftAlt
     }
 
     /// <summary>
@@ -20,8 +21,12 @@ namespace FiresRPGClasses.Input
     /// </summary>
     public static class ClassKeys
     {
-        public const string BarsSection = "Bars";
-        public const string ItemHotbarSection = "Item hotbar";
+        // 0.1.112 (Fire 10-13: sensible grouping): numbered sections, the keys in their own sections. Old values move over once at load
+        // (FiresRPGClassesPlugin.TidyConfig).
+        public const string BarsSection = "1 - Bars";
+        public const string BarKeysSection = "2 - Bar keys";
+        public const string ItemHotbarSection = "3 - Item hotbar";
+        public const string ItemHotbarKeysSection = "4 - Item hotbar keys";
 
         private const int SlotCount = 8;
         private const string VanillaHotbarButtonPrefix = "Hotbar";
@@ -50,29 +55,34 @@ namespace FiresRPGClasses.Input
 
             SkillsNeedDrawnWeapon = config.Bind(BarsSection, "Skills need a drawn weapon", true,
                 "On: slots 1-8 are skills only while a weapon is drawn, and the item hotbar takes them while sheathed.");
-            Modifier = config.Bind(BarsSection, "Skill modifier", SkillModifier.Alt,
-                "Held with every slot key still on its default. Alt by default so 1-8 stay Valheim's hotbar: without a "
-                + "modifier this mod owns the number row, and a hammer in hotbar 1 could not be selected or swung. "
-                + "Vanilla runs on Shift and crouches on Ctrl, which is why it is Alt rather than either of those.");
+            // Fire, 2026-09-30: Shift+Alt, "since youre likely to be sprinting around swapping bars", and plain Alt+1-4 stays
+            // VAInventory's tool hotbar. A new key name, so the old "Skill modifier = Alt" in existing configs does not win.
+            Modifier = config.Bind(BarsSection, "Skill keys modifier", SkillModifier.ShiftAlt,
+                "Held with every slot key still on its default. While it is held the number row never reaches Valheim's "
+                + "hotbar. Shift+Alt by default: you are usually sprinting (Shift) when you swap bars, and plain Alt+1-4 is "
+                + "VAInventory's tool hotbar. Slot 1 draws the active bar's weapon, and swaps bars once it is in hand.");
             SlotOneSwapsBars = config.Bind(BarsSection, "Slot 1 swaps bars", true,
                 "On: slot 1's key swaps bars as well as the dedicated swap key.");
             ItemHotbarModifier = config.Bind(ItemHotbarSection, "Item hotbar modifier", SkillModifier.Alt,
-                "Used only when skills do not need a drawn weapon and the skill modifier is None.");
+                "The modifier added to the item hotbar keys (1-8) while they are left at their default keys, so they stay apart from the skill keys.");
 
             for (int slot = 0; slot < SlotCount; slot++)
             {
-                KeyBinding binding = new KeyBinding(config, BarsSection, "Slot" + (slot + 1),
+                KeyBinding binding = new KeyBinding(config, BarKeysSection, "Slot" + (slot + 1),
                     DefaultSlotKeys[slot], BindingContext.WeaponDrawn);
                 string vanillaButton = VanillaHotbarButtonPrefix + (slot + 1);
                 binding.Replaces(vanillaButton, BindingContext.WeaponDrawn);
                 binding.Replaces(vanillaButton, BindingContext.Gameplay);
                 SlotKeys[slot] = binding;
 
-                ItemHotbarKeys[slot] = new KeyBinding(config, ItemHotbarSection, "Item" + (slot + 1),
+                ItemHotbarKeys[slot] = new KeyBinding(config, ItemHotbarKeysSection, "Item" + (slot + 1),
                     DefaultSlotKeys[slot], BindingContext.Gameplay, defaultAlt: true);
+                // 0.1.81 ([generator]'s keybind check): the item keys stand in for vanilla's HotbarN too (read only while the slot keys
+                // own 1-8, when UseHotbarItem is suppressed and these route through UseThroughHandoff), so say so to Core's checker.
+                ItemHotbarKeys[slot].Replaces(vanillaButton, BindingContext.Gameplay);
             }
 
-            BarSwap = new KeyBinding(config, BarsSection, "BarSwap", KeyCode.Mouse3, BindingContext.WeaponDrawn);
+            BarSwap = new KeyBinding(config, BarKeysSection, "BarSwap", KeyCode.Mouse3, BindingContext.WeaponDrawn);
 
             ApplyScheme();
             SkillsNeedDrawnWeapon.SettingChanged += (s, e) => ApplyScheme();
@@ -82,6 +92,51 @@ namespace FiresRPGClasses.Input
 
         public static KeyBinding Slot(int slot) =>
             slot >= 1 && slot <= SlotCount ? SlotKeys[slot - 1] : null;
+
+        /// <summary>
+        /// Presses slot N's BOUND chord (its key plus whatever modifiers the player set) through Core's FiresKeys, the way a
+        /// player's keyboard would, for a bot driven by Core's brain ([visual]'s FDT fight, the skills drill). Takes the seam for
+        /// <paramref name="owner"/>; false when another owner holds it or the slot is unbound. The caller releases the seam
+        /// (FiresKeys.Release(owner)) when its fight ends.
+        /// </summary>
+        public static bool PressSlot(object owner, int slot)
+        {
+            KeyBinding binding = Slot(slot);
+            if (owner == null || binding == null || binding.Key.Value == KeyCode.None) return false;
+            if (!FiresKeys.Acquire(owner)) return false;
+            var modifiers = new List<KeyCode>();
+            if (binding.Ctrl.Value) modifiers.Add(KeyCode.LeftControl);
+            if (binding.Shift.Value) modifiers.Add(KeyCode.LeftShift);
+            if (binding.Alt.Value) modifiers.Add(KeyCode.LeftAlt);
+            return FiresKeys.Press(owner, binding.Key.Value, modifiers.ToArray());
+        }
+
+        /// <summary>
+        /// PressSlot with a point ([visual]'s FDT, Core's brain choosing where): a Placed or Aimed skill on that slot is cast
+        /// straight at <paramref name="point"/> (clamped to its range), with no aiming step; any other skill ignores it.
+        /// </summary>
+        public static bool PressSlotAt(object owner, int slot, Vector3 point)
+        {
+            if (!PressSlot(owner, slot)) return false;
+            _placedSlot = slot;
+            _placedPoint = point;
+            _placedFrame = Time.frameCount;
+            return true;
+        }
+
+        // The press lands on the next frame; a point older than a few frames is stale.
+        private const int PlacedFrames = 5;
+        private static int _placedSlot;
+        private static Vector3 _placedPoint;
+        private static int _placedFrame = -1000;
+
+        internal static bool TakePlacedPoint(int slot, out Vector3 point)
+        {
+            point = _placedPoint;
+            if (_placedSlot != slot || Time.frameCount - _placedFrame > PlacedFrames) return false;
+            _placedSlot = 0;
+            return true;
+        }
 
         /// <summary>
         /// The compact label the HUD prints in a slot's binding corner. Vanilla shows one digit there, so a
@@ -97,7 +152,17 @@ namespace FiresRPGClasses.Input
             if (binding.Ctrl.Value) prefix += "Ctrl+";
             if (binding.Shift.Value) prefix += "Shift+";
             if (binding.Alt.Value) prefix += "Alt+";
-            return prefix + slot;
+            return prefix + ShortKey(binding.Key.Value);
+        }
+
+        /// <summary>The bound key as the HUD prints it: "1" for Alpha1, "Num1" for Keypad1, "M3" for Mouse3, else the key's name.</summary>
+        private static string ShortKey(KeyCode key)
+        {
+            string name = key.ToString();
+            if (name.StartsWith("Alpha", System.StringComparison.Ordinal)) return name.Substring(5);
+            if (name.StartsWith("Keypad", System.StringComparison.Ordinal)) return "Num" + name.Substring(6);
+            if (name.StartsWith("Mouse", System.StringComparison.Ordinal)) return "M" + name.Substring(5);
+            return key == KeyCode.None ? "-" : name;
         }
 
         public static KeyBinding ItemHotbarKey(int slot) =>
@@ -131,7 +196,12 @@ namespace FiresRPGClasses.Input
         /// going to do anything with belongs to vanilla.
         /// </summary>
         public static bool SuppressVanillaHotbar(int slot)
-            => SuppressVanillaHotbar() && SlotHasSomethingToCast(slot);
+        {
+            // Fire, 2026-09-30: "a modifier needs to prevent normal 1 from firing". With a modifier, holding it means the key
+            // is ours whatever the bar holds; the per-slot test below is only for the no-modifier scheme.
+            if (IsBound && Modifier.Value != SkillModifier.None) return ModifierHeld(Modifier.Value);
+            return SuppressVanillaHotbar() && SlotHasSomethingToCast(slot);
+        }
 
         /// <summary>True only when this slot would actually do something: a slotted skill, the ultimate, or slot 1
         /// when it is set to swap bars and the swap can succeed.</summary>
@@ -188,11 +258,13 @@ namespace FiresRPGClasses.Input
             switch (modifier)
             {
                 case SkillModifier.Alt:
-                    return UnityEngine.Input.GetKey(KeyCode.LeftAlt) || UnityEngine.Input.GetKey(KeyCode.RightAlt);
+                    return FiresKeys.GetKey(KeyCode.LeftAlt) || FiresKeys.GetKey(KeyCode.RightAlt);
                 case SkillModifier.Ctrl:
-                    return UnityEngine.Input.GetKey(KeyCode.LeftControl) || UnityEngine.Input.GetKey(KeyCode.RightControl);
+                    return FiresKeys.GetKey(KeyCode.LeftControl) || FiresKeys.GetKey(KeyCode.RightControl);
                 case SkillModifier.Shift:
-                    return UnityEngine.Input.GetKey(KeyCode.LeftShift) || UnityEngine.Input.GetKey(KeyCode.RightShift);
+                    return FiresKeys.GetKey(KeyCode.LeftShift) || FiresKeys.GetKey(KeyCode.RightShift);
+                case SkillModifier.ShiftAlt:
+                    return ModifierHeld(SkillModifier.Shift) && ModifierHeld(SkillModifier.Alt);
                 default:
                     return false;
             }
@@ -207,7 +279,8 @@ namespace FiresRPGClasses.Input
             for (int slot = 0; slot < SlotCount; slot++)
             {
                 KeyBinding binding = SlotKeys[slot];
-                binding.WithContext(context);
+                // Slot 1 draws the bar's weapon, so it has to work sheathed too.
+                binding.WithContext(slot == 0 ? BindingContext.Gameplay : context);
                 if (binding.Key.Value == DefaultSlotKeys[slot]) WriteModifier(binding, Modifier.Value);
 
                 KeyBinding itemKey = ItemHotbarKeys[slot];
@@ -221,12 +294,12 @@ namespace FiresRPGClasses.Input
         private static void WriteModifier(KeyBinding binding, SkillModifier modifier)
         {
             binding.Ctrl.Value = modifier == SkillModifier.Ctrl;
-            binding.Shift.Value = modifier == SkillModifier.Shift;
-            binding.Alt.Value = modifier == SkillModifier.Alt;
+            binding.Shift.Value = modifier == SkillModifier.Shift || modifier == SkillModifier.ShiftAlt;
+            binding.Alt.Value = modifier == SkillModifier.Alt || modifier == SkillModifier.ShiftAlt;
         }
 
         public static IEnumerable<string> DeclaredHandOffs() =>
-            SlotKeys.Where(binding => binding != null)
+            SlotKeys.Concat(ItemHotbarKeys).Where(binding => binding != null)
                 .SelectMany(binding => binding.Replacements.Select(r => r.ButtonName + " (" + BindingContexts.Describe(r.Context) + ")"))
                 .Distinct();
     }

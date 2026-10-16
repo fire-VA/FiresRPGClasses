@@ -1,6 +1,6 @@
 # Third-party notices - FiresRPGClasses
 
-This mod ships two complete sets of the same 138 ability icons. Both were rendered to PNG from
+This mod ships two complete sets of the same 182 ability icons. Both were rendered to PNG from
 upstream vector sources; no upstream file is redistributed, only the rasterized glyphs, white on
 transparent, tinted at runtime.
 
@@ -155,6 +155,68 @@ Baked from `@iconify-json/game-icons` (4,133 icons, 512x512 path data) with
 | `cls_healer_aegis.png` | `winged-shield` |
 | `cls_healer_divine_hymn.png` | `music-spell` |
 | `cls_healer_avatar_life.png` | `eternal-love` |
+| `cls_druid_alpha_howl.png` | `wolf-howl` |
+| `cls_druid_barkskin.png` | `tree-face` |
+| `cls_druid_beast_pounce.png` | `claw-slashes` |
+| `cls_druid_beast_tongue.png` | `paw-heart` |
+| `cls_druid_call_asksvin.png` | `velociraptor` |
+| `cls_druid_call_bear.png` | `bear-head` |
+| `cls_druid_call_lox.png` | `mammoth` |
+| `cls_druid_call_unbjorn.png` | `boar-tusks` |
+| `cls_druid_entangling_roots.png` | `tree-roots` |
+| `cls_druid_forager.png` | `berries-bowl` |
+| `cls_druid_form_library.png` | `spell-book` |
+| `cls_druid_great_bear.png` | `polar-bear` |
+| `cls_druid_heart_of_the_grove.png` | `tree-growth` |
+| `cls_druid_lasting_form.png` | `sands-of-time` |
+| `cls_druid_partial_form.png` | `claws` |
+| `cls_druid_primal_avatar.png` | `deku-tree` |
+| `cls_druid_regrowth.png` | `sprout` |
+| `cls_druid_thick_hide.png` | `animal-hide` |
+| `cls_druid_thornfield.png` | `thorny-vine` |
+| `cls_druid_wild_hunt.png` | `thorned-arrow` |
+| `cls_druid_wildshape.png` | `werewolf` |
+| `cls_druid_wolf_pack.png` | `direwolf` |
+| `cls_necromancer_army_of_the_dead.png` | `raise-zombie` |
+| `cls_necromancer_bind_dead.png` | `manacles` |
+| `cls_necromancer_bone_harvest.png` | `scythe` |
+| `cls_necromancer_bone_wall.png` | `ribcage` |
+| `cls_necromancer_deathless_ward.png` | `skull-shield` |
+| `cls_necromancer_deep_link.png` | `linked-rings` |
+| `cls_necromancer_ghostwalk.png` | `floating-ghost` |
+| `cls_necromancer_grave_chill.png` | `snowflake-1` |
+| `cls_necromancer_grave_pestilence.png` | `biohazard` |
+| `cls_necromancer_grave_sense.png` | `graveyard` |
+| `cls_necromancer_legion.png` | `skeleton` |
+| `cls_necromancer_lich_form.png` | `crowned-skull` |
+| `cls_necromancer_life_tap.png` | `heart-drop` |
+| `cls_necromancer_plague_bearer.png` | `plague-doctor-profile` |
+| `cls_necromancer_raise_archer.png` | `bowman` |
+| `cls_necromancer_raise_charred.png` | `burning-skull` |
+| `cls_necromancer_raise_draugr.png` | `shambling-zombie` |
+| `cls_necromancer_raise_skeleton.png` | `raise-skeleton` |
+| `cls_necromancer_raise_wraith.png` | `spectre` |
+| `cls_necromancer_shadow_step.png` | `shadow-follower` |
+| `cls_necromancer_twin_link.png` | `two-shadows` |
+| `cls_necromancer_wither.png` | `leaf-skeleton` |
+
+The ten class crests and the two race crests (Werewolf, Vampire; RPGClasses 0.1.150) of the Classes window come from the same
+set, baked the same way with `Tools\Bake-GameIcons.ps1 -MapFile class-crests.map` at 128px:
+
+| shipped file | game-icons name |
+|---|---|
+| `crest_tank.png` | `checked-shield` |
+| `crest_paladin.png` | `sunbeams` |
+| `crest_berserker.png` | `battle-axe` |
+| `crest_rogue.png` | `plain-dagger` |
+| `crest_monk.png` | `fist` |
+| `crest_ranger.png` | `pocket-bow` |
+| `crest_mage.png` | `flame` |
+| `crest_healer.png` | `health-normal` |
+| `crest_druid.png` | `stag-head` |
+| `crest_necromancer.png` | `skull-staff` |
+| `crest_werewolf.png` | `werewolf` |
+| `crest_vampire.png` | `vampire-dracula` |
 
 ## 2. Tabler Icons - the alternate line-art set
 
@@ -329,3 +391,47 @@ SOFTWARE.
 | `cls_healer_aegis.png` | `shield-half` | U+F358 |
 | `cls_healer_divine_hymn.png` | `music` | U+EAFC |
 | `cls_healer_avatar_life.png` | `heart-filled` | U+F67C |
+| `cls_druid_alpha_howl.png` | `volume-2` | U+EB4F |
+| `cls_druid_barkskin.png` | `tree` | U+EF01 |
+| `cls_druid_beast_tongue.png` | `message-2` | U+EAEC |
+| `cls_druid_beast_pounce.png` | `arrow-big-right-lines` | U+EFED |
+| `cls_druid_call_asksvin.png` | `feather` | U+EE8B |
+| `cls_druid_call_bear.png` | `paw-filled` | U+F689 |
+| `cls_druid_call_lox.png` | `horse` | U+FC46 |
+| `cls_druid_call_unbjorn.png` | `pig` | U+EF52 |
+| `cls_druid_entangling_roots.png` | `git-merge` | U+EAB5 |
+| `cls_druid_forager.png` | `basket` | U+EBE1 |
+| `cls_druid_form_library.png` | `books` | U+EFF2 |
+| `cls_druid_great_bear.png` | `paw-filled` | U+F689 |
+| `cls_druid_heart_of_the_grove.png` | `trees` | U+EC10 |
+| `cls_druid_lasting_form.png` | `hourglass` | U+EF93 |
+| `cls_druid_partial_form.png` | `hand-grab` | U+F091 |
+| `cls_druid_primal_avatar.png` | `christmas-tree` | U+ED78 |
+| `cls_druid_regrowth.png` | `seedling` | U+ED51 |
+| `cls_druid_thick_hide.png` | `shield-check` | U+EB22 |
+| `cls_druid_thornfield.png` | `plant-2` | U+ED7E |
+| `cls_druid_wild_hunt.png` | `target-arrow` | U+F51A |
+| `cls_druid_wildshape.png` | `transform` | U+F38E |
+| `cls_druid_wolf_pack.png` | `users-group` | U+FA21 |
+| `cls_necromancer_army_of_the_dead.png` | `skull` | U+F292 |
+| `cls_necromancer_bind_dead.png` | `lock` | U+EAE2 |
+| `cls_necromancer_bone_harvest.png` | `bone` | U+EDB8 |
+| `cls_necromancer_bone_wall.png` | `wall` | U+EF7A |
+| `cls_necromancer_deathless_ward.png` | `shield-x` | U+EB23 |
+| `cls_necromancer_deep_link.png` | `affiliate` | U+EDFF |
+| `cls_necromancer_ghostwalk.png` | `ghost` | U+EB8E |
+| `cls_necromancer_grave_chill.png` | `snowflake` | U+EC0B |
+| `cls_necromancer_grave_pestilence.png` | `virus` | U+EB74 |
+| `cls_necromancer_grave_sense.png` | `grave-2` | U+F57F |
+| `cls_necromancer_legion.png` | `users-plus` | U+FA0F |
+| `cls_necromancer_lich_form.png` | `crown` | U+ED12 |
+| `cls_necromancer_life_tap.png` | `droplet` | U+EA97 |
+| `cls_necromancer_plague_bearer.png` | `virus-search` | U+ED67 |
+| `cls_necromancer_raise_archer.png` | `bow-filled` | U+FE89 |
+| `cls_necromancer_raise_charred.png` | `campfire-filled` | U+FB28 |
+| `cls_necromancer_raise_draugr.png` | `mood-sick` | U+F2E5 |
+| `cls_necromancer_raise_skeleton.png` | `bone-filled` | U+FE8B |
+| `cls_necromancer_raise_wraith.png` | `ghost-2` | U+F57C |
+| `cls_necromancer_shadow_step.png` | `shadow` | U+EED8 |
+| `cls_necromancer_twin_link.png` | `link-minus` | U+FD16 |
+| `cls_necromancer_wither.png` | `leaf-off` | U+F400 |

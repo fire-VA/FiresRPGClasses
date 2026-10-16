@@ -106,12 +106,16 @@ namespace FiresRPGClasses.Combat
         }
 
         /// <summary>Doc 16: XP per cast plus a share per target, with nodes unlocking by level alone.</summary>
-        public static int AwardCastXp(ClassPlayerData data, string ultimateId, int targetsAffected)
+        public static int AwardCastXp(ClassPlayerData data, string ultimateId, int targetsAffected) =>
+            AwardUltimateXp(data, ultimateId, XpPerCast + XpPerTargetAffected * Mathf.Max(0, targetsAffected));
+
+        /// <summary>An ultimate's own XP, levelling it the way its casts do (casts, and class_ult_xp). Returns levels gained.</summary>
+        public static int AwardUltimateXp(ClassPlayerData data, string ultimateId, long xp)
         {
             UltimateProgress progress = data?.UltimateState(ultimateId);
-            if (progress == null) return 0;
+            if (progress == null || xp <= 0) return 0;
 
-            progress.Xp += XpPerCast + XpPerTargetAffected * Mathf.Max(0, targetsAffected);
+            progress.Xp += xp;
             int levelsGained = 0;
             while (progress.Level < UltimateCatalog.MaxUltimateLevel)
             {

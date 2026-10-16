@@ -2,7 +2,10 @@
 # Schema 5: adds the counters section and node rankEffects (doc 21's class-kit gaps). Schema 4 added
 # progression and keys; schema 3 added ultimates and luck.
 # Existing nodes reference Core ClassAbility ids; their numbers live in Core.
+# revision: raise it whenever the shipped trees change. An install's copy with a lower revision is backed up and replaced
+# on the next start (ClassTreeLoader); 2 = the Druid and Necromancer trees (0.1.72); 3 = the Werewolf tree; 4 = the Vampire tree.
 schema: 5
+revision: 4
 combat:
   bars: {count: 2, slots: 8, weaponSlot: 1, skillSlots: [2, 3, 4, 5, 6, 7], ultimateSlot: 8}
   keys:
@@ -39,8 +42,8 @@ weapons:
   - {weapon: "Spear, with shield", archetypes: ["Tank", "Ranger"]}   # first = default
   - {weapon: "Sword, no shield", archetypes: ["Rogue", "Berserker"]}   # first = default
   - {weapon: "Axe, no shield (incl. dual axes)", archetypes: ["Berserker", "Rogue"]}   # first = default
-  - {weapon: "Club or mace, no shield", archetypes: ["Monk", "Berserker"]}   # first = default
-  - {weapon: "Knives (incl. dual knives)", archetypes: ["Rogue", "Monk"]}   # first = default
+  - {weapon: "Club or mace, no shield", archetypes: ["Monk", "Berserker", "Druid"]}   # first = default
+  - {weapon: "Knives (incl. dual knives)", archetypes: ["Rogue", "Monk", "Necromancer"]}   # first = default
   - {weapon: "Two-handed sword", archetypes: ["Berserker", "Paladin"]}   # first = default
   - {weapon: "Battleaxe", archetypes: ["Berserker", "Tank"]}   # first = default
   - {weapon: "Sledge", archetypes: ["Berserker", "Monk"]}   # first = default
@@ -49,8 +52,8 @@ weapons:
   - {weapon: "Spear, no shield", archetypes: ["Ranger", "Rogue"]}   # first = default
   - {weapon: "Bow", archetypes: ["Ranger", "Rogue"]}   # first = default
   - {weapon: "Crossbow", archetypes: ["Ranger", "Rogue"]}   # first = default
-  - {weapon: "Elemental staff", archetypes: ["Mage", "Healer"]}   # first = default
-  - {weapon: "Blood-magic staff", archetypes: ["Healer", "Mage"]}   # first = default
+  - {weapon: "Elemental staff", archetypes: ["Mage", "Healer", "Druid"]}   # first = default
+  - {weapon: "Blood-magic staff", archetypes: ["Healer", "Mage", "Necromancer"]}   # first = default
 progression:
   characterLevels: 100
   hoursToLevel100: 120
@@ -634,7 +637,7 @@ classes:
         cooldown: 18
         values:
           bonus: ["80%", "110%", "140%"]
-        text: "Your next attack deals {bonus} bonus spirit damage and stuns for 2 s (4 s against undead)."
+        text: "Your next attack deals {bonus} bonus holy damage (blunt, plus half again as spirit) and stuns for 2 s (4 s against undead)."
         ai: {category: Opener, trigger: HighValueTarget}
         builtOn: "HolySmiteEffect + RootedEffect"
         variant: pal_exp
@@ -683,7 +686,7 @@ classes:
         targeting: {mode: "Placed", range: 30, radius: 6}
         cost: "50 stamina"
         cooldown: 60
-        text: "Call lightning down where you aim, within 30 m: up to 5 enemies within 6 m of that point take 80 lightning and 40 spirit damage each."
+        text: "Call lightning down where you aim, within 30 m: up to 5 enemies within 6 m of that point take 80 lightning and 40 holy damage each (40 blunt + 20 spirit)."
         ai: {category: Situational, trigger: Surrounded}
         builtOn: "New AoE strike (AbilityFXManager for VFX)"
       - id: paladin_avatar
@@ -1448,11 +1451,11 @@ classes:
         cooldown: 10
         values:
           targets: [2, 3, 4]
-        text: "Your next arrow passes through up to {targets} enemies and deals 20% more damage."
+        text: "Your next arrow passes through up to {targets} enemies (coming later) and deals 20% more damage."
         ai: {category: Opener, trigger: EnemyInRange}
         builtOn: "Projectile pierce flag (new)"
         rankEffects:
-          - {rank: 2, counter: shieldBreak, effect: "The arrow carries Breach through every enemy it passes."}
+          - {rank: 2, counter: shieldBreak, effect: "The arrow carries Breach through every enemy it passes (coming later)."}
           - {rank: 3, counter: interrupt, effect: "Concussive: the first enemy hit is staggered, which interrupts its cast."}
         variant: ran_adv
       - id: ranger_deadeye
@@ -2120,6 +2123,915 @@ classes:
       Ranger: {name: "Nature Priest", ability: "Regrowth"}
       Mage: {name: "Arcane Healer", ability: "Mana Transfusion"}
       Monk: {name: "Chi Master", ability: "Chi Restoration"}
+  # Druid and Necromancer (Fire 10-07; Tools\CLASSES_DRUID_NECROMANCER.md sections 3, 4, 5b, 8). Scaffolding: every node is
+  # listed with its numbers; the possession skills (Wildshape, Bind Dead), the summons (Core SummonApi) and the rest get their
+  # handlers in later builds, and until then read as not implemented, like any node without a handler.
+  - class: Druid
+    paths:
+      - {id: wildheart, name: "Wild Heart", theme: "Become the beast"}
+      - {id: pack, name: "Pack", theme: "Call the wild to your side"}
+      - {id: grove, name: "Grove", theme: "Heal, root and thorn"}
+    nodes:
+      - id: druid_wildshape
+        name: "Wildshape"
+        tier: starter
+        path: all
+        level: 1
+        ranks: 3
+        kind: active
+        source: core
+        slot: skill
+        targeting: {mode: "Aimed", range: 8}
+        cost: "40 eitr"
+        cooldown: 120
+        values:
+          health: ["40%", "50%", "60%"]
+          time: ["30", "45", "60"]
+        text: "Consume a creature under your crosshair within 8 m at or below {health} health (a tameable animal or your own summon at any health) and take its form, moves and attacks for {time} s. The form has its own health; when it falls you drop out and take the overflow."
+        ai: {category: Opener, trigger: HighValueTarget}
+        builtOn: "Core PossessionApi (Body = Carried) + a form health pool"
+      - id: druid_primal_avatar
+        name: "Primal Avatar"
+        tier: starter
+        path: all
+        level: 10
+        ranks: 3
+        kind: active
+        source: new
+        slot: ultimate
+        targeting: {mode: "Self"}
+        cost: "60 eitr"
+        values:
+          time: ["12", "16", "20"]
+          hp: ["25%", "35%", "50%"]
+        text: "Become a giant form of your strongest library creature for {time} s, with {hp} more health; its attacks hit everything in front of it."
+        ai: {category: Situational, trigger: Surrounded}
+        builtOn: "Wildshape form (scaled) + BuffEffect (health)"
+      - id: druid_lasting_form
+        name: "Lasting Form"
+        tier: basic
+        path: wildheart
+        level: 5
+        ranks: 3
+        kind: passive
+        source: new
+        values:
+          time: ["20%", "35%", "50%"]
+          hp: ["10%", "20%", "30%"]
+        text: "Your forms last {time} longer and their health pool is {hp} larger."
+        builtOn: "Wildshape duration + form health"
+      - id: druid_thick_hide
+        name: "Thick Hide"
+        tier: advanced
+        path: wildheart
+        level: 15
+        ranks: 3
+        kind: passive
+        source: new
+        values:
+          armor: ["10%", "20%", "30%"]
+        text: "In a form you have {armor} more armour."
+        builtOn: "Form damage hook (armour)"
+      - id: druid_beast_pounce
+        name: "Beast Pounce"
+        tier: advanced
+        path: wildheart
+        level: 20
+        ranks: 3
+        kind: active
+        source: core
+        slot: dodge
+        targeting: {mode: "Dodge"}
+      - id: druid_form_library
+        name: "Form Library"
+        tier: expert
+        path: wildheart
+        level: 35
+        ranks: 3
+        kind: active
+        source: new
+        slot: skill
+        targeting: {mode: "Self"}
+        cost: "30 eitr"
+        cooldown: 90
+        values:
+          forms: ["1", "2", "3"]
+        text: "Remembers your last {forms} form(s); shift into one without a fresh target."
+        ai: {category: Situational, trigger: PreCombat}
+        builtOn: "Wildshape + a per-player form list"
+      - id: druid_partial_form
+        name: "Partial Form"
+        tier: master
+        path: wildheart
+        level: 75
+        ranks: 1
+        kind: active
+        source: new
+        slot: skill
+        targeting: {mode: "Self"}
+        cost: "50 eitr"
+        cooldown: 120
+        duration: 30
+        text: "For 30 s take a library form's movement, health and dodge while keeping your own weapons and skills."
+        ai: {category: Situational, trigger: PreCombat}
+        builtOn: "Wildshape (Body = Carried, own weapons)"
+      - id: druid_call_bear
+        name: "Call of the Bear"
+        tier: basic
+        path: pack
+        level: 5
+        ranks: 3
+        kind: active
+        source: new
+        slot: skill
+        targeting: {mode: "Self"}
+        cost: "30 eitr"
+        cooldown: 60
+        values:
+          time: ["60", "75", "90"]
+        text: "Call a half-size Bjorn that follows you and fights your target for {time} s."
+        ai: {category: Opener, trigger: PreCombat}
+        builtOn: "Core SummonApi (Bjorn, scale 0.5)"
+      - id: druid_beast_tongue
+        name: "Beast Tongue"
+        tier: basic
+        path: pack
+        level: 10
+        ranks: 3
+        kind: passive
+        source: new
+        values:
+          range: ["10", "20", "30"]
+        text: "Wild animals within {range} m start one step less hostile."
+        builtOn: "BaseAI alert hook"
+      - id: druid_call_unbjorn
+        name: "Call of the Unbjorn"
+        tier: advanced
+        path: pack
+        level: 15
+        ranks: 3
+        kind: active
+        source: new
+        slot: skill
+        targeting: {mode: "Self"}
+        cost: "35 eitr"
+        cooldown: 60
+        values:
+          time: ["60", "75", "90"]
+        text: "Call a half-size Unbjorn that guards you and taunts nearby enemies for {time} s."
+        ai: {category: Reactive, trigger: BeingFocused}
+        builtOn: "Core SummonApi (Unbjorn, scale 0.5, Guard)"
+        variant: dru_pack_adv
+      - id: druid_wolf_pack
+        name: "Wolf Pack"
+        tier: advanced
+        path: pack
+        level: 25
+        ranks: 3
+        kind: active
+        source: new
+        slot: skill
+        targeting: {mode: "Self"}
+        cost: "45 eitr"
+        cooldown: 90
+        values:
+          wolves: ["2", "2", "3"]
+          time: ["60", "75", "75"]
+        text: "Call {wolves} wolves that flank and harry your target for {time} s."
+        ai: {category: Opener, trigger: HighValueTarget}
+        builtOn: "Core SummonApi (Wolf x2-3)"
+        variant: dru_pack_adv
+      - id: druid_call_lox
+        name: "Call of the Lox"
+        tier: expert
+        path: pack
+        level: 40
+        ranks: 3
+        kind: active
+        source: new
+        slot: skill
+        targeting: {mode: "Self"}
+        cost: "55 eitr"
+        cooldown: 120
+        values:
+          time: ["75", "90", "105"]
+        text: "Call a young Lox that tanks for you and knocks enemies back for {time} s."
+        ai: {category: Reactive, trigger: Surrounded}
+        builtOn: "Core SummonApi (Lox, scale 0.6, Guard)"
+        variant: dru_pack_exp
+      - id: druid_alpha_howl
+        name: "Alpha Howl"
+        tier: expert
+        path: pack
+        level: 45
+        ranks: 3
+        kind: active
+        source: new
+        slot: skill
+        targeting: {mode: "Around you", radius: 15}
+        cost: "30 eitr"
+        cooldown: 45
+        duration: 10
+        values:
+          dmg: ["10%", "15%", "20%"]
+        text: "You, your allies and your summons within 15 m deal {dmg} more damage for 10 s."
+        ai: {category: Situational, trigger: PreCombat}
+        builtOn: "BuffEffect (party + summons)"
+        variant: dru_pack_exp
+      - id: druid_call_asksvin
+        name: "Call of the Asksvin"
+        tier: expert
+        path: pack
+        level: 55
+        ranks: 3
+        kind: active
+        source: new
+        slot: skill
+        targeting: {mode: "Self"}
+        cost: "60 eitr"
+        cooldown: 120
+        values:
+          time: ["60", "75", "90"]
+        text: "Call an Asksvin, a fast striker that darts at your target, for {time} s."
+        ai: {category: Opener, trigger: HighValueTarget}
+        builtOn: "Core SummonApi (Asksvin)"
+      - id: druid_great_bear
+        name: "Great Bear"
+        tier: master
+        path: pack
+        level: 75
+        ranks: 1
+        kind: active
+        source: new
+        slot: skill
+        targeting: {mode: "Self"}
+        cost: "80 eitr"
+        cooldown: 180
+        duration: 90
+        text: "Call a full-size Bjorn for 90 s; its roar raises your pack's damage by 15% while it stands."
+        ai: {category: Opener, trigger: HighValueTarget}
+        builtOn: "Core SummonApi (Bjorn, scale 1.0) + pack BuffEffect"
+      - id: druid_regrowth
+        name: "Regrowth"
+        tier: basic
+        path: grove
+        level: 5
+        ranks: 3
+        kind: active
+        source: new
+        slot: skill
+        targeting: {mode: "Ally", range: 20}
+        cost: "25 eitr"
+        cooldown: 15
+        duration: 10
+        values:
+          heal: ["20", "30", "40"]
+        text: "Heals the ally under your crosshair (or you) for {heal} health over 10 s."
+        ai: {category: Sustained, trigger: AllyLowHealth}
+        builtOn: "HealOverTimeEffect"
+      - id: druid_forager
+        name: "Forager"
+        tier: basic
+        path: grove
+        level: 10
+        ranks: 3
+        kind: passive
+        source: new
+        values:
+          chance: ["15%", "25%", "35%"]
+        text: "Berries and mushrooms you pick have a {chance} chance to give one more."
+        builtOn: "Pickable.Interact hook"
+      - id: druid_entangling_roots
+        name: "Entangling Roots"
+        tier: advanced
+        path: grove
+        level: 15
+        ranks: 3
+        kind: active
+        source: new
+        slot: skill
+        targeting: {mode: "Placed", range: 25, radius: 5}
+        cost: "30 eitr"
+        cooldown: 25
+        duration: 6
+        values:
+          slow: ["30%", "45%", "60%"]
+        text: "Roots burst from the ground: enemies in a 5 m circle are slowed {slow} for 6 s."
+        ai: {category: Situational, trigger: EnemyInRange}
+        builtOn: "Placed zone + SlowEffect"
+        variant: dru_grove_adv
+      - id: druid_barkskin
+        name: "Barkskin"
+        tier: advanced
+        path: grove
+        level: 20
+        ranks: 3
+        kind: active
+        source: new
+        slot: skill
+        targeting: {mode: "Self"}
+        cost: "25 eitr"
+        cooldown: 40
+        duration: 10
+        values:
+          dr: ["15%", "20%", "25%"]
+        text: "Your skin hardens to bark: {dr} less damage taken for 10 s."
+        ai: {category: Reactive, trigger: BeingFocused}
+        builtOn: "BuffEffect (resistance)"
+        variant: dru_grove_adv
+      - id: druid_thornfield
+        name: "Thornfield"
+        tier: expert
+        path: grove
+        level: 40
+        ranks: 3
+        kind: active
+        source: new
+        slot: skill
+        targeting: {mode: "Placed", range: 25, radius: 6}
+        cost: "40 eitr"
+        cooldown: 30
+        duration: 8
+        values:
+          dmg: ["10", "15", "20"]
+        text: "A field of thorns: enemies inside take {dmg} pierce damage a second for 8 s."
+        ai: {category: Situational, trigger: Surrounded}
+        builtOn: "Placed zone + damage tick"
+      - id: druid_heart_of_the_grove
+        name: "Heart of the Grove"
+        tier: master
+        path: grove
+        level: 75
+        ranks: 1
+        kind: active
+        source: new
+        slot: skill
+        targeting: {mode: "Placed", range: 25, radius: 8}
+        cost: "70 eitr"
+        cooldown: 90
+        duration: 12
+        text: "A sacred grove for 12 s: allies inside heal 4% a second and enemies inside are rooted for 2 s when they enter."
+        ai: {category: Sustained, trigger: AllyLowHealth}
+        builtOn: "Placed zone + HealOverTimeEffect + RootedEffect"
+      - id: druid_wild_hunt
+        name: "Wild Hunt"
+        tier: ultimate
+        path: all
+        level: 100
+        ranks: 1
+        kind: active
+        source: new
+        slot: ultimate
+        targeting: {mode: "Around you", radius: 40}
+        text: "You and your pack sprint and hunt-mark every creature within 40 m."
+        builtOn: "BuffEffect (speed, party + summons) + a hunt mark"
+    capstoneByDeepestPath:
+      wildheart: "Wildshape has no health threshold and no cooldown between forms you already know."
+      pack: "The summon cap rises by 1, and your summons last 50% longer."
+      grove: "Your heals also slow nearby enemies 20% for 3 s."
+    companionDefaults:
+      dru_pack_adv: druid_wolf_pack
+      dru_pack_exp: druid_alpha_howl
+      dru_grove_adv: druid_barkskin
+  - class: Necromancer
+    paths:
+      - {id: bone, name: "Bone", theme: "Raise the dead"}
+      - {id: spirit, name: "Spirit", theme: "Walk in the dead"}
+      - {id: blight, name: "Blight", theme: "Curse and wither"}
+    nodes:
+      - id: necromancer_bind_dead
+        name: "Bind the Dead"
+        tier: starter
+        path: all
+        level: 1
+        ranks: 3
+        kind: active
+        source: core
+        slot: skill
+        targeting: {mode: "Aimed", range: 15}
+        cost: "50 eitr, then 2 eitr a second"
+        cooldown: 90
+        values:
+          time: ["60", "90", "120"]
+        text: "Possess an undead humanoid under your crosshair within 15 m that is below 50% health (or your own thrall) for up to {time} s. Your body rises and channels, untouchable; the link breaks past 60 m, when your eitr runs out, or when the thrall dies."
+        ai: {category: Opener, trigger: HighValueTarget}
+        builtOn: "Core PossessionApi (Body = Frozen, PlayerInvulnerable, ChannelLock, ChannelHover)"
+      - id: necromancer_lich_form
+        name: "Lich Form"
+        tier: starter
+        path: all
+        level: 10
+        ranks: 3
+        kind: active
+        source: new
+        slot: ultimate
+        targeting: {mode: "Self"}
+        cost: "60 eitr"
+        values:
+          time: ["12", "16", "20"]
+          dr: ["10%", "15%", "20%"]
+        text: "For {time} s your own body becomes undead: you float, your spells cost health instead of eitr, and you take {dr} less damage."
+        ai: {category: Situational, trigger: Surrounded}
+        builtOn: "BuffEffect (resistance) + spell cost hook"
+      - id: necromancer_raise_skeleton
+        name: "Raise Skeleton"
+        tier: basic
+        path: bone
+        level: 1
+        ranks: 3
+        kind: active
+        source: new
+        slot: skill
+        targeting: {mode: "Self"}
+        cost: "25 eitr"
+        cooldown: 30
+        values:
+          time: ["60", "75", "90"]
+        text: "Raise a skeleton that follows you and attacks your target for {time} s."
+        ai: {category: Opener, trigger: PreCombat}
+        builtOn: "Core SummonApi (Skeleton_Friendly, the Dead Raiser's)"
+      - id: necromancer_bone_harvest
+        name: "Bone Harvest"
+        tier: basic
+        path: bone
+        level: 10
+        ranks: 3
+        kind: passive
+        source: new
+        values:
+          chance: ["15%", "25%", "35%"]
+        text: "Undead you kill have a {chance} chance to drop one more bone fragment."
+        builtOn: "CharacterDrop hook"
+      - id: necromancer_raise_archer
+        name: "Raise Archer"
+        tier: advanced
+        path: bone
+        level: 15
+        ranks: 3
+        kind: active
+        source: new
+        slot: skill
+        targeting: {mode: "Self"}
+        cost: "30 eitr"
+        cooldown: 45
+        values:
+          time: ["60", "75", "90"]
+        text: "Raise a skeleton archer that keeps its distance and shoots your target for {time} s."
+        ai: {category: Opener, trigger: PreCombat}
+        builtOn: "Core SummonApi (skeleton archer)"
+        variant: nec_bone_adv
+      - id: necromancer_bone_wall
+        name: "Bone Wall"
+        tier: advanced
+        path: bone
+        level: 20
+        ranks: 3
+        kind: active
+        source: new
+        slot: skill
+        targeting: {mode: "Placed", range: 20}
+        cost: "30 eitr"
+        cooldown: 30
+        values:
+          time: ["8", "10", "12"]
+        text: "Raise a wall of bone 6 m wide that blocks enemies and projectiles for {time} s."
+        ai: {category: Situational, trigger: EnemyInRange}
+        builtOn: "Placed blocker"
+        variant: nec_bone_adv
+      - id: necromancer_raise_draugr
+        name: "Raise Draugr"
+        tier: advanced
+        path: bone
+        level: 30
+        ranks: 3
+        kind: active
+        source: new
+        slot: skill
+        targeting: {mode: "Self"}
+        cost: "45 eitr"
+        cooldown: 90
+        values:
+          time: ["75", "90", "105"]
+        text: "Raise a draugr, a melee bruiser, for {time} s."
+        ai: {category: Opener, trigger: HighValueTarget}
+        builtOn: "Core SummonApi (Draugr)"
+      - id: necromancer_raise_wraith
+        name: "Raise Wraith"
+        tier: expert
+        path: bone
+        level: 45
+        ranks: 3
+        kind: active
+        source: new
+        slot: skill
+        targeting: {mode: "Self"}
+        cost: "60 eitr"
+        cooldown: 120
+        values:
+          time: ["45", "55", "65"]
+        text: "Raise a wraith that flies through obstacles and deals spirit damage for {time} s."
+        ai: {category: Opener, trigger: HighValueTarget}
+        builtOn: "Core SummonApi (Wraith)"
+        variant: nec_bone_exp
+      - id: necromancer_raise_charred
+        name: "Raise Charred"
+        tier: expert
+        path: bone
+        level: 60
+        ranks: 3
+        kind: active
+        source: new
+        slot: skill
+        targeting: {mode: "Self"}
+        cost: "70 eitr"
+        cooldown: 120
+        values:
+          time: ["60", "75", "90"]
+        text: "Raise a charred warrior, heavy melee that sets what it hits on fire, for {time} s."
+        ai: {category: Opener, trigger: HighValueTarget}
+        builtOn: "Core SummonApi (Charred_Melee)"
+        variant: nec_bone_exp
+      - id: necromancer_army_of_the_dead
+        name: "Army of the Dead"
+        tier: master
+        path: bone
+        level: 75
+        ranks: 1
+        kind: active
+        source: new
+        slot: skill
+        targeting: {mode: "Around you", radius: 8}
+        cost: "100 eitr"
+        cooldown: 300
+        duration: 45
+        text: "Fill every free summon slot with skeletons for 45 s."
+        ai: {category: Situational, trigger: Surrounded}
+        builtOn: "Core SummonApi (Skeleton_Friendly up to the cap)"
+      - id: necromancer_deep_link
+        name: "Deep Link"
+        tier: basic
+        path: spirit
+        level: 5
+        ranks: 3
+        kind: passive
+        source: new
+        values:
+          time: ["15%", "30%", "45%"]
+          range: ["10", "20", "30"]
+        text: "Bind the Dead lasts {time} longer and reaches {range} m further."
+        builtOn: "Bind the Dead (duration, MaxRange)"
+      - id: necromancer_deathless_ward
+        name: "Deathless Ward"
+        tier: basic
+        path: spirit
+        level: 10
+        ranks: 3
+        kind: passive
+        source: new
+        values:
+          range: ["10", "20", "30"]
+        text: "Undead within {range} m start one step less hostile."
+        builtOn: "BaseAI alert hook"
+      - id: necromancer_shadow_step
+        name: "Shadow Step"
+        tier: advanced
+        path: spirit
+        level: 20
+        ranks: 3
+        kind: active
+        source: core
+        slot: dodge
+        targeting: {mode: "Dodge"}
+      - id: necromancer_grave_sense
+        name: "Grave Sense"
+        tier: advanced
+        path: spirit
+        level: 25
+        ranks: 3
+        kind: passive
+        source: new
+        values:
+          range: ["10", "15", "20"]
+        text: "You see undead through walls within {range} m."
+        builtOn: "Outline effect on undead in range"
+      - id: necromancer_ghostwalk
+        name: "Ghostwalk"
+        tier: expert
+        path: spirit
+        level: 40
+        ranks: 3
+        kind: active
+        source: new
+        slot: skill
+        targeting: {mode: "Aimed", range: 30}
+        cost: "40 eitr"
+        cooldown: 60
+        values:
+          time: ["20", "30", "40"]
+        text: "Possess a ghost under your crosshair for {time} s to scout through walls; a ghost cannot attack."
+        ai: {category: Situational, trigger: PreCombat}
+        builtOn: "Core PossessionApi (Body = Frozen) on a Ghost"
+      - id: necromancer_twin_link
+        name: "Twin Link"
+        tier: master
+        path: spirit
+        level: 75
+        ranks: 1
+        kind: passive
+        source: new
+        text: "While you possess a thrall, one of your raised summons keeps following you instead of standing idle."
+        builtOn: "Bind the Dead + Core SummonApi (Follow)"
+      - id: necromancer_wither
+        name: "Wither"
+        tier: basic
+        path: blight
+        level: 5
+        ranks: 3
+        kind: active
+        source: new
+        slot: skill
+        targeting: {mode: "Aimed", range: 25}
+        cost: "20 eitr"
+        cooldown: 8
+        duration: 10
+        values:
+          dmg: ["4", "6", "8"]
+        text: "Curses the enemy under your crosshair: {dmg} poison damage a second for 10 s."
+        ai: {category: Opener, trigger: HighValueTarget}
+        builtOn: "PoisonEffect (damage over time)"
+        rankEffects:
+          - {rank: 3, counter: antiHeal, effect: "Withered enemies are Wounded."}
+      - id: necromancer_grave_chill
+        name: "Grave Chill"
+        tier: advanced
+        path: blight
+        level: 15
+        ranks: 3
+        kind: active
+        source: new
+        slot: skill
+        targeting: {mode: "Placed", range: 25, radius: 5}
+        cost: "30 eitr"
+        cooldown: 25
+        duration: 6
+        values:
+          slow: ["25%", "35%", "45%"]
+        text: "A grave-cold mist: enemies in a 5 m circle are slowed {slow} and frosted for 6 s."
+        ai: {category: Situational, trigger: EnemyInRange}
+        builtOn: "Placed zone + SlowEffect + frost"
+        variant: nec_blight_adv
+      - id: necromancer_life_tap
+        name: "Life Tap"
+        tier: advanced
+        path: blight
+        level: 20
+        ranks: 3
+        kind: passive
+        source: new
+        values:
+          heal: ["5%", "8%", "12%"]
+        text: "Your summons' and thralls' hits heal you for {heal} of the damage they deal."
+        builtOn: "Summon hit hook (Core SummonApi owner attribution)"
+        variant: nec_blight_adv
+      - id: necromancer_plague_bearer
+        name: "Plague Bearer"
+        tier: expert
+        path: blight
+        level: 40
+        ranks: 3
+        kind: passive
+        source: new
+        values:
+          range: ["4", "6", "8"]
+        text: "When a Withered enemy dies, Wither jumps to the nearest enemy within {range} m."
+        builtOn: "Wither + death hook"
+      - id: necromancer_grave_pestilence
+        name: "Grave Pestilence"
+        tier: master
+        path: blight
+        level: 75
+        ranks: 1
+        kind: active
+        source: new
+        slot: skill
+        targeting: {mode: "Placed", range: 25, radius: 8}
+        cost: "70 eitr"
+        cooldown: 90
+        duration: 10
+        text: "A cloud of pestilence for 10 s: every enemy inside is Withered and Wounded."
+        ai: {category: Situational, trigger: Surrounded}
+        builtOn: "Placed zone + Wither + WoundedEffect"
+        rankEffects:
+          - {rank: 1, counter: antiHeal, effect: "Every enemy inside is Wounded."}
+      - id: necromancer_legion
+        name: "Legion"
+        tier: ultimate
+        path: all
+        level: 100
+        ranks: 1
+        kind: active
+        source: new
+        slot: ultimate
+        targeting: {mode: "Around you", radius: 30}
+        text: "Every undead within 30 m below 50% health becomes your thrall for 30 s."
+        builtOn: "Core SummonApi (convert) + Bind the Dead's thrall rules"
+    capstoneByDeepestPath:
+      bone: "The summon cap rises by 1, and your summons rise with 25% more health."
+      spirit: "Bind the Dead costs no eitr a second."
+      blight: "Wither spreads to every enemy within 4 m of its target."
+    companionDefaults:
+      nec_bone_adv: necromancer_raise_archer
+      nec_bone_exp: necromancer_raise_wraith
+      nec_blight_adv: necromancer_life_tap
+  # Werewolf (Fire 10-13; Tools\WEREWOLF_CLASS_DESIGN.md sections 2-5, LOCKED). The class needs the werewolf RACE, not a weapon: the
+  # player ZDO "rpg_race" = "Werewolf" (VCS 0.8.6), until then a Fenring base model; without it the class is greyed out and keeps its
+  # points, as a missing weapon does for the others. Wolf Form keeps the player (gear, food, skills) and only swaps the look through
+  # VCS. The handlers are WerewolfKit's; numbers the design gives are also server settings in [11 - Werewolf].
+  - class: Werewolf
+    paths:
+      - {id: fang, name: "Fang", theme: "Claws, rage and the moon"}
+      - {id: pack, name: "Pack", theme: "Howl the pack together"}
+    nodes:
+      - id: werewolf_wolf_form
+        name: "Wolf Form"
+        tier: starter
+        path: all
+        level: 1
+        ranks: 1
+        kind: active
+        source: new
+        slot: skill
+        targeting: {mode: "Self"}
+        cooldown: 120
+        duration: 30
+        text: "Become the wolf for 30 s: 20% faster, 25% more stamina regeneration, 20% higher jumps, 15% less slash damage taken but 20% more fire damage taken. Your weapons are put away and your bare hands become claws (30 slash + 2 per class level, 30% faster). You can't build, craft or eat new food. Press again to change back."
+        ai: {category: Opener, trigger: PreCombat}
+        builtOn: "VcsApi.SetForm (look) + ClassWolfForm (stats) + the server's grant"
+      - id: werewolf_claws
+        name: "Claws"
+        tier: basic
+        path: fang
+        level: 5
+        ranks: 3
+        kind: passive
+        source: new
+        values:
+          claw: ["10%", "20%", "30%"]
+        text: "Your claws deal {claw} more damage."
+        builtOn: "Wolf Form's claw hit"
+      - id: werewolf_howl
+        name: "Howl"
+        tier: basic
+        path: pack
+        level: 10
+        ranks: 1
+        kind: active
+        source: new
+        slot: skill
+        targeting: {mode: "Around you", radius: 12}
+        cooldown: 45
+        text: "Howl: you and your party within 12 m deal 15% more damage, move 10% faster and regain stamina 30% faster for 10 s. Enemies within 12 m: animals and the weak flee for 4 s, the tough and the humanoid are staggered, elites half-staggered, and bosses are shaken (10% less damage dealt, 10% more taken, 8 s). With Tank (or Paladin with Shield Wall rank 3) on your other bar it also taunts them for 6 s."
+        ai: {category: Opener, trigger: Surrounded}
+        builtOn: "ClassHowl group buff + ClassCrowdControl.Flee / vanilla stagger / ClassHowlDread + Core TauntManager (hybrid)"
+      - id: werewolf_lunar_hunger
+        name: "Lunar Hunger"
+        tier: basic
+        path: fang
+        level: 15
+        ranks: 1
+        kind: passive
+        source: new
+        values:
+          night: ["10%"]
+          full: ["20%"]
+        text: "You deal {night} more damage at night, and {full} under a full moon."
+        builtOn: "Outgoing hit + EnvMan night (moon phase: no source yet)"
+      - id: werewolf_pack_bond
+        name: "Pack Bond"
+        tier: advanced
+        path: pack
+        level: 20
+        ranks: 1
+        kind: passive
+        source: new
+        values:
+          armor: ["10%"]
+        text: "Howl's party buff also gives {armor} more armour."
+        builtOn: "ClassHowlPack in place of ClassHowl"
+      - id: werewolf_blood_rage
+        name: "Blood Rage"
+        tier: advanced
+        path: fang
+        level: 25
+        ranks: 1
+        kind: passive
+        source: new
+        text: "Below 25% health in a fight you turn into the wolf for 15 s, at most once every 300 s."
+        builtOn: "Wolf Form (rage trigger) + the server's grant"
+      - id: werewolf_alpha
+        name: "Alpha"
+        tier: ultimate
+        path: all
+        level: 10
+        ranks: 1
+        kind: active
+        source: new
+        slot: ultimate
+        targeting: {mode: "Around you", radius: 15}
+        duration: 20
+        text: "For 20 s your party within 15 m deals 20% more damage, and each of your hits heals you for 2% of your max health."
+        ai: {category: Situational, trigger: Surrounded}
+        builtOn: "ClassAlpha group buff + a heal on hit"
+  # Vampire (Fire 10-13; Tools\VAMPIRE_CLASS_DESIGN.md sections 2-5 and 10-12, LOCKED). The class needs the vampire RACE, not a weapon:
+  # the player ZDO "rpg_race" = "Vampire" (VCS 0.8.7+), no model fallback; without it the class is greyed out and keeps its points.
+  # Bat Form is a Core possession (Druid Wildshape's path) whose time and cooldown grow with the "Bat Form" skill (section 11). The
+  # handlers are VampireKit's; numbers the design gives are also server settings in [12 - Vampire]. Sunlight is a race rule (section 5).
+  - class: Vampire
+    paths:
+      - {id: blood, name: "Blood", theme: "Drain, frenzy and the crimson tide"}
+      - {id: night, name: "Night", theme: "Wings, shadows and the gaze"}
+    nodes:
+      - id: vampire_bat_form
+        name: "Bat Form"
+        tier: starter
+        path: all
+        level: 1
+        ranks: 3
+        kind: active
+        source: new
+        slot: skill
+        targeting: {mode: "Self"}
+        cost: "15 eitr"
+        cooldown: 90
+        text: "Become a bat for 45 s, up to 180 s as your Bat Form skill rises (it grows with every second flown). Fly 30% faster than a bat; open doors and pick items up (Use), but you can't attack or take portals. The bat has 30% of your health; damage past it ends the form and reaches you at half. Your body waits, untouchable, and you return where the bat is. Cooldown 90 s (up to 135 s with the skill) from the form's end. Rank 2: 20% shorter cooldown. Rank 3: 15% faster, and landing no longer ends the form. Can't start within 5 s of taking damage. Press again to change back."
+        ai: {category: Situational, trigger: PreCombat}
+        builtOn: "Core PossessionApi (a spawned vanilla Bat, Body Hidden as Wildshape) + the Bat Form skill (FiresSkillRegistry) + the server's validator"
+      - id: vampire_life_drain
+        name: "Life Drain"
+        tier: basic
+        path: blood
+        level: 5
+        ranks: 3
+        kind: passive
+        source: new
+        values:
+          drain: ["4%", "6%", "8%"]
+        text: "Your melee hits heal you for {drain} of their damage, at most 5% of your max health a hit; half on bosses, nothing from tamed creatures. Not in direct sunlight."
+        builtOn: "Outgoing hit + AbilityHeals"
+      - id: vampire_night_stalker
+        name: "Night Stalker"
+        tier: basic
+        path: night
+        level: 10
+        ranks: 1
+        kind: passive
+        source: new
+        text: "At night you deal 10% more damage and are 15% harder to notice. By day the sun weakens you (see Sunlight)."
+        builtOn: "Outgoing hit + ClassNightStalker (stealth) at night"
+      - id: vampire_mesmerise
+        name: "Mesmerise"
+        tier: advanced
+        path: night
+        level: 15
+        ranks: 1
+        kind: active
+        source: new
+        slot: skill
+        targeting: {mode: "Aimed", range: 20}
+        cooldown: 30
+        text: "Hold the enemy under your crosshair still for 3 s. Not bosses, nor anything above 600 max health."
+        ai: {category: Opener, trigger: HighValueTarget}
+        builtOn: "Core ClassCrowdControl.Stun"
+      - id: vampire_blood_frenzy
+        name: "Blood Frenzy"
+        tier: advanced
+        path: blood
+        level: 20
+        ranks: 1
+        kind: active
+        source: new
+        slot: skill
+        targeting: {mode: "Self"}
+        cost: "10% of your current health"
+        cooldown: 60
+        duration: 8
+        text: "Pay 10% of your current health: for 8 s your life-steal is doubled and you attack 15% faster."
+        ai: {category: Situational, trigger: Surrounded}
+        builtOn: "ClassBloodFrenzy self buff + the attack-speed hook"
+      - id: vampire_crimson_tide
+        name: "Crimson Tide"
+        tier: ultimate
+        path: all
+        level: 10
+        ranks: 1
+        kind: active
+        source: new
+        slot: ultimate
+        targeting: {mode: "Around you", radius: 15}
+        duration: 10
+        text: "For 10 s every hit by you and your party within 15 m heals the striker for 10% of its damage (at most 5% of max health a hit)."
+        ai: {category: Situational, trigger: Surrounded}
+        builtOn: "ClassCrimsonTide group buff + a heal on hit"
 ultimates:
   slot: 8
   unlock: {ultimateI: 10, ultimateII: 20, hybrid: 25}
@@ -2164,7 +3076,7 @@ ultimates:
         cooldown: 90
         morphs:
           - {name: "Lighthouse", effect: "The beacon follows the most injured ally.", capstone: {name: "Guiding Light", effect: "Allies inside receive 15% more healing from every source."}}
-          - {name: "Searing Beacon", effect: "Also burns enemies inside for 10 spirit damage per second.", capstone: {name: "Radiant Nova", effect: "When it ends it detonates: 60 spirit damage, and allies heal 10%."}}
+          - {name: "Searing Beacon", effect: "Also burns enemies inside for 10 holy damage per second (10 blunt + 5 spirit).", capstone: {name: "Radiant Nova", effect: "When it ends it detonates: 60 spirit damage, and allies heal 10%."}}
       - id: paladin_avatar
         name: "Avatar of Light"
         source: core
@@ -2288,6 +3200,58 @@ ultimates:
         morphs:
           - {name: "Avatar of Mercy", effect: "Healing triples, but you move 30% slower.", capstone: {name: "Lifebloom", effect: "Every heal also heals the target's neighbours for 30% of it."}}
           - {name: "Avatar of Sacrifice", effect: "Costs 40% health, and instantly revives a fallen companion.", capstone: {name: "Martyr's Grace", effect: "The health you spent returns as a team heal when it ends."}}
+    Druid:
+      - id: druid_primal_avatar
+        name: "Primal Avatar"
+        source: new
+        unlock: 10
+        cost: {resource: eitr, amount: 60}
+        cooldown: 180
+        morphs:
+          - {name: "Elder Beast", effect: "The giant form lasts 5 s longer and its attacks stagger.", capstone: {name: "Ancient Hide", effect: "You take 30% less damage while it lasts."}}
+          - {name: "Pack Avatar", effect: "Your summons grow to full size while it lasts.", capstone: {name: "Rally the Wild", effect: "On activation, every summon heals to full."}}
+      - id: druid_wild_hunt
+        name: "Wild Hunt"
+        source: new
+        unlock: 20
+        cost: {resource: adrenaline, amount: 60}
+        cooldown: 240
+        morphs:
+          - {name: "Hunt Mark", effect: "Marked creatures take 20% more damage from you and your pack.", capstone: {name: "Run Them Down", effect: "Each marked kill adds 2 s."}}
+          - {name: "Stampede", effect: "You and your pack charge through enemies, knocking them down.", capstone: {name: "Trampled", effect: "Knocked-down enemies are slowed 40% for 4 s."}}
+    Necromancer:
+      - id: necromancer_lich_form
+        name: "Lich Form"
+        source: new
+        unlock: 10
+        cost: {resource: eitr, amount: 60}
+        cooldown: 180
+        morphs:
+          - {name: "Bone Lich", effect: "Raising a summon costs no eitr while it lasts.", capstone: {name: "Phylactery", effect: "The first killing blow on you while it lasts leaves you at 1 health."}}
+          - {name: "Plague Lich", effect: "Your spells also Wither what they hit.", capstone: {name: "Pall of Death", effect: "On activation, enemies within 8 m are Wounded for 10 s."}}
+      - id: necromancer_legion
+        name: "Legion"
+        source: new
+        unlock: 20
+        cost: {resource: adrenaline, amount: 70}
+        cooldown: 240
+        morphs:
+          - {name: "Endless Legion", effect: "Thralls taken by Legion last 15 s longer.", capstone: {name: "March of the Dead", effect: "Legion's thralls move 30% faster."}}
+          - {name: "Soul Harvest", effect: "Each thrall that falls restores 5% of your eitr.", capstone: {name: "Death's Due", effect: "When it ends, every thrall bursts for spirit damage."}}
+    Werewolf:
+      - id: werewolf_alpha
+        name: "Alpha"
+        source: new
+        unlock: 10
+        cost: {resource: adrenaline, amount: 60}
+        cooldown: 180
+    Vampire:
+      - id: vampire_crimson_tide
+        name: "Crimson Tide"
+        source: new
+        unlock: 10
+        cost: {resource: adrenaline, amount: 60}
+        cooldown: 180
   hybrids:
     default: {resource: adrenaline, amount: 50, cooldown: 180}
     healthCost: {amount: 20, percent: true, hybrids: [Ravager, Blood Mage, Blood Knight, Pain Shaman]}
@@ -2302,6 +3266,10 @@ ultimates:
       Ranger: "range and marks"
       Mage: "elemental damage and slows"
       Healer: "healing and cleansing"
+      Druid: "beast forms and the pack"
+      Necromancer: "undead thralls and curses"
+      Werewolf: "the wolf form and the howl"
+      Vampire: "the bat form and the blood"
     offer: "the ordered pair's own hybrid ability plus its mirror's (see classes[].hybrids)"
 luck:
   neutral: 50

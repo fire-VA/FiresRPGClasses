@@ -1,0 +1,2066 @@
+# FiresRPGClasses - Paragon constellations (ESO Champion-Point style), Tools\RPG_PARAGON_TALENT_PLAN.md sections 6, 8 and 9.
+# Generated from the plan tables + Tools\paragon_star_positions.txt (10-14). Per star: perRank is the value per point (percent
+# unless the effect says otherwise); past knee (in points) the rank count goes through SoftCap.Soft, or for curve asymptote the
+# value approaches limit (percent). Stars feeding one stat are summed first, then one curve. effectFormat: Latin-1, {value}.
+# revision: raise it whenever the shipped trees change. An install's copy with a lower revision is backed up and replaced.
+schema: 1
+revision: 1
+trees:
+  - id: warfare
+    name: Warfare
+    colour: '#C8423A'
+    tierGates: [0, 25, 75, 150]
+    clusters:
+      - id: W1
+        name: 'Bloodwarden'
+        angle: 225
+      - id: W2
+        name: 'Berserker''s Edge'
+        angle: 315
+      - id: W3
+        name: 'Bane of Giants'
+        angle: 45
+      - id: W4
+        name: 'Huntsman''s Eye'
+        angle: 135
+  - id: fitness
+    name: Fitness
+    colour: '#4FA84A'
+    tierGates: [0, 25, 75, 150]
+    clusters:
+      - id: F1
+        name: 'Survivor''s Spite'
+        angle: 225
+      - id: F2
+        name: 'Wind Chaser'
+        angle: 315
+      - id: F3
+        name: 'Walking Fortress'
+        angle: 45
+      - id: F4
+        name: 'Wild Blood'
+        angle: 135
+  - id: craft
+    name: Craft
+    colour: '#3F7FD0'
+    tierGates: [0, 25, 75, 150]
+    clusters:
+      - id: C1
+        name: 'Gatherer'
+        angle: 225
+      - id: C2
+        name: 'Artisan'
+        angle: 315
+      - id: C3
+        name: 'Traveller'
+        angle: 45
+      - id: C4
+        name: 'Rider'
+        angle: 135
+stars:
+  - id: W1.1
+    name: 'Mender''s Touch'
+    shortName: 'Mender'
+    tree: warfare
+    cluster: W1
+    tier: 1
+    kind: passive
+    capstone: false
+    bridge: false
+    maxRank: 25
+    perRank: 0.4
+    knee: 25
+    curve: soft
+    limit: 0
+    links: [W1.2, W1.3]
+    pos: [0.337, 0.444]
+    effectFormat: '+{value}% healing done'
+  - id: W1.2
+    name: 'Sanguine Thirst'
+    shortName: 'Sanguine'
+    tree: warfare
+    cluster: W1
+    tier: 1
+    kind: passive
+    capstone: false
+    bridge: false
+    maxRank: 50
+    perRank: 0.1
+    knee: 30
+    curve: asymptote
+    limit: 8
+    links: [W1.4, W1.S1, WB1]
+    pos: [0.444, 0.337]
+    effectFormat: '+{value}% life steal'
+  - id: W1.3
+    name: 'Blood Price'
+    shortName: 'Blood Price'
+    tree: warfare
+    cluster: W1
+    tier: 2
+    kind: passive
+    capstone: false
+    bridge: false
+    maxRank: 25
+    perRank: 0.6
+    knee: 20
+    curve: asymptote
+    limit: 40
+    links: [W1.5]
+    pos: [0.225, 0.446]
+    effectFormat: '-{value}% blood magic health cost'
+  - id: W1.4
+    name: 'Renewing Pulse'
+    shortName: 'Renew Pulse'
+    tree: warfare
+    cluster: W1
+    tier: 2
+    kind: passive
+    capstone: false
+    bridge: false
+    maxRank: 25
+    perRank: 0.8
+    knee: 25
+    curve: soft
+    limit: 0
+    links: [W1.6, W1.S2]
+    pos: [0.302, 0.302]
+    effectFormat: '+{value}% heal-over-time strength'
+  - id: W1.5
+    name: 'Triage'
+    shortName: 'Triage'
+    tree: warfare
+    cluster: W1
+    tier: 3
+    kind: passive
+    capstone: false
+    bridge: false
+    maxRank: 50
+    perRank: 0.5
+    knee: 30
+    curve: soft
+    limit: 0
+    links: [W1.6, W1.S3]
+    pos: [0.127, 0.428]
+    effectFormat: '+{value}% healing on targets under 35% health'
+  - id: W1.6
+    name: 'Shared Vigour'
+    shortName: 'Shared Vigor'
+    tree: warfare
+    cluster: W1
+    tier: 3
+    kind: passive
+    capstone: false
+    bridge: false
+    maxRank: 50
+    perRank: 0.2
+    knee: 30
+    curve: soft
+    limit: 0
+    links: [W1.S3]
+    pos: [0.232, 0.232]
+    effectFormat: 'your heals also restore {value}% of the heal as stamina'
+  - id: W1.S1
+    name: 'Crimson Overflow'
+    shortName: 'Crimson Flow'
+    tree: warfare
+    cluster: W1
+    tier: 2
+    kind: slottable
+    capstone: false
+    bridge: false
+    maxRank: 30
+    perRank: 1
+    knee: 30
+    curve: soft
+    limit: 0
+    links: []
+    pos: [0.446, 0.225]
+    effectFormat: 'life-steal overheal becomes a shield, up to {value}% max health'
+  - id: W1.S2
+    name: 'Field Medic'
+    shortName: 'Field Medic'
+    tree: warfare
+    cluster: W1
+    tier: 3
+    kind: slottable
+    capstone: false
+    bridge: false
+    maxRank: 20
+    perRank: 2.5
+    knee: 20
+    curve: soft
+    limit: 0
+    links: []
+    pos: [0.428, 0.127]
+    effectFormat: 'your crit chance applies to heals; heal crits +{value}%'
+  - id: W1.S3
+    name: 'Red Covenant'
+    shortName: 'Red Covenant'
+    tree: warfare
+    cluster: W1
+    tier: 4
+    kind: slottable
+    capstone: true
+    bridge: false
+    maxRank: 50
+    perRank: 0.4
+    knee: 50
+    curve: soft
+    limit: 0
+    links: []
+    pos: [0.175, 0.175]
+    effectFormat: 'killing blows heal allies within 10 m for {value}% of the damage'
+  - id: W2.1
+    name: 'Weapon Might'
+    shortName: 'Weapon Might'
+    tree: warfare
+    cluster: W2
+    tier: 1
+    kind: passive
+    capstone: false
+    bridge: false
+    maxRank: 50
+    perRank: 0.4
+    knee: 25
+    curve: soft
+    limit: 0
+    links: [W2.2, W2.3]
+    pos: [0.556, 0.337]
+    effectFormat: '+{value}% physical weapon damage'
+  - id: W2.2
+    name: 'Rune Fury'
+    shortName: 'Rune Fury'
+    tree: warfare
+    cluster: W2
+    tier: 1
+    kind: passive
+    capstone: false
+    bridge: false
+    maxRank: 50
+    perRank: 0.4
+    knee: 25
+    curve: soft
+    limit: 0
+    links: [W2.4]
+    pos: [0.663, 0.444]
+    effectFormat: '+{value}% elemental and blood magic damage'
+  - id: W2.3
+    name: 'Executioner'
+    shortName: 'Executioner'
+    tree: warfare
+    cluster: W2
+    tier: 2
+    kind: passive
+    capstone: false
+    bridge: false
+    maxRank: 25
+    perRank: 1
+    knee: 20
+    curve: soft
+    limit: 0
+    links: [W2.5, W2.S2]
+    pos: [0.554, 0.225]
+    effectFormat: '+{value}% damage to targets under 25% health'
+  - id: W2.4
+    name: 'Adrenal Surge'
+    shortName: 'Adrenal'
+    tree: warfare
+    cluster: W2
+    tier: 2
+    kind: passive
+    capstone: false
+    bridge: false
+    maxRank: 25
+    perRank: 1
+    knee: 25
+    curve: asymptote
+    limit: 60
+    links: [W2.6, W2.S1]
+    pos: [0.656, 0.266]
+    effectFormat: '+{value}% adrenaline gain'
+  - id: W2.5
+    name: 'Heavy Hand'
+    shortName: 'Heavy Hand'
+    tree: warfare
+    cluster: W2
+    tier: 3
+    kind: passive
+    capstone: false
+    bridge: false
+    maxRank: 50
+    perRank: 1
+    knee: 30
+    curve: soft
+    limit: 0
+    links: [W2.S3, WB2]
+    pos: [0.572, 0.127]
+    effectFormat: '+{value}% stagger damage dealt'
+  - id: W2.6
+    name: 'Ultimate Mastery'
+    shortName: 'Ult Mastery'
+    tree: warfare
+    cluster: W2
+    tier: 3
+    kind: passive
+    capstone: false
+    bridge: false
+    maxRank: 25
+    perRank: 0.8
+    knee: 20
+    curve: soft
+    limit: 0
+    links: [W2.S3]
+    pos: [0.873, 0.428]
+    effectFormat: '-{value}% ultimate cooldown'
+  - id: W2.S1
+    name: 'Berserk Momentum'
+    shortName: 'Momentum'
+    tree: warfare
+    cluster: W2
+    tier: 2
+    kind: slottable
+    capstone: false
+    bridge: false
+    maxRank: 30
+    perRank: 0.1
+    knee: 30
+    curve: soft
+    limit: 0
+    links: []
+    pos: [0.734, 0.344]
+    effectFormat: 'hits within 3 s stack (max 10): +{value}% damage per stack'
+  - id: W2.S2
+    name: 'Exploiter'
+    shortName: 'Exploiter'
+    tree: warfare
+    cluster: W2
+    tier: 2
+    kind: slottable
+    capstone: false
+    bridge: false
+    maxRank: 20
+    perRank: 1
+    knee: 20
+    curve: soft
+    limit: 0
+    links: []
+    pos: [0.775, 0.446]
+    effectFormat: '+{value}% damage to staggered enemies'
+  - id: W2.S3
+    name: 'Wrath Unleashed'
+    shortName: 'Wrath'
+    tree: warfare
+    cluster: W2
+    tier: 4
+    kind: slottable
+    capstone: true
+    bridge: false
+    maxRank: 50
+    perRank: 1
+    knee: 50
+    curve: soft
+    limit: 0
+    links: []
+    pos: [0.825, 0.175]
+    effectFormat: 'ultimates deal +{value}% damage and refund a fifth as much adrenaline'
+  - id: W3.1
+    name: 'Giantslayer'
+    shortName: 'Giantslayer'
+    tree: warfare
+    cluster: W3
+    tier: 1
+    kind: passive
+    capstone: false
+    bridge: false
+    maxRank: 50
+    perRank: 0.3
+    knee: 30
+    curve: soft
+    limit: 0
+    links: [W3.2, W3.3]
+    pos: [0.663, 0.556]
+    effectFormat: '+{value}% damage to bosses and elites'
+  - id: W3.2
+    name: 'Staving Death'
+    shortName: 'Stave Death'
+    tree: warfare
+    cluster: W3
+    tier: 1
+    kind: passive
+    capstone: false
+    bridge: false
+    maxRank: 50
+    perRank: 0.2
+    knee: 30
+    curve: asymptote
+    limit: 25
+    links: [W3.4, W3.S2]
+    pos: [0.556, 0.663]
+    effectFormat: '-{value}% damage taken from bosses and elites'
+  - id: W3.3
+    name: 'Monster Lore'
+    shortName: 'Monster Lore'
+    tree: warfare
+    cluster: W3
+    tier: 2
+    kind: passive
+    capstone: false
+    bridge: false
+    maxRank: 25
+    perRank: 1
+    knee: 20
+    curve: soft
+    limit: 0
+    links: [W3.5, W3.S1]
+    pos: [0.775, 0.554]
+    effectFormat: '+{value}% damage to tier 3+ monsters'
+  - id: W3.4
+    name: 'Forsaken Echo'
+    shortName: 'Forsaken'
+    tree: warfare
+    cluster: W3
+    tier: 2
+    kind: passive
+    capstone: false
+    bridge: false
+    maxRank: 25
+    perRank: 2
+    knee: 25
+    curve: soft
+    limit: 0
+    links: [W3.6]
+    pos: [0.698, 0.698]
+    effectFormat: '+{value}% forsaken power duration'
+  - id: W3.5
+    name: 'Dungeon Delver'
+    shortName: 'Delver'
+    tree: warfare
+    cluster: W3
+    tier: 3
+    kind: passive
+    capstone: false
+    bridge: false
+    maxRank: 25
+    perRank: 1
+    knee: 20
+    curve: soft
+    limit: 0
+    links: [W3.S3]
+    pos: [0.873, 0.572]
+    effectFormat: 'in dungeons: +{value}% damage, half as much less damage taken'
+  - id: W3.6
+    name: 'Weakpoint'
+    shortName: 'Weakpoint'
+    tree: warfare
+    cluster: W3
+    tier: 3
+    kind: passive
+    capstone: false
+    bridge: false
+    maxRank: 50
+    perRank: 0.4
+    knee: 25
+    curve: asymptote
+    limit: 40
+    links: [W3.S3, WB3]
+    pos: [0.768, 0.768]
+    effectFormat: '+{value}% crit chance against bosses'
+  - id: W3.S1
+    name: 'Gravebane Oath'
+    shortName: 'Gravebane'
+    tree: warfare
+    cluster: W3
+    tier: 2
+    kind: slottable
+    capstone: false
+    bridge: false
+    maxRank: 30
+    perRank: 1
+    knee: 30
+    curve: soft
+    limit: 0
+    links: []
+    pos: [0.554, 0.775]
+    effectFormat: '+{value}% damage to undead'
+  - id: W3.S2
+    name: 'Stonebreaker''s Patience'
+    shortName: 'Stonebreaker'
+    tree: warfare
+    cluster: W3
+    tier: 3
+    kind: slottable
+    capstone: false
+    bridge: false
+    maxRank: 20
+    perRank: 2
+    knee: 20
+    curve: soft
+    limit: 0
+    links: []
+    pos: [0.572, 0.873]
+    effectFormat: 'after you block a boss hit, your next hit deals +{value}%'
+  - id: W3.S3
+    name: 'Bane Crown'
+    shortName: 'Bane Crown'
+    tree: warfare
+    cluster: W3
+    tier: 4
+    kind: slottable
+    capstone: true
+    bridge: false
+    maxRank: 50
+    perRank: 0.2
+    knee: 50
+    curve: soft
+    limit: 0
+    links: []
+    pos: [0.825, 0.825]
+    effectFormat: 'each 10% of boss health you remove: -{value}% forsaken power cooldown'
+  - id: W4.1
+    name: 'Keen Eye'
+    shortName: 'Keen Eye'
+    tree: warfare
+    cluster: W4
+    tier: 1
+    kind: passive
+    capstone: false
+    bridge: false
+    maxRank: 50
+    perRank: 0.2
+    knee: 30
+    curve: asymptote
+    limit: 35
+    links: [W4.2, W4.3]
+    pos: [0.444, 0.663]
+    effectFormat: '+{value}% crit chance'
+  - id: W4.2
+    name: 'Deadly Strikes'
+    shortName: 'Deadly Blows'
+    tree: warfare
+    cluster: W4
+    tier: 1
+    kind: passive
+    capstone: false
+    bridge: false
+    maxRank: 50
+    perRank: 1
+    knee: 30
+    curve: soft
+    limit: 0
+    links: [W4.4, W4.S1]
+    pos: [0.337, 0.556]
+    effectFormat: '+{value}% crit damage'
+  - id: W4.3
+    name: 'Steady Draw'
+    shortName: 'Steady Draw'
+    tree: warfare
+    cluster: W4
+    tier: 2
+    kind: passive
+    capstone: false
+    bridge: false
+    maxRank: 25
+    perRank: 1
+    knee: 20
+    curve: asymptote
+    limit: 50
+    links: [W4.5]
+    pos: [0.446, 0.775]
+    effectFormat: '+{value}% bow draw and crossbow reload speed'
+  - id: W4.4
+    name: 'Backstabber'
+    shortName: 'Backstabber'
+    tree: warfare
+    cluster: W4
+    tier: 2
+    kind: passive
+    capstone: false
+    bridge: false
+    maxRank: 25
+    perRank: 2
+    knee: 20
+    curve: soft
+    limit: 0
+    links: [W4.6, W4.S2]
+    pos: [0.302, 0.698]
+    effectFormat: '+{value}% sneak attack damage'
+  - id: W4.5
+    name: 'Long Shot'
+    shortName: 'Long Shot'
+    tree: warfare
+    cluster: W4
+    tier: 3
+    kind: passive
+    capstone: false
+    bridge: false
+    maxRank: 50
+    perRank: 0.4
+    knee: 30
+    curve: soft
+    limit: 0
+    links: [W4.S3]
+    pos: [0.428, 0.873]
+    effectFormat: '+{value}% damage to targets beyond 20 m'
+  - id: W4.6
+    name: 'Huntsman''s Instinct'
+    shortName: 'Huntsman'
+    tree: warfare
+    cluster: W4
+    tier: 3
+    kind: passive
+    capstone: false
+    bridge: false
+    maxRank: 25
+    perRank: 1
+    knee: 20
+    curve: soft
+    limit: 0
+    links: [W4.S3]
+    pos: [0.232, 0.768]
+    effectFormat: '+{value}% damage to beasts'
+  - id: W4.S1
+    name: 'Deadly Aim'
+    shortName: 'Deadly Aim'
+    tree: warfare
+    cluster: W4
+    tier: 2
+    kind: slottable
+    capstone: false
+    bridge: false
+    maxRank: 20
+    perRank: 1
+    knee: 20
+    curve: soft
+    limit: 0
+    links: []
+    pos: [0.225, 0.554]
+    effectFormat: 'the first hit within 2 s of a dodge crits, +{value}% crit damage'
+  - id: W4.S2
+    name: 'Bat''s Eye'
+    shortName: 'Bat''s Eye'
+    tree: warfare
+    cluster: W4
+    tier: 3
+    kind: slottable
+    capstone: false
+    bridge: false
+    maxRank: 20
+    perRank: 1
+    knee: 20
+    curve: soft
+    limit: 0
+    links: []
+    pos: [0.127, 0.572]
+    effectFormat: 'in Bat Form, hostiles within 10 + {value} m are marked'
+  - id: W4.S3
+    name: 'Hunter''s Mark'
+    shortName: 'Hunter Mark'
+    tree: warfare
+    cluster: W4
+    tier: 4
+    kind: slottable
+    capstone: true
+    bridge: false
+    maxRank: 50
+    perRank: 0.4
+    knee: 50
+    curve: soft
+    limit: 0
+    links: []
+    pos: [0.175, 0.825]
+    effectFormat: 'crits mark the target for 6 s: +{value}% damage to it'
+  - id: WB1
+    name: 'Bloodlust'
+    shortName: 'Bloodlust'
+    tree: warfare
+    cluster: W1
+    tier: 2
+    kind: passive
+    capstone: false
+    bridge: true
+    maxRank: 50
+    perRank: 0.3
+    knee: 30
+    curve: soft
+    limit: 0
+    links: [W2.3]
+    pos: [0.500, 0.170]
+    effectFormat: '+{value}% damage for 5 s after you heal'
+  - id: WB2
+    name: 'Battle-Hardened'
+    shortName: 'Battle-Hard'
+    tree: warfare
+    cluster: W2
+    tier: 3
+    kind: passive
+    capstone: false
+    bridge: true
+    maxRank: 50
+    perRank: 0.4
+    knee: 30
+    curve: asymptote
+    limit: 40
+    links: [W3.5]
+    pos: [0.920, 0.500]
+    effectFormat: '+{value}% stagger resistance while attacking'
+  - id: WB3
+    name: 'Predator''s Patience'
+    shortName: 'Predator'
+    tree: warfare
+    cluster: W3
+    tier: 3
+    kind: passive
+    capstone: false
+    bridge: true
+    maxRank: 50
+    perRank: 0.3
+    knee: 30
+    curve: soft
+    limit: 0
+    links: [W4.5]
+    pos: [0.500, 0.920]
+    effectFormat: '+{value}% crit damage against bosses and elites'
+  - id: F1.1
+    name: 'Hearty'
+    shortName: 'Hearty'
+    tree: fitness
+    cluster: F1
+    tier: 1
+    kind: passive
+    capstone: false
+    bridge: false
+    maxRank: 50
+    perRank: 0.3
+    knee: 30
+    curve: soft
+    limit: 0
+    links: [F1.2, F1.3]
+    pos: [0.337, 0.444]
+    effectFormat: '+{value}% max health'
+  - id: F1.2
+    name: 'Mead Sense'
+    shortName: 'Mead Sense'
+    tree: fitness
+    cluster: F1
+    tier: 1
+    kind: passive
+    capstone: false
+    bridge: false
+    maxRank: 25
+    perRank: 1
+    knee: 20
+    curve: soft
+    limit: 0
+    links: [F1.4, FB1]
+    pos: [0.444, 0.337]
+    effectFormat: '+{value}% mead and potion strength and duration'
+  - id: F1.3
+    name: 'Iron Stomach'
+    shortName: 'Iron Stomach'
+    tree: fitness
+    cluster: F1
+    tier: 2
+    kind: passive
+    capstone: false
+    bridge: false
+    maxRank: 50
+    perRank: 0.3
+    knee: 30
+    curve: soft
+    limit: 0
+    links: [F1.5, F1.S1]
+    pos: [0.225, 0.446]
+    effectFormat: '+{value}% food health and stamina'
+  - id: F1.4
+    name: 'Recovery'
+    shortName: 'Recovery'
+    tree: fitness
+    cluster: F1
+    tier: 2
+    kind: passive
+    capstone: false
+    bridge: false
+    maxRank: 25
+    perRank: 1
+    knee: 25
+    curve: soft
+    limit: 0
+    links: [F1.6]
+    pos: [0.302, 0.302]
+    effectFormat: '+{value}% health regen'
+  - id: F1.5
+    name: 'Rested Body'
+    shortName: 'Rested Body'
+    tree: fitness
+    cluster: F1
+    tier: 3
+    kind: passive
+    capstone: false
+    bridge: false
+    maxRank: 25
+    perRank: 2
+    knee: 25
+    curve: soft
+    limit: 0
+    links: [F1.S3]
+    pos: [0.127, 0.428]
+    effectFormat: '+{value}% rested duration'
+  - id: F1.6
+    name: 'Spite'
+    shortName: 'Spite'
+    tree: fitness
+    cluster: F1
+    tier: 3
+    kind: passive
+    capstone: false
+    bridge: false
+    maxRank: 50
+    perRank: 0.4
+    knee: 30
+    curve: soft
+    limit: 0
+    links: [F1.S2, F1.S3]
+    pos: [0.232, 0.232]
+    effectFormat: '+{value}% regen per enemy within 8 m (max 3)'
+  - id: F1.S1
+    name: 'Bloodthirst'
+    shortName: 'Bloodthirst'
+    tree: fitness
+    cluster: F1
+    tier: 2
+    kind: slottable
+    capstone: false
+    bridge: false
+    maxRank: 30
+    perRank: 0.3
+    knee: 30
+    curve: soft
+    limit: 0
+    links: []
+    pos: [0.446, 0.225]
+    effectFormat: 'kills restore {value}% max health'
+  - id: F1.S2
+    name: 'Second Wind'
+    shortName: 'Second Wind'
+    tree: fitness
+    cluster: F1
+    tier: 3
+    kind: slottable
+    capstone: false
+    bridge: false
+    maxRank: 20
+    perRank: 1
+    knee: 20
+    curve: soft
+    limit: 0
+    links: []
+    pos: [0.428, 0.127]
+    effectFormat: 'dropping under 30% health restores {value}% health and stamina (90 s cooldown)'
+  - id: F1.S3
+    name: 'Undying Spite'
+    shortName: 'Undying'
+    tree: fitness
+    cluster: F1
+    tier: 4
+    kind: slottable
+    capstone: true
+    bridge: false
+    maxRank: 50
+    perRank: 0.6
+    knee: 50
+    curve: soft
+    limit: 0
+    links: []
+    pos: [0.175, 0.175]
+    effectFormat: 'under 40% health: +{value}% regen, a third as much less damage taken'
+  - id: F2.1
+    name: 'Fleet Foot'
+    shortName: 'Fleet Foot'
+    tree: fitness
+    cluster: F2
+    tier: 1
+    kind: passive
+    capstone: false
+    bridge: false
+    maxRank: 50
+    perRank: 0.2
+    knee: 30
+    curve: asymptote
+    limit: 20
+    links: [F2.2, F2.3]
+    pos: [0.556, 0.337]
+    effectFormat: '+{value}% run speed'
+  - id: F2.2
+    name: 'Light Step'
+    shortName: 'Light Step'
+    tree: fitness
+    cluster: F2
+    tier: 1
+    kind: passive
+    capstone: false
+    bridge: false
+    maxRank: 25
+    perRank: 1
+    knee: 20
+    curve: asymptote
+    limit: 50
+    links: [F2.4, FB1]
+    pos: [0.663, 0.444]
+    effectFormat: '-{value}% run and jump stamina'
+  - id: F2.3
+    name: 'Evasion'
+    shortName: 'Evasion'
+    tree: fitness
+    cluster: F2
+    tier: 2
+    kind: passive
+    capstone: false
+    bridge: false
+    maxRank: 50
+    perRank: 0.5
+    knee: 25
+    curve: asymptote
+    limit: 50
+    links: [F2.5, F2.S1]
+    pos: [0.554, 0.225]
+    effectFormat: '-{value}% dodge stamina'
+  - id: F2.4
+    name: 'Leaper'
+    shortName: 'Leaper'
+    tree: fitness
+    cluster: F2
+    tier: 2
+    kind: passive
+    capstone: false
+    bridge: false
+    maxRank: 25
+    perRank: 0.4
+    knee: 20
+    curve: soft
+    limit: 0
+    links: [F2.6, F2.S2]
+    pos: [0.698, 0.302]
+    effectFormat: '+{value}% jump force, five times as much less fall damage'
+  - id: F2.5
+    name: 'Swift Swimmer'
+    shortName: 'Swift Swim'
+    tree: fitness
+    cluster: F2
+    tier: 3
+    kind: passive
+    capstone: false
+    bridge: false
+    maxRank: 25
+    perRank: 1
+    knee: 20
+    curve: asymptote
+    limit: 50
+    links: [F2.S3, FB2]
+    pos: [0.572, 0.127]
+    effectFormat: '+{value}% swim speed and -{value}% swim stamina'
+  - id: F2.6
+    name: 'Slipstream'
+    shortName: 'Slipstream'
+    tree: fitness
+    cluster: F2
+    tier: 3
+    kind: passive
+    capstone: false
+    bridge: false
+    maxRank: 50
+    perRank: 0.4
+    knee: 30
+    curve: asymptote
+    limit: 30
+    links: [F2.S4]
+    pos: [0.710, 0.184]
+    effectFormat: '+{value}% speed for 3 s after a dodge'
+  - id: F2.S1
+    name: 'Unchained'
+    shortName: 'Unchained'
+    tree: fitness
+    cluster: F2
+    tier: 2
+    kind: slottable
+    capstone: false
+    bridge: false
+    maxRank: 20
+    perRank: 1
+    knee: 20
+    curve: soft
+    limit: 0
+    links: []
+    pos: [0.775, 0.446]
+    effectFormat: 'breaking a stun, stagger or root: +{value}% speed for 4 s, slows cleared'
+  - id: F2.S2
+    name: 'Wolf''s Pace'
+    shortName: 'Wolf''s Pace'
+    tree: fitness
+    cluster: F2
+    tier: 3
+    kind: slottable
+    capstone: false
+    bridge: false
+    maxRank: 30
+    perRank: 1
+    knee: 30
+    curve: soft
+    limit: 0
+    links: []
+    pos: [0.816, 0.290]
+    effectFormat: 'Wolf Form: +{value}% move speed, -{value}% sprint stamina'
+  - id: F2.S3
+    name: 'Deep Diver'
+    shortName: 'Deep Diver'
+    tree: fitness
+    cluster: F2
+    tier: 3
+    kind: slottable
+    capstone: false
+    bridge: false
+    maxRank: 20
+    perRank: 5
+    knee: 20
+    curve: soft
+    limit: 0
+    links: []
+    pos: [0.873, 0.428]
+    effectFormat: '+{value}% breath underwater, a fifth as much swim speed'
+  - id: F2.S4
+    name: 'Gale Runner'
+    shortName: 'Gale Runner'
+    tree: fitness
+    cluster: F2
+    tier: 4
+    kind: slottable
+    capstone: true
+    bridge: false
+    maxRank: 50
+    perRank: 0.4
+    knee: 50
+    curve: soft
+    limit: 0
+    links: []
+    pos: [0.825, 0.175]
+    effectFormat: 'each dodge: 2 s windwalk, +{value}% speed, refunds half as much dodge stamina'
+  - id: F3.1
+    name: 'Ironhide'
+    shortName: 'Ironhide'
+    tree: fitness
+    cluster: F3
+    tier: 1
+    kind: passive
+    capstone: false
+    bridge: false
+    maxRank: 50
+    perRank: 0.4
+    knee: 30
+    curve: soft
+    limit: 0
+    links: [F3.2, F3.3]
+    pos: [0.663, 0.556]
+    effectFormat: '+{value}% armour'
+  - id: F3.2
+    name: 'Shield Discipline'
+    shortName: 'Shield Disc'
+    tree: fitness
+    cluster: F3
+    tier: 1
+    kind: passive
+    capstone: false
+    bridge: false
+    maxRank: 50
+    perRank: 0.4
+    knee: 30
+    curve: asymptote
+    limit: 50
+    links: [F3.4, F3.S1]
+    pos: [0.556, 0.663]
+    effectFormat: '-{value}% block stamina'
+  - id: F3.3
+    name: 'Parry Expert'
+    shortName: 'Parry Expert'
+    tree: fitness
+    cluster: F3
+    tier: 2
+    kind: passive
+    capstone: false
+    bridge: false
+    maxRank: 25
+    perRank: 2
+    knee: 20
+    curve: soft
+    limit: 0
+    links: [F3.5, F3.S2]
+    pos: [0.775, 0.554]
+    effectFormat: '+{value}% parry bonus'
+  - id: F3.4
+    name: 'Elemental Ward'
+    shortName: 'Elem Ward'
+    tree: fitness
+    cluster: F3
+    tier: 2
+    kind: passive
+    capstone: false
+    bridge: false
+    maxRank: 50
+    perRank: 0.2
+    knee: 30
+    curve: asymptote
+    limit: 30
+    links: [F3.6, FB2]
+    pos: [0.698, 0.698]
+    effectFormat: '-{value}% fire, frost, poison and lightning damage taken'
+  - id: F3.5
+    name: 'Unshakeable'
+    shortName: 'Unshakeable'
+    tree: fitness
+    cluster: F3
+    tier: 3
+    kind: passive
+    capstone: false
+    bridge: false
+    maxRank: 25
+    perRank: 1
+    knee: 20
+    curve: asymptote
+    limit: 50
+    links: [F3.S3, FB3]
+    pos: [0.873, 0.572]
+    effectFormat: '+{value}% stagger threshold'
+  - id: F3.6
+    name: 'Bulwark'
+    shortName: 'Bulwark'
+    tree: fitness
+    cluster: F3
+    tier: 3
+    kind: passive
+    capstone: false
+    bridge: false
+    maxRank: 50
+    perRank: 0.2
+    knee: 30
+    curve: asymptote
+    limit: 30
+    links: [F3.S4]
+    pos: [0.816, 0.710]
+    effectFormat: '-{value}% physical damage taken'
+  - id: F3.S1
+    name: 'Shield Wall Master'
+    shortName: 'Shield Wall'
+    tree: fitness
+    cluster: F3
+    tier: 2
+    kind: slottable
+    capstone: false
+    bridge: false
+    maxRank: 30
+    perRank: 2
+    knee: 30
+    curve: soft
+    limit: 0
+    links: []
+    pos: [0.554, 0.775]
+    effectFormat: 'perfect blocks refund {value}% of the block''s stamina'
+  - id: F3.S2
+    name: 'Iron Guard'
+    shortName: 'Iron Guard'
+    tree: fitness
+    cluster: F3
+    tier: 3
+    kind: slottable
+    capstone: false
+    bridge: false
+    maxRank: 20
+    perRank: 1
+    knee: 20
+    curve: soft
+    limit: 0
+    links: []
+    pos: [0.710, 0.816]
+    effectFormat: '+{value}% block power for 3 s after a parry'
+  - id: F3.S3
+    name: 'Warden''s Challenge'
+    shortName: 'Warden'
+    tree: fitness
+    cluster: F3
+    tier: 3
+    kind: slottable
+    capstone: false
+    bridge: false
+    maxRank: 20
+    perRank: 0.5
+    knee: 20
+    curve: soft
+    limit: 0
+    links: []
+    pos: [0.572, 0.873]
+    effectFormat: 'enemies within 8 m prefer you; -{value}% damage from them'
+  - id: F3.S4
+    name: 'Last Stand'
+    shortName: 'Last Stand'
+    tree: fitness
+    cluster: F3
+    tier: 4
+    kind: slottable
+    capstone: true
+    bridge: false
+    maxRank: 50
+    perRank: 1
+    knee: 50
+    curve: soft
+    limit: 0
+    links: []
+    pos: [0.825, 0.825]
+    effectFormat: 'a lethal hit is negated (240 s cooldown, 2 s less per point) with a {value}% max health shield'
+  - id: F4.1
+    name: 'Deep Lungs'
+    shortName: 'Deep Lungs'
+    tree: fitness
+    cluster: F4
+    tier: 1
+    kind: passive
+    capstone: false
+    bridge: false
+    maxRank: 50
+    perRank: 0.3
+    knee: 30
+    curve: soft
+    limit: 0
+    links: [F4.2, F4.3]
+    pos: [0.444, 0.663]
+    effectFormat: '+{value}% max stamina'
+  - id: F4.2
+    name: 'Wellspring'
+    shortName: 'Wellspring'
+    tree: fitness
+    cluster: F4
+    tier: 1
+    kind: passive
+    capstone: false
+    bridge: false
+    maxRank: 50
+    perRank: 0.3
+    knee: 30
+    curve: soft
+    limit: 0
+    links: [F4.4, F4.S2]
+    pos: [0.337, 0.556]
+    effectFormat: '+{value}% max eitr'
+  - id: F4.3
+    name: 'Stamina Flow'
+    shortName: 'Stamina Flow'
+    tree: fitness
+    cluster: F4
+    tier: 2
+    kind: passive
+    capstone: false
+    bridge: false
+    maxRank: 25
+    perRank: 1
+    knee: 25
+    curve: soft
+    limit: 0
+    links: [F4.5]
+    pos: [0.446, 0.775]
+    effectFormat: '+{value}% stamina regen'
+  - id: F4.4
+    name: 'Eitr Flow'
+    shortName: 'Eitr Flow'
+    tree: fitness
+    cluster: F4
+    tier: 2
+    kind: passive
+    capstone: false
+    bridge: false
+    maxRank: 25
+    perRank: 1
+    knee: 25
+    curve: soft
+    limit: 0
+    links: [F4.6]
+    pos: [0.302, 0.698]
+    effectFormat: '+{value}% eitr regen'
+  - id: F4.5
+    name: 'Beast Hide'
+    shortName: 'Beast Hide'
+    tree: fitness
+    cluster: F4
+    tier: 3
+    kind: passive
+    capstone: false
+    bridge: false
+    maxRank: 25
+    perRank: 1
+    knee: 20
+    curve: soft
+    limit: 0
+    links: [F4.S1, FB3]
+    pos: [0.428, 0.873]
+    effectFormat: 'in Bat or Wolf Form: +{value}% armour and max health'
+  - id: F4.6
+    name: 'Night Blood'
+    shortName: 'Night Blood'
+    tree: fitness
+    cluster: F4
+    tier: 3
+    kind: passive
+    capstone: false
+    bridge: false
+    maxRank: 25
+    perRank: 1
+    knee: 20
+    curve: soft
+    limit: 0
+    links: [F4.S1]
+    pos: [0.127, 0.572]
+    effectFormat: '+{value}% all regen at night'
+  - id: F4.S1
+    name: 'Moonbound Hunger'
+    shortName: 'Moonbound'
+    tree: fitness
+    cluster: F4
+    tier: 4
+    kind: slottable
+    capstone: true
+    bridge: false
+    maxRank: 50
+    perRank: 1
+    knee: 50
+    curve: soft
+    limit: 0
+    links: []
+    pos: [0.175, 0.825]
+    effectFormat: 'at night, kills in Bat or Wolf Form restore {value}% stamina and eitr'
+  - id: F4.S2
+    name: 'Brimming Well'
+    shortName: 'Brimming'
+    tree: fitness
+    cluster: F4
+    tier: 2
+    kind: slottable
+    capstone: false
+    bridge: false
+    maxRank: 20
+    perRank: 1
+    knee: 20
+    curve: soft
+    limit: 0
+    links: []
+    pos: [0.225, 0.554]
+    effectFormat: 'above 90% eitr: spells cost -{value}%'
+  - id: FB1
+    name: 'Tireless'
+    shortName: 'Tireless'
+    tree: fitness
+    cluster: F1
+    tier: 2
+    kind: passive
+    capstone: false
+    bridge: true
+    maxRank: 50
+    perRank: 0.2
+    knee: 30
+    curve: soft
+    limit: 0
+    links: []
+    pos: [0.500, 0.170]
+    effectFormat: '+{value}% stamina regen while moving'
+  - id: FB2
+    name: 'Stalwart Stride'
+    shortName: 'Stalwart'
+    tree: fitness
+    cluster: F2
+    tier: 3
+    kind: passive
+    capstone: false
+    bridge: true
+    maxRank: 50
+    perRank: 0.4
+    knee: 30
+    curve: asymptote
+    limit: 60
+    links: []
+    pos: [0.920, 0.500]
+    effectFormat: '-{value}% move penalty from shields and heavy armour'
+  - id: FB3
+    name: 'Thick Blood'
+    shortName: 'Thick Blood'
+    tree: fitness
+    cluster: F3
+    tier: 3
+    kind: passive
+    capstone: false
+    bridge: true
+    maxRank: 50
+    perRank: 0.2
+    knee: 30
+    curve: soft
+    limit: 0
+    links: []
+    pos: [0.500, 0.920]
+    effectFormat: '+{value}% max health and stamina'
+  - id: C1.1
+    name: 'Lumberjack'
+    shortName: 'Lumberjack'
+    tree: craft
+    cluster: C1
+    tier: 1
+    kind: passive
+    capstone: false
+    bridge: false
+    maxRank: 50
+    perRank: 0.4
+    knee: 30
+    curve: soft
+    limit: 0
+    links: [C1.2, C1.3]
+    pos: [0.337, 0.444]
+    effectFormat: '+{value}% extra wood drop chance'
+  - id: C1.2
+    name: 'Prospector'
+    shortName: 'Prospector'
+    tree: craft
+    cluster: C1
+    tier: 1
+    kind: passive
+    capstone: false
+    bridge: false
+    maxRank: 50
+    perRank: 0.4
+    knee: 30
+    curve: soft
+    limit: 0
+    links: [C1.4, C1.S2]
+    pos: [0.444, 0.337]
+    effectFormat: '+{value}% extra ore and stone drop chance'
+  - id: C1.3
+    name: 'Green Thumb'
+    shortName: 'Green Thumb'
+    tree: craft
+    cluster: C1
+    tier: 2
+    kind: passive
+    capstone: false
+    bridge: false
+    maxRank: 25
+    perRank: 1
+    knee: 20
+    curve: soft
+    limit: 0
+    links: [C1.5, CB1]
+    pos: [0.225, 0.446]
+    effectFormat: '+{value}% extra crop yield chance'
+  - id: C1.4
+    name: 'Angler'
+    shortName: 'Angler'
+    tree: craft
+    cluster: C1
+    tier: 2
+    kind: passive
+    capstone: false
+    bridge: false
+    maxRank: 25
+    perRank: 1
+    knee: 20
+    curve: asymptote
+    limit: 50
+    links: [C1.6]
+    pos: [0.302, 0.302]
+    effectFormat: '+{value}% bite speed and catch chance'
+  - id: C1.5
+    name: 'Forager'
+    shortName: 'Forager'
+    tree: craft
+    cluster: C1
+    tier: 3
+    kind: passive
+    capstone: false
+    bridge: false
+    maxRank: 25
+    perRank: 2
+    knee: 20
+    curve: soft
+    limit: 0
+    links: [C1.S3]
+    pos: [0.127, 0.428]
+    effectFormat: '+{value}% extra wild pick chance'
+  - id: C1.6
+    name: 'Tool Care'
+    shortName: 'Tool Care'
+    tree: craft
+    cluster: C1
+    tier: 3
+    kind: passive
+    capstone: false
+    bridge: false
+    maxRank: 50
+    perRank: 0.4
+    knee: 30
+    curve: asymptote
+    limit: 60
+    links: [C1.S1, C1.S3]
+    pos: [0.232, 0.232]
+    effectFormat: '-{value}% tool durability loss'
+  - id: C1.S1
+    name: 'Treasure Hunter'
+    shortName: 'Treasure'
+    tree: craft
+    cluster: C1
+    tier: 2
+    kind: slottable
+    capstone: false
+    bridge: false
+    maxRank: 30
+    perRank: 1
+    knee: 30
+    curve: soft
+    limit: 0
+    links: []
+    pos: [0.446, 0.225]
+    effectFormat: '+{value}% chance of an extra loot roll in chests'
+  - id: C1.S2
+    name: 'Vein Sense'
+    shortName: 'Vein Sense'
+    tree: craft
+    cluster: C1
+    tier: 3
+    kind: slottable
+    capstone: false
+    bridge: false
+    maxRank: 20
+    perRank: 1
+    knee: 20
+    curve: soft
+    limit: 0
+    links: []
+    pos: [0.428, 0.127]
+    effectFormat: 'ore veins within 10 + {value} m chime and pin'
+  - id: C1.S3
+    name: 'Bountiful Harvest'
+    shortName: 'Bountiful'
+    tree: craft
+    cluster: C1
+    tier: 4
+    kind: slottable
+    capstone: true
+    bridge: false
+    maxRank: 50
+    perRank: 0.4
+    knee: 50
+    curve: soft
+    limit: 0
+    links: []
+    pos: [0.175, 0.175]
+    effectFormat: '{value}% chance any gather yields double'
+  - id: C2.1
+    name: 'Master Smith'
+    shortName: 'Master Smith'
+    tree: craft
+    cluster: C2
+    tier: 1
+    kind: passive
+    capstone: false
+    bridge: false
+    maxRank: 50
+    perRank: 0.2
+    knee: 30
+    curve: asymptote
+    limit: 25
+    links: [C2.2, C2.3]
+    pos: [0.556, 0.337]
+    effectFormat: '{value}% chance to refund crafting materials'
+  - id: C2.2
+    name: 'Chef'
+    shortName: 'Chef'
+    tree: craft
+    cluster: C2
+    tier: 1
+    kind: passive
+    capstone: false
+    bridge: false
+    maxRank: 25
+    perRank: 1
+    knee: 25
+    curve: soft
+    limit: 0
+    links: [C2.4, CB1]
+    pos: [0.663, 0.444]
+    effectFormat: '+{value}% food duration'
+  - id: C2.3
+    name: 'Kiln Master'
+    shortName: 'Kiln Master'
+    tree: craft
+    cluster: C2
+    tier: 2
+    kind: passive
+    capstone: false
+    bridge: false
+    maxRank: 25
+    perRank: 2
+    knee: 20
+    curve: asymptote
+    limit: 75
+    links: [C2.5, C2.S2]
+    pos: [0.554, 0.225]
+    effectFormat: '+{value}% speed of stations you fill'
+  - id: C2.4
+    name: 'Sturdy Builder'
+    shortName: 'Sturdy Build'
+    tree: craft
+    cluster: C2
+    tier: 2
+    kind: passive
+    capstone: false
+    bridge: false
+    maxRank: 50
+    perRank: 0.6
+    knee: 30
+    curve: soft
+    limit: 0
+    links: [C2.6, CB2]
+    pos: [0.698, 0.302]
+    effectFormat: '+{value}% health of pieces you build'
+  - id: C2.5
+    name: 'Scholar'
+    shortName: 'Scholar'
+    tree: craft
+    cluster: C2
+    tier: 3
+    kind: passive
+    capstone: false
+    bridge: false
+    maxRank: 50
+    perRank: 0.4
+    knee: 30
+    curve: soft
+    limit: 0
+    links: [C2.S1, C2.S3]
+    pos: [0.572, 0.127]
+    effectFormat: '+{value}% skill XP'
+  - id: C2.6
+    name: 'Brewer'
+    shortName: 'Brewer'
+    tree: craft
+    cluster: C2
+    tier: 3
+    kind: passive
+    capstone: false
+    bridge: false
+    maxRank: 25
+    perRank: 2
+    knee: 20
+    curve: asymptote
+    limit: 75
+    links: [C2.S3]
+    pos: [0.768, 0.232]
+    effectFormat: '+{value}% fermenter speed'
+  - id: C2.S1
+    name: 'Masterwork'
+    shortName: 'Masterwork'
+    tree: craft
+    cluster: C2
+    tier: 3
+    kind: slottable
+    capstone: false
+    bridge: false
+    maxRank: 20
+    perRank: 0.5
+    knee: 20
+    curve: soft
+    limit: 0
+    links: []
+    pos: [0.873, 0.428]
+    effectFormat: 'items you craft get +{value}% damage or armour'
+  - id: C2.S2
+    name: 'Gemcutter'
+    shortName: 'Gemcutter'
+    tree: craft
+    cluster: C2
+    tier: 2
+    kind: slottable
+    capstone: false
+    bridge: false
+    maxRank: 30
+    perRank: 1
+    knee: 30
+    curve: soft
+    limit: 0
+    links: []
+    pos: [0.775, 0.446]
+    effectFormat: '{value}% chance socketing keeps the gem'
+  - id: C2.S3
+    name: 'Architect'
+    shortName: 'Architect'
+    tree: craft
+    cluster: C2
+    tier: 4
+    kind: slottable
+    capstone: true
+    bridge: false
+    maxRank: 50
+    perRank: 0.4
+    knee: 50
+    curve: soft
+    limit: 0
+    links: []
+    pos: [0.825, 0.175]
+    effectFormat: '{value}% chance a build piece refunds its materials'
+  - id: C3.1
+    name: 'Pack Mule'
+    shortName: 'Pack Mule'
+    tree: craft
+    cluster: C3
+    tier: 1
+    kind: passive
+    capstone: false
+    bridge: false
+    maxRank: 50
+    perRank: 2
+    knee: 30
+    curve: soft
+    limit: 0
+    links: [C3.2, C3.3]
+    pos: [0.663, 0.556]
+    effectFormat: '+{value} carry weight'
+  - id: C3.2
+    name: 'Wayfarer'
+    shortName: 'Wayfarer'
+    tree: craft
+    cluster: C3
+    tier: 1
+    kind: passive
+    capstone: false
+    bridge: false
+    maxRank: 25
+    perRank: 1
+    knee: 20
+    curve: asymptote
+    limit: 40
+    links: [C3.4, CB2]
+    pos: [0.556, 0.663]
+    effectFormat: '+{value}% move speed out of combat'
+  - id: C3.3
+    name: 'Seafarer'
+    shortName: 'Seafarer'
+    tree: craft
+    cluster: C3
+    tier: 2
+    kind: passive
+    capstone: false
+    bridge: false
+    maxRank: 50
+    perRank: 0.4
+    knee: 30
+    curve: asymptote
+    limit: 40
+    links: [C3.5, C3.S1]
+    pos: [0.775, 0.554]
+    effectFormat: '+{value}% ship speed while you steer'
+  - id: C3.4
+    name: 'Weathered'
+    shortName: 'Weathered'
+    tree: craft
+    cluster: C3
+    tier: 2
+    kind: passive
+    capstone: false
+    bridge: false
+    maxRank: 25
+    perRank: 2
+    knee: 20
+    curve: asymptote
+    limit: 75
+    links: [C3.6]
+    pos: [0.698, 0.698]
+    effectFormat: '-{value}% wet, cold and freezing duration'
+  - id: C3.5
+    name: 'Cartographer'
+    shortName: 'Cartographer'
+    tree: craft
+    cluster: C3
+    tier: 3
+    kind: passive
+    capstone: false
+    bridge: false
+    maxRank: 25
+    perRank: 2
+    knee: 20
+    curve: soft
+    limit: 0
+    links: [C3.S3, CB3]
+    pos: [0.873, 0.572]
+    effectFormat: '+{value}% map explore radius'
+  - id: C3.6
+    name: 'Long Haul'
+    shortName: 'Long Haul'
+    tree: craft
+    cluster: C3
+    tier: 3
+    kind: passive
+    capstone: false
+    bridge: false
+    maxRank: 50
+    perRank: 0.4
+    knee: 30
+    curve: asymptote
+    limit: 60
+    links: [C3.S2]
+    pos: [0.768, 0.768]
+    effectFormat: '-{value}% stamina drain while encumbered'
+  - id: C3.S1
+    name: 'Sea Wolf'
+    shortName: 'Sea Wolf'
+    tree: craft
+    cluster: C3
+    tier: 2
+    kind: slottable
+    capstone: false
+    bridge: false
+    maxRank: 30
+    perRank: 1
+    knee: 30
+    curve: soft
+    limit: 0
+    links: []
+    pos: [0.554, 0.775]
+    effectFormat: 'while you steer: +{value}% ship speed, crew take half as much less damage'
+  - id: C3.S2
+    name: 'Pathfinder'
+    shortName: 'Pathfinder'
+    tree: craft
+    cluster: C3
+    tier: 3
+    kind: slottable
+    capstone: false
+    bridge: false
+    maxRank: 20
+    perRank: 1
+    knee: 20
+    curve: soft
+    limit: 0
+    links: []
+    pos: [0.572, 0.873]
+    effectFormat: 'on paths: +{value}% speed, no walk stamina'
+  - id: C3.S3
+    name: 'Wind Caller'
+    shortName: 'Wind Caller'
+    tree: craft
+    cluster: C3
+    tier: 4
+    kind: slottable
+    capstone: true
+    bridge: false
+    maxRank: 50
+    perRank: 4
+    knee: 50
+    curve: soft
+    limit: 0
+    links: []
+    pos: [0.825, 0.825]
+    effectFormat: 'wind follows your heading for 60 s (600 s cooldown, {value} s less)'
+  - id: C4.1
+    name: 'Horse Sense'
+    shortName: 'Horse Sense'
+    tree: craft
+    cluster: C4
+    tier: 1
+    kind: passive
+    capstone: false
+    bridge: false
+    maxRank: 50
+    perRank: 0.4
+    knee: 30
+    curve: soft
+    limit: 0
+    links: [C4.2, C4.3]
+    pos: [0.444, 0.663]
+    effectFormat: '+{value}% mount max stamina'
+  - id: C4.2
+    name: 'Steady Seat'
+    shortName: 'Steady Seat'
+    tree: craft
+    cluster: C4
+    tier: 1
+    kind: passive
+    capstone: false
+    bridge: false
+    maxRank: 25
+    perRank: 1
+    knee: 20
+    curve: asymptote
+    limit: 40
+    links: [C4.4]
+    pos: [0.337, 0.556]
+    effectFormat: '-{value}% damage taken while mounted'
+  - id: C4.3
+    name: 'Gallop'
+    shortName: 'Gallop'
+    tree: craft
+    cluster: C4
+    tier: 2
+    kind: passive
+    capstone: false
+    bridge: false
+    maxRank: 50
+    perRank: 0.3
+    knee: 30
+    curve: asymptote
+    limit: 25
+    links: [C4.5, C4.S1]
+    pos: [0.446, 0.775]
+    effectFormat: '+{value}% mount run speed'
+  - id: C4.4
+    name: 'Beastmaster'
+    shortName: 'Beastmaster'
+    tree: craft
+    cluster: C4
+    tier: 2
+    kind: passive
+    capstone: false
+    bridge: false
+    maxRank: 25
+    perRank: 1
+    knee: 20
+    curve: soft
+    limit: 0
+    links: [C4.6, CB3]
+    pos: [0.302, 0.698]
+    effectFormat: '+{value}% tamed creature health and damage'
+  - id: C4.5
+    name: 'Mounted Combat'
+    shortName: 'Saddle Fight'
+    tree: craft
+    cluster: C4
+    tier: 3
+    kind: passive
+    capstone: false
+    bridge: false
+    maxRank: 25
+    perRank: 1
+    knee: 20
+    curve: soft
+    limit: 0
+    links: [C4.S2]
+    pos: [0.428, 0.873]
+    effectFormat: '+{value}% damage from the saddle'
+  - id: C4.6
+    name: 'Swift Taming'
+    shortName: 'Swift Taming'
+    tree: craft
+    cluster: C4
+    tier: 3
+    kind: passive
+    capstone: false
+    bridge: false
+    maxRank: 25
+    perRank: 2
+    knee: 20
+    curve: asymptote
+    limit: 75
+    links: [C4.S3]
+    pos: [0.232, 0.768]
+    effectFormat: '+{value}% taming speed'
+  - id: C4.S1
+    name: 'Steed''s Blessing'
+    shortName: 'Steed Bless'
+    tree: craft
+    cluster: C4
+    tier: 2
+    kind: slottable
+    capstone: false
+    bridge: false
+    maxRank: 30
+    perRank: 2
+    knee: 30
+    curve: soft
+    limit: 0
+    links: []
+    pos: [0.225, 0.554]
+    effectFormat: 'mount +{value}% stamina regen, half as much health regen'
+  - id: C4.S2
+    name: 'Rider''s Charge'
+    shortName: 'Rider Charge'
+    tree: craft
+    cluster: C4
+    tier: 3
+    kind: slottable
+    capstone: false
+    bridge: false
+    maxRank: 20
+    perRank: 2
+    knee: 20
+    curve: soft
+    limit: 0
+    links: []
+    pos: [0.127, 0.572]
+    effectFormat: 'a sprinting mount''s first hit deals +{value}% and knocks back'
+  - id: C4.S3
+    name: 'Pack Leader'
+    shortName: 'Pack Leader'
+    tree: craft
+    cluster: C4
+    tier: 4
+    kind: slottable
+    capstone: true
+    bridge: false
+    maxRank: 50
+    perRank: 0.4
+    knee: 50
+    curve: soft
+    limit: 0
+    links: []
+    pos: [0.175, 0.825]
+    effectFormat: 'your summons and tames within 20 m: +{value}% damage and health'
+  - id: CB1
+    name: 'Field Kitchen'
+    shortName: 'Camp Kitchen'
+    tree: craft
+    cluster: C1
+    tier: 2
+    kind: passive
+    capstone: false
+    bridge: true
+    maxRank: 50
+    perRank: 0.3
+    knee: 30
+    curve: soft
+    limit: 0
+    links: []
+    pos: [0.500, 0.170]
+    effectFormat: '+{value}% food stamina and eitr from food you cooked or grew'
+  - id: CB2
+    name: 'Roadwright'
+    shortName: 'Roadwright'
+    tree: craft
+    cluster: C2
+    tier: 3
+    kind: passive
+    capstone: false
+    bridge: true
+    maxRank: 50
+    perRank: 0.4
+    knee: 30
+    curve: asymptote
+    limit: 50
+    links: []
+    pos: [0.920, 0.500]
+    effectFormat: '-{value}% build and repair stamina away from your base'
+  - id: CB3
+    name: 'Wild Form'
+    shortName: 'Wild Form'
+    tree: craft
+    cluster: C3
+    tier: 3
+    kind: passive
+    capstone: false
+    bridge: true
+    maxRank: 50
+    perRank: 1
+    knee: 30
+    curve: soft
+    limit: 0
+    links: []
+    pos: [0.500, 0.920]
+    effectFormat: '+{value}% Bat and Wolf Form duration'

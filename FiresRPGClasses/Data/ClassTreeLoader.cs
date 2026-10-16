@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using FiresCore.Storage;
 using UnityEngine;
 
@@ -32,7 +33,7 @@ namespace FiresRPGClasses.Data
 
         public static void Initialize()
         {
-            SeedFileIfMissing();
+            SeedOrUpgradeFile();
             Load();
             StartWatching();
         }
@@ -84,34 +85,60 @@ namespace FiresRPGClasses.Data
             }
         }
 
+        // The yaml's top-level "revision: N" (0 when it has none), raised whenever the shipped trees change.
+        private static readonly Regex RevisionLine = new Regex(@"^revision:\s*(\d+)\s*$", RegexOptions.Multiline);
+
+        internal static int RevisionOf(string yaml)
+        {
+            Match match = RevisionLine.Match(yaml ?? "");
+            return match.Success && int.TryParse(match.Groups[1].Value, out int revision) ? revision : 0;
+        }
+
         /// <summary>
-        /// Writes the bundled copy on first run so a fresh install has trees and an admin has a file to
-        /// edit. An existing file is never overwritten - it is the admin's.
+        /// Writes the bundled copy on first run so a fresh install has trees and an admin has a file to edit. A file on disk
+        /// is the admin's and stays, unless the trees this version ships are a newer revision (0.1.72: the Druid and
+        /// Necromancer trees never reached a file seeded before them). Then the bundled trees replace it
+        /// (0.1.161: no .bak copy is kept), said once at Warning.
         /// </summary>
-        private static void SeedFileIfMissing()
+        private static void SeedOrUpgradeFile()
         {
             string path = FilePath;
-            if (File.Exists(path)) return;
-
             try
             {
-                using (Stream stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(BundledResourceName))
+                string bundled = ReadBundled();
+                if (bundled == null) return;
+                if (!File.Exists(path))
                 {
-                    if (stream == null)
-                    {
-                        Debug.LogError($"[ClassTrees] The bundled {FileName} is missing from the assembly - "
-                            + $"it must be an EmbeddedResource named {BundledResourceName}.");
-                        return;
-                    }
-
-                    using (var reader = new StreamReader(stream))
-                        File.WriteAllText(path, reader.ReadToEnd());
+                    File.WriteAllText(path, bundled);
+                    Debug.Log($"[ClassTrees] Wrote the bundled {FileName} to {path}.");
+                    return;
                 }
-                Debug.Log($"[ClassTrees] Wrote the bundled {FileName} to {path}.");
+                int onDisk = RevisionOf(File.ReadAllText(path));
+                int shipped = RevisionOf(bundled);
+                if (onDisk >= shipped) return;
+                // 0.1.161 (Fire 10-15: no backup data on the rig): no .r<old>.bak copy is kept any more
+                File.WriteAllText(path, bundled);
+                Debug.LogWarning($"[ClassTrees] {FileName} on disk was revision {onDisk}, older than this version's {shipped}: "
+                    + "replaced with the bundled trees (no backup copy kept).");
             }
             catch (Exception ex)
             {
                 Debug.LogError($"[ClassTrees] Could not write {path} ({ex.GetType().Name}: {ex.Message}).");
+            }
+        }
+
+        private static string ReadBundled()
+        {
+            using (Stream stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(BundledResourceName))
+            {
+                if (stream == null)
+                {
+                    Debug.LogError($"[ClassTrees] The bundled {FileName} is missing from the assembly - "
+                        + $"it must be an EmbeddedResource named {BundledResourceName}.");
+                    return null;
+                }
+                using (var reader = new StreamReader(stream))
+                    return reader.ReadToEnd();
             }
         }
 

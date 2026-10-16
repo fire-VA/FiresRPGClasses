@@ -12,7 +12,7 @@ namespace FiresRPGClasses.UI
     [HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.OnOpenSkills))]
     internal static class InventoryGuiOnOpenSkillsPatch
     {
-        private const string Section = "UI";
+        private const string Section = "6 - UI";
 
         private static ConfigEntry<bool> _takeOver;
 

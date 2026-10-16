@@ -21,18 +21,50 @@ namespace FiresRPGClasses.Combat
         /// <summary>Raised for a node with no Core effect name, so the class-kit work can supply the behaviour.</summary>
         public static event Action<ClassTreeNode, Character, Vector3, ZDOID> Unmapped;
 
+        /// <summary>The last <see cref="PlayLocal"/> ran a handler that refused (no target, refused): the cast didn't happen.</summary>
+        internal static bool LastHandlerRefused { get; private set; }
+
         public static void PlayLocal(ClassTreeNode node, Character caster, CastTarget target)
         {
+            LastHandlerRefused = false;
             if (node == null || caster == null) return;
+            // A cast (a heal or a buff too) is taking part in the fight, for class XP's kill share.
+            ClassXp.MarkActive();
             TargetingController.ShowCastRing(node, target.Point, CastRingSeconds);
             ClassCastNetwork.Broadcast(caster, node.Id, target.Point, target.TargetZdo);
+            if (ClassSkillKit.TryRun(node, caster, target, out bool succeeded))
+            {
+                LastHandlerRefused = !succeeded;
+                return;
+            }
             Apply(node, caster, target.TargetCharacter, target.Point, target.TargetZdo);
+        }
+
+        /// <summary>True when <see cref="Apply"/> would hand this node to Core rather than to the unmapped hook.</summary>
+        public static bool AppliesCoreEffect(ClassTreeNode node)
+        {
+            if (node == null || string.IsNullOrEmpty(node.EffectName)) return false;
+            switch (node.Targeting.Mode)
+            {
+                case TargetingMode.Self:
+                case TargetingMode.NextAttack:
+                case TargetingMode.Ally:
+                case TargetingMode.AroundYou:
+                case TargetingMode.Melee:
+                case TargetingMode.Aimed:
+                case TargetingMode.Dash:
+                    return true;
+                default:
+                    return false;
+            }
         }
 
         public static void PlayRemote(ClassTreeNode node, Character caster, Vector3 point, ZDOID targetZdo)
         {
             if (node == null) return;
             TargetingController.ShowCastRing(node, point, CastRingSeconds);
+            CoreSkillKit.OnRemoteCast(node, caster, point);
+            WerewolfKit.OnRemoteCast(node, caster);   // Howl: the caster's howl is heard here too
         }
 
         private static void Apply(ClassTreeNode node, Character caster, Character target, Vector3 point, ZDOID targetZdo)
