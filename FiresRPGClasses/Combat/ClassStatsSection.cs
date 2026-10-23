@@ -9,8 +9,8 @@ using FiresRPGClasses.UI;
 namespace FiresRPGClasses.Combat
 {
     /// <summary>
-    /// 0.1.159 ([wishbone], Fire via [generator] 10-15: "the hub's Stats tab shows every mod's stats"): RPGClasses' card on Core 0.2.511's
-    /// Stats tab (FiresShell.RegisterStatsSection, Tools\CORE_STATS_SECTIONS_API.md; order 400). Data only, from the local class record
+    /// RPGClasses' card on Core's
+    /// Stats tab (FiresShell.RegisterStatsSection; order 400). Data only, from the local class record
     /// and Core's ProgressionEngine; Core draws the card, reads it on the main thread only while the tab shows, every second.
     /// Registered next to ClassesHub.Register; the Stats tab exists only in the hub (the Fires UI override), so with the override off
     /// nothing changes. Older Core (no RegisterStatsSection): the call sits in its own NoInlining method behind a try/catch, so only

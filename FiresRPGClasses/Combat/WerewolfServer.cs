@@ -26,7 +26,9 @@ namespace FiresRPGClasses.Combat
         internal enum Reason { Skill = 0, Rage = 1, Moon = 2 }
 
         // What the server allows at most, per trigger (the skill's design numbers; Blood Rage's and the moon's from config).
-        private const float SkillSecondsCap = 30f;
+        // x1.6 = the soft max of Paragon's Wild Form ("+{value}% Bat and Wolf Form duration"). The server never sees a
+        // client's Paragon stars (they are local), so it allows the most a star can add; the client asks for its own real length.
+        private const float SkillSecondsCap = 30f * 1.6f;
         private const float SkillCooldown = 120f;
         private const float MoonSecondsCap = 1200f;   // a forced night form; the client ends it at dawn
         private const float MoonCooldown = 60f;

@@ -8,7 +8,7 @@ namespace FiresRPGClasses.Combat
     /// The class kit: what each tree node really does. A node counts as implemented when a handler is registered for it
     /// here, or when its Core effect binding reaches an effect Core applies. Everything else is not implemented yet, and
     /// the rest of the mod treats it that way: an unimplemented evasion leaves the vanilla dodge alone.
-    /// FiresClassTest reads <see cref="Implements"/> by reflection (Tools\CLASS_TEST_PLAN.md).
+    /// FiresClassTest reads <see cref="Implements"/> by reflection.
     /// </summary>
     public static class ClassSkillKit
     {

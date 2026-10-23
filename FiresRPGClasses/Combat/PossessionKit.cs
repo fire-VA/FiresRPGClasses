@@ -220,7 +220,7 @@ namespace FiresRPGClasses.Combat
             return Begin(player, node, thrall, options, eitr);
         }
 
-        // ── Necromancer: Ghostwalk (0.1.80, Fire 10-08: talents group 4) ─────────────────────────────────────────────────────
+        // ── Necromancer: Ghostwalk ─────────────────────────────────────────────────────────────────────────────────────────────────────────
         // "Possess a ghost under your crosshair for {time} s to scout through walls; a ghost cannot attack." Your body stays frozen
         // and untouchable where it stood and you come back to it; the ghost's hits do nothing (DamageScale 0).
         internal const string GhostTag = "rpg-necro-ghost";
@@ -255,7 +255,7 @@ namespace FiresRPGClasses.Combat
         private static string ValidateGhost(long playerId, ZDO zdo, Character c) =>
             c == null || IsGhost(c) ? null : "only a ghost can be walked";
 
-        // ── Druid: the form library (0.1.81, Fire 10-08: talents group 5) ─────────────────────────────────────────────────
+        // ── Druid: the form library ──────────────────────────────────────────────────────────────────────────────────────────────────────
         // Every Wildshape remembers its creature on the player (custom data "rpg_druid_forms", newest first, up to 3).
         // - Form Library: "Remembers your last {forms} form(s); shift into one without a fresh target." Each cast takes the next
         //   remembered form: a fresh one of that creature appears beside you and you Wildshape into it (the Wildshape's own rules).
@@ -324,11 +324,10 @@ namespace FiresRPGClasses.Combat
             if (form == null) { ZNetScene.instance.Destroy(go); return Refuse(player, node, "that form has no body"); }
             ZNetView nview = go.GetComponent<ZNetView>();
             if (scale != 1f && nview != null && nview.IsValid()) nview.SetLocalScale(go.transform.localScale * scale);
-            // 0.1.171 ([wishbone]; R-NIGHT7: the Form Library's fresh Boar, wild and at 20% health, was killed by the tester's companion in
-            // the 1 s before the possession landed, so the form never happened). The body is now stamped as the caster's own (the
-            // server's ValidateWildshape passes an owned creature whatever its health, so it is no longer beaten down) and sits in the
-            // players' faction for that wait, so companions and other player-side AI do not see an enemy. The possessed body's health
-            // comes from FormHealth as before.
+            // A fresh, wild form body could be killed (e.g. by a companion) in the second before the possession lands. So the body is
+            // stamped as the caster's own (the server's ValidateWildshape passes an owned creature whatever its health, so it need not
+            // be beaten down) and sits in the players' faction for that wait, so companions and other player-side AI do not see an
+            // enemy. The possessed body's health comes from FormHealth.
             if (nview != null && nview.IsValid()) nview.GetZDO().Set(SummonOwnerKey, player.GetPlayerID());
             form.m_faction = Character.Faction.Players;
             ClassTreeNode wildshape = ClassTrees.Node(WildshapeId);
@@ -345,7 +344,7 @@ namespace FiresRPGClasses.Combat
                 DamageScale = 1f + DamagePerLevel * (ClassLevel() - 1),
                 SourceTag = DruidTag,
             };
-            // 0.1.83 (round 22: "refused (Revoked)"): the server checks the form's ZDO, so the possession is asked a second after the
+            // the server checks the form's ZDO, so the possession is asked a second after the
             // spawn, once the new creature has reached it. The cast counts now; a refusal still refunds through OnEnded.
             player.StartCoroutine(BeginShiftLater(player, node, go, form, options, eitr));
             return true;
@@ -400,8 +399,7 @@ namespace FiresRPGClasses.Combat
             if (player.GetEitr() < need) return false;
             float before = player.GetEitr();
             player.UseEitr(need);
-            // 0.1.106 (R-1012N: "asked 2.01 eitr this second, 0.00 left the pool", world rate 1): UseEitr didn't move the pool. The channel
-            // isn't a spell (no spell-cost passives), so it pays the way vanilla's UseEitr does on the owner (RPC_UseEitr), and says once why
+            // UseEitr does not always move the pool (view / owner / Lich Form). The channel isn't a spell (no spell-cost passives), so it pays the way vanilla's UseEitr does on the owner (RPC_UseEitr), and says once why
             // UseEitr didn't (view / owner / Lich Form).
             if (player.GetEitr() >= before - need * 0.5f)
             {
@@ -413,7 +411,7 @@ namespace FiresRPGClasses.Combat
                 }
                 if (player.m_nview != null && player.m_nview.IsValid() && player.m_nview.IsOwner()) player.RPC_UseEitr(0L, need * Game.m_eitrRate);
             }
-            // 0.1.105 (R-1012M: "eitr didn't drain while channelling (-0.3)"): evidence once a second - what was asked, what left the pool,
+            // diagnostics once a second - what was asked, what left the pool,
             // and the world's eitr rate (vanilla multiplies every eitr cost by Game.m_eitrRate).
             _drainAsked += need; _drainGone += Mathf.Max(0f, before - player.GetEitr());
             ChannelAskedTotal += need;

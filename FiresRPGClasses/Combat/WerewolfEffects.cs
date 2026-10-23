@@ -45,7 +45,7 @@ namespace FiresRPGClasses.Combat
             if (db.GetStatusEffect(name.GetStableHashCode()) != null) return 0;
             var effect = ScriptableObject.CreateInstance<T>();
             effect.name = name;
-            // 10-14 (SE icon inventory: Dread is added by hash, its template empty): the readable name + its family icon.
+            // Dread is added by hash, so its template is empty: give it the readable name + its family icon.
             effect.m_name = effect.DisplayName;
             effect.m_tooltip = effect.Description;
             effect.EffectIcon = effect.m_icon = UI.ClassIcons.ForEffect(name);
@@ -116,7 +116,7 @@ namespace FiresRPGClasses.Combat
     /// <summary>§4 / §8.4 the boss's Howl debuff: 10% less damage dealt AND 10% more damage taken, 8 s. No fear, no stagger.</summary>
     public class HowlDreadEffect : CompanionStatusEffectBase
     {
-        public HowlDreadEffect() { Duration = 8f; }   // 0.1.127: applied by hash (vanilla SEMan), so the template carries the 8 s
+        public HowlDreadEffect() { Duration = 8f; }   // applied by hash (vanilla SEMan), so the template carries the 8 s
 
         public override string DisplayName => "Dread";
         public override string Description => "Shaken by a werewolf's howl: deals less damage and takes more.";

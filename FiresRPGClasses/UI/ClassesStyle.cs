@@ -10,7 +10,7 @@ using UnityEngine.UI;
 namespace FiresRPGClasses.UI
 {
     /// <summary>
-    /// The look of Fire's Classes mockups (Tools\ClassesUI_Mockups, "layout B + tree T3"): the parchment palette,
+    /// The look of the Classes mockups ("layout B + tree T3"): the parchment palette,
     /// 44 px targets and the small widget set every board is made of - tabs, pills, the three button styles,
     /// wells, badges, bars and rings. Frames are generated here rather than shipped, so the window needs no bundle.
     /// Plan: Tools\CLASSES_UI_PLAN.md
@@ -75,10 +75,10 @@ namespace FiresRPGClasses.UI
         private static readonly Color MonkColor = Hex("#6fc2b4");
         private static readonly Color RangerColor = Hex("#a3bf5f");
         private static readonly Color MageColor = Hex("#7f98e8");
-        private static readonly Color DruidColor = Hex("#7fb069");          // moss green (Fire, 10-07)
-        private static readonly Color NecromancerColor = Hex("#6ad1e8");    // spectral cyan (Fire, 10-07; apart from Monk's teal)
-        private static readonly Color WerewolfColor = Hex("#a8743f");      // pelt brown (the Werewolf, 10-13)
-        private static readonly Color VampireColor = Hex("#b0303f");       // blood crimson (the Vampire, 10-13)
+        private static readonly Color DruidColor = Hex("#7fb069");          // moss green
+        private static readonly Color NecromancerColor = Hex("#6ad1e8");    // spectral cyan (apart from Monk's teal)
+        private static readonly Color WerewolfColor = Hex("#a8743f");      // pelt brown
+        private static readonly Color VampireColor = Hex("#b0303f");       // blood crimson
 
         public static Color Hex(string hex) =>
             ColorUtility.TryParseHtmlString(hex, out Color color) ? color : Color.magenta;

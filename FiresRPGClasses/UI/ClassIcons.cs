@@ -48,7 +48,8 @@ namespace FiresRPGClasses.UI
         {
             if (_set != null) return;
             _set = config.Bind(Section, "IconSet", IconSet.Fantasy,
-                "Which ability icon art to use. Fantasy is game-icons.net; Line is Tabler line art.");
+                new ConfigDescription("Which ability icon art to use: Fantasy or Line.", null,
+                    new FiresCore.Sync.ConfigurationManagerAttributes { IsAdvanced = true }));
             _set.SettingChanged += (s, e) => Forget();
         }
 
@@ -57,10 +58,10 @@ namespace FiresRPGClasses.UI
         {
             if (string.IsNullOrEmpty(nodeId)) return null;
 
-            // 0.1.119 (perf audit: Set + "/" + nodeId boxed the enum and built a string per slot per frame, twice a frame): one map per set.
+            // One map per set: a combined Set + "/" + nodeId key would box the enum and build a string per slot per frame.
             if (!ResolvedBySet.TryGetValue(Set, out Dictionary<string, Sprite> resolved)) { resolved = new Dictionary<string, Sprite>(); ResolvedBySet[Set] = resolved; }
             // A miss is cached too: the bars ask every frame, and an uncached miss asked Core again each time
-            // (0.1.72: ~135,000 "[FiresMinigame] sprite ... not embedded" Errors for the Druid nodes).
+            // (otherwise a missing sprite logs an error on every frame).
             if (resolved.TryGetValue(nodeId, out Sprite cached)) return cached;
 
             IconSet other = Set == IconSet.Fantasy ? IconSet.Line : IconSet.Fantasy;
@@ -110,8 +111,8 @@ namespace FiresRPGClasses.UI
             return asm;
         }
 
-        // ── status-effect icons (Fire 10-14: a proper icon for EVERY custom status effect; Tools\SE_ICON_INVENTORY.md) ──
-        // [classes-ui] draws one icon per effect FAMILY as Icons\Effects\se_<Family>.png (64x64, vanilla status style). The
+        // ── status-effect icons (a proper icon for EVERY custom status effect; Tools\SE_ICON_INVENTORY.md) ──
+        // There is one icon per effect FAMILY as Icons\Effects\se_<Family>.png (64x64, vanilla status style). The
         // family is the effect name without its trailing tier number: ClassHaste15 / 20 / 25 -> se_ClassHaste.png. An exact
         // se_<EffectName>.png wins over the family one. Null when neither is embedded (the caller keeps its old icon).
         private static readonly Dictionary<string, Sprite> EffectResolved = new Dictionary<string, Sprite>(StringComparer.Ordinal);
@@ -131,7 +132,7 @@ namespace FiresRPGClasses.UI
             return sprite;
         }
 
-        /// <summary>An item's own icon, Icons\Items\item_&lt;Prefab&gt;.png ([classes-ui]'s race potions, 10-14), or null.</summary>
+        /// <summary>An item's own icon, Icons\Items\item_&lt;Prefab&gt;.png (e.g. the race potions), or null.</summary>
         internal static Sprite ForItem(string prefab)
         {
             if (string.IsNullOrEmpty(prefab)) return null;

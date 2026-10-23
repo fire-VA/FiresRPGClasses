@@ -11,8 +11,8 @@ namespace FiresRPGClasses.Combat
     /// Doc 14: an archetype's level-20 evasion replaces the dodge roll while that archetype is on the active bar.
     /// Evasions are never slotted. Plan: Docs/PLAN_ClassesCombatAndUI.md
     /// Each evasion is Core's EmergencyEvasionManager.TryPlayerEvasion: the archetype's evasion (Infernal Blink for the
-    /// Mage + Berserker pair) in the dodge direction, for Core's stamina/eitr cost and cooldown (Fire, popup 2026-09-28
-    /// 19:09). When it isn't ready or the player can't pay, the vanilla roll runs.
+    /// Mage + Berserker pair) in the dodge direction, for Core's stamina/eitr cost and cooldown.
+    /// When it isn't ready or the player can't pay, the vanilla roll runs.
     /// </summary>
     public static class EvasionController
     {
@@ -45,7 +45,7 @@ namespace FiresRPGClasses.Combat
         /// <summary>True when the evasion took the dodge, so the vanilla roll must not also run.</summary>
         public static bool TryTakeDodge(Player player, Vector3 direction)
         {
-            // 0.1.141 ([wishbone], Fire 10-14): a race dodge (vampire mist-step, werewolf pounce) goes first when unlocked; else the class evasion
+            // a race dodge (vampire mist-step, werewolf pounce) goes first when unlocked; else the class evasion
             if (ClassMovement.TryRaceDodge(player, direction)) return true;
             ClassTreeNode node = ActiveEvasion();
             if (node == null || player == null) return false;
@@ -69,7 +69,7 @@ namespace FiresRPGClasses.Combat
             bool evaded = EmergencyEvasionManager.TryPlayerEvasion(player, type, target.Point - player.transform.position);
 
             EmergencyEvasionManager.CostOf(type, out float cost, out bool usesEitr, out float cooldown);
-            // 0.1.114 (R-1013O: 60 "refused" lines on the bot): one line per roll press is a per-event diagnostic - Debug.
+            // one line per roll press is a per-event diagnostic - Debug.
             FiresRPGClassesPlugin.Log?.LogDebug(evaded
                 ? $"[Evasion] {node.Id} -> {type}: cast ({cost} {(usesEitr ? "eitr" : "stamina")}, cooldown {cooldown} s)"
                 : $"[Evasion] {node.Id} -> {type}: refused (cooldown {EmergencyEvasionManager.PlayerCooldownRemaining(player):0.0} s, " +

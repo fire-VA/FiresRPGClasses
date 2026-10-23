@@ -8,7 +8,7 @@ using UnityEngine;
 namespace FiresRPGClasses.Combat
 {
     /// <summary>
-    /// 0.1.92 (Fire #11 batch 2a): design-only actives built on seams that already exist. Every number is the node's yaml value
+    /// Design-only actives built on seams that already exist. Every number is the node's yaml value
     /// at the caster's rank. Self-only effects keep a local timer (no network: only the caster is changed); anything that touches
     /// another character goes through Core (AbilityHeals / ApplySingleEffect / SummonApi).
     /// - Swift Mend: an instant heal on the ally under the crosshair (Mending Light's path).
@@ -25,6 +25,7 @@ namespace FiresRPGClasses.Combat
         private const string TrackerId = "ranger_tracker";
         private const string CallWildId = "ranger_call_of_the_wild";
         private const string BloodbathId = "berserker_bloodbath";
+        internal const string BloodbathNodeId = BloodbathId;   // ClassStatsApi row name
         private const float BloodbathSteal = 0.15f;          // "15% of the damage you deal heals you"
         private static float _bathUntil = -1f, _bathSpeed = 1f;
 
@@ -117,7 +118,7 @@ namespace FiresRPGClasses.Combat
             return true;
         }
 
-        // 0.1.93 (ultimate): "For 10 s: +{as} attack speed, and 15% of the damage you deal heals you." The health cost is the
+        // Ultimate: "For 10 s: +{as} attack speed, and 15% of the damage you deal heals you." The health cost is the
         // ultimate's own (UltimateController). Lifesteal reads the hit as sent (before the victim's armor): the attacker's peer
         // never sees the damage the victim's owner applies.
         private static bool Bloodbath(ClassTreeNode node, Character caster, CastTarget target)
@@ -185,13 +186,13 @@ namespace FiresRPGClasses.Combat
             {
                 float was = hit.m_damage.m_frost;
                 hit.m_damage.m_frost *= 1f - _wardRes;
-                Log($"{GlacialWardId}: frost {was:0.0} -> {hit.m_damage.m_frost:0.0} ({_wardRes:0%} resistance, before armor)");   // 0.1.106: evidence
+                Log($"{GlacialWardId}: frost {was:0.0} -> {hit.m_damage.m_frost:0.0} ({_wardRes:0%} resistance, before armor)");   // evidence the ward applied
             }
             Character attacker = hit.GetAttacker();
             float reach = attacker != null ? Vector3.Distance(attacker.transform.position, victim.transform.position) : -1f;
             bool slowed = attacker != null && !hit.m_ranged && reach <= WardMeleeReach
                 && AbilityRPCManager.ApplySingleEffect(victim, attacker, StatusEffectManager.EFFECT_CLASS_SLOW30, WardSlowSeconds);
-            Log($"{GlacialWardId}: attacker {(attacker != null ? attacker.GetHoverName() : "none")} at {reach:0.0} m, ranged {hit.m_ranged}: slowed {slowed}");   // 0.1.108: evidence
+            Log($"{GlacialWardId}: attacker {(attacker != null ? attacker.GetHoverName() : "none")} at {reach:0.0} m, ranged {hit.m_ranged}: slowed {slowed}");   // evidence the slow applied
         }
 
         /// <summary>For ClassTest: whether Killshot is armed and Glacial Ward's resistance now (0 when off).</summary>

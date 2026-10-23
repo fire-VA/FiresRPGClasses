@@ -6,11 +6,11 @@ using HarmonyLib;
 namespace FiresRPGClasses.UI
 {
     /// <summary>
-    /// The class system's help in vanilla's compendium (Fire 10-01: "proper help menu entries", where the Raven texts are
+    /// The class system's help in vanilla's compendium (proper help menu entries, where the Raven texts are
     /// re-read): the classes and their paths, the two bars, what your weapon decides, talent points and ranks, active /
     /// passive / ultimate, and attributes.
     ///
-    /// The words are [wishbone]'s Hints\ClassRavenHints, the same text the raven speaks, built live from the mod's real
+    /// The words are Hints\ClassRavenHints, the same text the raven speaks, built live from the mod's real
     /// rules, so the compendium and the raven never disagree and never go stale. Every entry is added each time the
     /// compendium opens (vanilla rebuilds the list then); nothing is saved into the character, and the ravens are labelless
     /// so they don't add a second copy. Plan: Tools\CLASSES_UI_PLAN.md
@@ -19,8 +19,8 @@ namespace FiresRPGClasses.UI
     {
         private const string TopicPrefix = "Classes: ";
 
-        /// <summary>[wishbone]'s cheat commands (Combat\ClassAdminCommands), listed only while devcommands are on.</summary>
-        private static readonly string[] AdminCommands = { "class_xp", "class_level", "class_ult_xp" };
+        /// <summary>The cheat commands (Combat\ClassAdminCommands), listed only while devcommands are on.</summary>
+        private static readonly string[] AdminCommands = { "class_xp", "class_level", "class_ult_xp", "class_set", "class_cooldown_reset" };
 
         private static readonly AccessTools.FieldRef<Dictionary<string, Terminal.ConsoleCommand>> Commands =
             AccessTools.StaticFieldRefAccess<Dictionary<string, Terminal.ConsoleCommand>>(AccessTools.Field(typeof(Terminal), "commands"));

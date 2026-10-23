@@ -6,11 +6,11 @@ using UnityEngine;
 namespace FiresRPGClasses.UI
 {
     /// <summary>
-    /// 0.1.166 ([wishbone]; Fire "every HUD element movable", Tools\golden\ui_overhaul\hud_layout\INVENTORY.md): one reflection wrapper over
-    /// Core 0.2.522's FiresShell.RegisterHudElement / UnregisterHudElement, so RPGClasses' HUD pieces join Core's dock engine on any Core
+    /// One reflection wrapper over
+    /// Core's FiresShell.RegisterHudElement / UnregisterHudElement, so RPGClasses' HUD pieces join Core's dock engine on any Core
     /// without a hard reference (an older Core, or the override OFF, just says why and the caller keeps placing itself). Override flips
     /// arrive through FiresShell.OverrideChanged as a flag the callers read on the main thread. (ClassesHud's bars keep their own
-    /// 0.1.162 copy of this; same calls.)
+    /// copy of this; same calls.)
     /// </summary>
     internal static class ClassesHudDock
     {
@@ -69,7 +69,7 @@ namespace FiresRPGClasses.UI
             optT.GetField("Label")?.SetValue(opts, label);
             optT.GetField("Resizable")?.SetValue(opts, true);
             if (visible != null) optT.GetField("Visible")?.SetValue(opts, visible);
-            // Core 0.2.531: shown in layout mode even while hidden in play (an older Core lacks the field: skipped)
+            // Shown in layout mode even while hidden in play (an older Core lacks the field: skipped)
             if (showInLayout) { var sil = optT.GetField("ShowInLayout"); if (sil != null && sil.FieldType == typeof(bool)) sil.SetValue(opts, true); }
             if (!string.IsNullOrEmpty(dockTo))
             {
@@ -78,7 +78,7 @@ namespace FiresRPGClasses.UI
                 if (edgeF != null && !string.IsNullOrEmpty(edge)) edgeF.SetValue(opts, Enum.Parse(edgeF.FieldType, edge));
             }
             SetSizeOptions(optT, opts, sizeChanged, minSize);
-            // 0.1.174 (the lead: Reset must restore the size too; Core 0.2.579 HudElementOptions.SizeReset): the rect's size at register
+            // Reset restores the size too (HudElementOptions.SizeReset): the rect's size at register
             // is the element's default (the saved size is applied after registering), so a reset puts that back, re-lays the content at
             // it, and drops the saved entry. An older Core lacks the field: skipped.
             if (sizeChanged != null)
@@ -99,7 +99,7 @@ namespace FiresRPGClasses.UI
             return null;
         }
 
-        /// <summary>0.1.173 (Fire "REAL resize"; Core 0.2.574+ HudElementOptions.SizeChanged / MinSize, VAInventory 1.0.231 pattern): the grips
+        /// <summary>HudElementOptions.SizeChanged / MinSize (VAInventory's pattern): the grips
         /// change the rect's size per axis and Core calls back; the owner re-lays its content. An older Core lacks the fields: skipped (scale grip).</summary>
         internal static bool SetSizeOptions(Type optT, object opts, Action<Vector2> sizeChanged, Vector2 minSize)
         {
@@ -115,6 +115,20 @@ namespace FiresRPGClasses.UI
             return true;
         }
 
+        /// <summary>HudElementOptions.LiveEdit + DragHandle (as FiresAdminPrefabs'
+        /// CoreUiBridge.RegisterDock: set DragHandle, then LiveEdit): the element moves / resizes at any time, no editor. An older
+        /// Core lacks the fields: skipped silently (false). The handle must already be a raycast target (the caller's own grab area).</summary>
+        internal static bool SetLiveEdit(Type optT, object opts, RectTransform handle)
+        {
+            if (optT == null || opts == null || handle == null) return false;
+            var fh = optT.GetField("DragHandle");
+            var fl = optT.GetField("LiveEdit");
+            if (fh == null || fl == null || fh.FieldType != typeof(RectTransform) || fl.FieldType != typeof(bool)) return false;
+            fh.SetValue(opts, handle);
+            fl.SetValue(opts, true);
+            return true;
+        }
+
         [MethodImpl(MethodImplOptions.NoInlining)]
         private static void UnregisterCore(string id)
         {
@@ -123,9 +137,9 @@ namespace FiresRPGClasses.UI
     }
 
     /// <summary>
-    /// 0.1.173 (Fire "REAL resize": a diagonal grip changes both axes, a straight one one axis; Core 0.2.574+ SizeChanged): the size the
+    /// A diagonal grip changes both axes, a straight one one axis (Core's SizeChanged). The size the
     /// player gave each resizable RPGClasses HUD element. Core saves position only ("the size is the owner's to save and re-apply",
-    /// DockElementOptions.SizeChanged), so, as VAInventory 1.0.231, the sizes live in BepInEx\cache\FiresRPGClasses\hud_sizes.txt
+    /// DockElementOptions.SizeChanged), so, as in VAInventory, the sizes live in BepInEx\cache\FiresRPGClasses\hud_sizes.txt
     /// ("id|w|h"). No saved size = today's layout exactly. Writes and the "[HUD] id resized" Debug line happen once a resize has
     /// settled (0.5 s with no new size), so a drag is one save and one line, not one per frame. Tick() allocates nothing while idle.
     /// </summary>
@@ -156,7 +170,7 @@ namespace FiresRPGClasses.UI
             s_changedAt = Time.unscaledTime;
         }
 
-        /// <summary>0.1.174: Core reset the element: forget its saved size (written now, not at the next settle).</summary>
+        /// <summary>Core reset the element: forget its saved size (written now, not at the next settle).</summary>
         internal static void Clear(string id)
         {
             Load();

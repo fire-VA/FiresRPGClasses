@@ -17,7 +17,7 @@ namespace FiresRPGClasses.Combat
         public Color Tint = Color.white;
         public float Cooldown01;          // 0 = ready (no sweep)
         public int SecondsShown = -1;     // whole seconds left, -1 = none; the TEXT is rebuilt only when this changes
-        public bool SecondsDirty;         // true on the frame SecondsShown changed (0.1.119 / 0.1.130 perf rule)
+        public bool SecondsDirty;         // true on the frame SecondsShown changed (repaint only on change)
         public int Charges = -1, MaxCharges;   // class skills have no charges today: -1 = no pips
         public string KeyLabel = "";
         public string KeyTooltip = "";    // the full chord ("Shift+Alt+1") for the tooltip
@@ -28,11 +28,11 @@ namespace FiresRPGClasses.Combat
     }
 
     /// <summary>
-    /// 0.1.160 ([wishbone]; the HotbarSlot port, Tools\golden\ui_overhaul\hotbars\PLAN.md): the DATA side of the class front/back bars
-    /// for Core's kit HotbarSlot/HotbarRow, with no UI or kit types, so it compiles on any Core. [classes-ui] draws it on the ON path
-    /// (two HotbarRows in ClassesHud); OFF stays today's clone path, which doesn't use this. Same sources and rules as ClassesHud.Paint
+    /// The DATA side of the class front/back bars
+    /// for Core's kit HotbarSlot/HotbarRow, with no UI or kit types, so it compiles on any Core. It is drawn on the ON path
+    /// (two HotbarRows in ClassesHud); OFF stays the clone path, which doesn't use this. Same sources and rules as ClassesHud.Paint
     /// today: ClassIcons / the bar's weapon art, the readiness tint, CooldownTracker fractions, the whole-second text only on change.
-    /// The open Fire choices (back-bar opacity, the well fill, possession chips) are NOT here: they're draw-side keys.
+    /// Look choices (back-bar opacity, the well fill, possession chips) are NOT here: they're draw-side keys.
     /// </summary>
     public static class ClassBarModel
     {

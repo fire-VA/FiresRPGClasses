@@ -7,7 +7,7 @@ using UnityEngine;
 namespace FiresRPGClasses.Combat
 {
     /// <summary>
-    /// The race potions (Tools\VAMPIRE_CLASS_DESIGN.md §6; Fire 10-13 LOCKED; amounts are [wishbone]'s placeholders for Fire):
+    /// The race potions (Tools\VAMPIRE_CLASS_DESIGN.md §6; amounts are placeholders):
     /// - Cleansing Mead: cures Moon-touched / Tainted Blood (the disease, before turning). Thistle 2 + Dandelion 2 + Honey 2.
     /// - Purifying Draught (vampirism): cures a turned vampire. Silver 5 + Moder trophy 1 + Honey 2.
     /// - Purifying Draught (lycanthropy): cures a turned werewolf. Silver 5 + Bonemass trophy 1 + Honey 2.
@@ -52,7 +52,7 @@ namespace FiresRPGClasses.Combat
 
         private static void Log(string s) => FiresRPGClassesPlugin.Log?.LogDebug("[Races] " + s);
 
-        // 0.1.136 drink trace ([lead]: "bag 1 -> 1" three rounds running): identities, so a copy and the original can be told apart.
+        // Drink trace: identities, so a copy and the original can be told apart.
         internal static string Ident(ItemDrop.ItemData it) =>
             it == null ? "null" : $"#{System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(it):X} x{it.m_stack} @({it.m_gridPos.x},{it.m_gridPos.y}) shared #{System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(it.m_shared):X}";
 
@@ -108,7 +108,7 @@ namespace FiresRPGClasses.Combat
             shared.m_consumeStatusEffect = null;
             shared.m_food = shared.m_foodStamina = shared.m_foodEitr = 0f;
             shared.m_itemType = ItemDrop.ItemData.ItemType.Consumable;
-            // [classes-ui]'s potion art (Icons\Items\item_<Prefab>.png); the source mead's icon stays when it's missing.
+            // The potion art (Icons\Items\item_<Prefab>.png); the source mead's icon stays when it's missing.
             Sprite icon = UI.ClassIcons.ForItem(d.Prefab);
             if (icon != null) shared.m_icons = new[] { icon };
             Log($"{d.Prefab}: icon {(icon != null ? "item_" + d.Prefab + ".png" : "the source mead's (no art embedded)")}");
@@ -269,9 +269,9 @@ namespace FiresRPGClasses.Combat
             Inventory inv = inventory ?? __instance.GetInventory();
             int before = inv.CountItems(item.m_shared.m_name);
             int stack = item.m_stack;
-            // 0.1.136 ([lead], strike 3 on "bag 1 -> 1"): every instance of this potion in the bag (identity, stack, grid) right before
-            // and after the removal, the drunk instance and who called. 0.1.137: kept at Debug ([lead]); it showed the cause - the
-            // tester's god mode with ServerDevcommands' "No item usage with god mode" leaves the potion (not a game bug).
+            // Debug trace: every instance of this potion in the bag (identity, stack, grid) right before and after the removal,
+            // the drunk instance and who called. A potion that stays after drinking is usually god mode with ServerDevcommands'
+            // "No item usage with god mode" (not a game bug).
             string drunkId = RaceItems.Ident(item);
             string beforeList = RaceItems.Instances(inv, item);
             bool removed = inv.RemoveOneItem(item);

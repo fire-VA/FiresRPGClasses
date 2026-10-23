@@ -8,13 +8,12 @@ using UnityEngine;
 namespace FiresRPGClasses.Combat
 {
     /// <summary>
-    /// 0.1.142 ([wishbone], Fire 10-15 via the lead: "our bars should clear when we change weapons, or show the last bar setup for
-    /// that weapon type, not continue to show skills we cannot use"): each bar remembers its layout (class, 6 skills, ultimate +
+    /// Bars never keep showing skills the new weapon can't use: each bar remembers its layout (class, 6 skills, ultimate +
     /// morph) PER WEAPON TYPE. On a weapon change the current layout is saved under the old type and the new type's saved layout comes
     /// back; a type never seen starts with the class that weapon can drive and EMPTY skill slots. Either way, a skill the bar's class
     /// can't drive is cleared (logged). Stored in the class record (ClassPlayerData.WeaponBars, per character). The first time, the
     /// two bars simply become their weapons' entries (nothing to migrate beyond that).
-    /// Always on (0.1.147: a fix has no key). Key "[1 - Bars] Bar swap animation" (default false,
+    /// The memory is always on. Key "[1 - Bars] Bar swap animation" (default false,
     /// a new visual: vanilla's R-key draw trigger "equip_hip" on a front / back swap).
     /// </summary>
     public static class BarMemory
@@ -22,14 +21,14 @@ namespace FiresRPGClasses.Combat
         public const string Section = "1 - Bars";   // the existing bars section
         private static ConfigEntry<bool> _swapAnim;
 
-        // 0.1.147 (Fire 10-15 TEAM RULE: a fix is always on, no key): the per-weapon-type bar memory has no key any more
+        // The per-weapon-type bar memory is always on; it has no config key.
         public static bool Remember => true;
         public static bool SwapAnimation => _swapAnim != null && _swapAnim.Value;
 
         public static void Bind(ConfigFile cfg)
         {
             _swapAnim = cfg.Bind(Section, "Bar swap animation", false,
-                "Swapping front / back bar plays the draw-weapon animation (the same one as the vanilla hide / show weapons key), so a swap between two staves is easy to see.");
+                "Play the draw-weapon animation when you swap front and back bars.");
         }
 
         /// <summary>"BloodMagic.2H", "Swords.1H+Shield", "Unarmed": the bar's weapon type (skill + hands + shield).</summary>

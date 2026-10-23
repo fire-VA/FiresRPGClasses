@@ -9,9 +9,9 @@ using UnityEngine;
 namespace FiresRPGClasses.Combat
 {
     /// <summary>
-    /// 0.1.141 ([wishbone], Fire 10-14 "use our 250 animations"): the "firesmovementclips" bundle (26 CC0 Quaternius UAL clips from the
+    /// The "firesmovementclips" bundle (26 CC0 Quaternius UAL clips from the
     /// full sandbox library, imported Humanoid; Valheim's player avatar is Humanoid, so they play on it as they are) is embedded in this
-    /// DLL and registered with Core's ClipSlots (FiresCore.Animation, Core 0.2.493+) once at client start-up, under the ids the movement
+    /// DLL and registered with Core's ClipSlots (FiresCore.Animation) once at client start-up, under the ids the movement
     /// styles and Core's own moves play. Registering is what turns Core's [Movement] "Clip slots" Auto on (a consumer).
     /// Not on a dedicated server (no animator there). A missing bundle or an older Core leaves every move on its vanilla fallback.
     /// </summary>
@@ -21,7 +21,7 @@ namespace FiresRPGClasses.Combat
         private static AssetBundle _bundle;
         private static bool _done;
 
-        // id -> clip name (the lead's approved picks, 10-14) + its default mode
+        // id -> clip name + its default mode
         private static readonly (string id, string clip, ClipMode mode)[] Map =
         {
             // Core's own moves (Core plays these ids when they're registered; vanilla jump / crouch otherwise)
@@ -87,7 +87,7 @@ namespace FiresRPGClasses.Combat
             }
             catch (Exception e)
             {
-                // TypeLoad / MissingMethod here = a Core older than 0.2.493 (no ClipSlots): the moves keep their fallbacks
+                // TypeLoad / MissingMethod here = an older Core (no ClipSlots): the moves keep their fallbacks
                 FiresRPGClassesPlugin.Log?.LogWarning("[Movement] clips: not registered (Core without ClipSlots?): " + e.GetBaseException().Message);
             }
         }

@@ -177,8 +177,8 @@ namespace FiresRPGClasses.Data
                 {
                     string text = (item?.ToString() ?? "").Trim();
                     bool percent = text.EndsWith("%", StringComparison.Ordinal);
-                    // The leading number, whatever the unit after it: "15%" -> 0.15, "3 s" -> 3, and (0.1.91, Fire #11) "50 m" -> 50,
-                    // "0-star" -> 0, "5th" -> 5. Before 0.1.91 only % and s were stripped, and the rest were dropped with a warning.
+                    // The leading number, whatever the unit after it: "15%" -> 0.15, "3 s" -> 3, "50 m" -> 50,
+                    // "0-star" -> 0, "5th" -> 5.
                     Match lead = LeadingNumber.Match(text);
                     if (lead.Success && float.TryParse(lead.Value, NumberStyles.Float, CultureInfo.InvariantCulture, out float number))
                         parsed.Add(percent ? number / 100f : number);
@@ -330,7 +330,7 @@ namespace FiresRPGClasses.Data
             return added;
         }
 
-        // 0.1.104: the ultimate's resource, amount and morph names for UltimateCatalog.
+        // the ultimate's resource, amount and morph names for UltimateCatalog.
         private static void KeepUltimate(ClassTreeNode node, Dictionary<object, object> cost, Dictionary<object, object> map)
         {
             if (cost != null)
@@ -356,8 +356,8 @@ namespace FiresRPGClasses.Data
 
         /// <summary>
         /// The yaml is written for people, so its enum labels carry spaces: "Around you", "Next attack".
-        /// Enum.TryParse matches neither, and silently taking the fallback turned 25 abilities into Self on
-        /// 2026-09-24. Every enum label the yaml can name is read through here, so a spaced, hyphenated or
+        /// Enum.TryParse matches neither, and silently taking the fallback would turn such abilities into
+        /// Self. Every enum label the yaml can name is read through here, so a spaced, hyphenated or
         /// underscored spelling resolves while a genuinely unknown word still fails and warns.
         /// </summary>
         private static bool TryParseEnumLabel<T>(string text, out T value) where T : struct

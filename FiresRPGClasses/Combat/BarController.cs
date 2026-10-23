@@ -37,22 +37,22 @@ namespace FiresRPGClasses.Combat
 
         public static event Action<BarSide> BarsChanged;
 
-        /// <summary>0.1.142: after a front / back swap (from, to), local player. [classes-ui]'s HUD cue.</summary>
+        /// <summary>After a front / back swap (from, to), local player. Drives the HUD's swap cue.</summary>
         public static event Action<BarSide, BarSide> BarSwapped;
 
-        /// <summary>0.1.142: after per-weapon-type memory saved / restored a layout (side, old type key, new type key, restored).</summary>
+        /// <summary>After per-weapon-type memory saved / restored a layout (side, old type key, new type key, restored).</summary>
         public static event Action<BarSide, string, string, bool> BarWeaponTypeChanged;
 
         internal static void RaiseWeaponTypeChanged(BarSide side, string oldType, string newType, bool restored) => BarWeaponTypeChanged?.Invoke(side, oldType, newType, restored);
 
-        /// <summary>0.1.142: the bar's current weapon type key ("BloodMagic.2H", "Swords.1H+Shield", "Unarmed").</summary>
+        /// <summary>The bar's current weapon type key ("BloodMagic.2H", "Swords.1H+Shield", "Unarmed").</summary>
         public static string WeaponTypeKey(BarSide side)
         {
             ClassPlayerData data = ClassPlayerStore.Local;
             return data == null ? "" : HasBarSlots ? BarMemory.TypeKey(BarWeapon(side), BarOffHand(side)) : BarMemory.TypeKey(data.Bar(side).WeaponPrefab, data.Bar(side).OffHandPrefab);
         }
 
-        /// <summary>0.1.142: true when the bar's class can drive that skill (the UI hides, not greys, the rest).</summary>
+        /// <summary>True when the bar's class can drive that skill (the UI hides, not greys, the rest).</summary>
         public static bool CanDrive(BarSide side, string nodeId) => BarMemory.CanDrive(ClassPlayerStore.Local?.Bar(side), nodeId);
 
         public static bool SwapLocked => Time.time < _swapReadyAt;
@@ -85,10 +85,10 @@ namespace FiresRPGClasses.Combat
             return FindInInventory(bar.WeaponPrefab) != null;
         }
 
-        // ---- VAInventory's bar slots (Fire, 2026-09-30) ------------------------------------------------------
+        // ---- VAInventory's bar slots ------------------------------------------------------------------------
         // VAInventory (a soft dependency, reached by reflection like ClassesInventoryTab) adds four equipment slots:
         // Front bar, Front offhand, Back bar, Back offhand. When they exist, each bar takes its weapon and off hand
-        // from its slots instead of from whatever is equipped (Fire's popup, 20:2x):
+        // from its slots instead of from whatever is equipped:
         //   - switching bars equips that bar's weapon and off hand;
         //   - the hotbar cannot change a bar: a weapon equipped some other way is a temporary swap that dims the
         //     active bar (SlotAvailability.WrongWeapon) until the player switches bars or re-equips its weapon;
@@ -122,7 +122,7 @@ namespace FiresRPGClasses.Combat
             {
                 if (_slotsFrame == Time.frameCount) return _hasBarSlots;
                 _slotsFrame = Time.frameCount;
-                // 0.1.130 (Fire's profiler: ClassesHud 183 MB / 8.6 min): a bound getter, not PropertyInfo.GetValue (boxed bool per frame).
+                // A bound getter, not PropertyInfo.GetValue (that boxes a bool every frame).
                 if (!ResolveVa() || _vaActive == null) _hasBarSlots = false;
                 else if (_vaActiveGetter != null)
                 {
@@ -214,7 +214,7 @@ namespace FiresRPGClasses.Combat
                 BarLayout bar = data.Bar(side);
                 if (bar.WeaponPrefab == weaponPrefab && bar.OffHandPrefab == offHandPrefab) continue;
 
-                // 0.1.142: per-weapon-type memory first (it reads the OLD weapon still on the bar), then the bar takes the new one
+                // Per-weapon-type memory first (it reads the OLD weapon still on the bar), then the bar takes the new one
                 bool remembered = BarMemory.OnWeaponChange(data, side, weapon, offHand, FallbackArchetype(weapon, offHand, data.Bar(ClassPlayerData.Other(side)).Archetype));
                 bar.WeaponPrefab = weaponPrefab;
                 bar.OffHandPrefab = offHandPrefab;
@@ -234,9 +234,8 @@ namespace FiresRPGClasses.Combat
             }
         }
 
-        // 0.1.130 (Fire's profiler: ClassesHud 183 MB / 8.6 min): this was a closure + Func + object[] + MethodInfo.Invoke per call, and the
-        // HUD makes up to ~18 calls a frame (weapon art, HoldingBarWeapon per lit skill slot). Now a bound delegate (no reflection, no
-        // allocation), and each of the four slots is read at most once a frame. A put through TryPutInClassBarSlot drops the frame cache.
+        // The HUD makes up to ~18 calls a frame (weapon art, HoldingBarWeapon per lit skill slot), so this is a bound delegate (no
+        // reflection, no closure, no allocation per call), and each of the four slots is read at most once a frame. A put through TryPutInClassBarSlot drops the frame cache.
         private static Func<string, ItemDrop.ItemData> _vaGetItemFn;
         private static Func<bool> _vaActiveGetter;
         private static readonly string[] SlotIds = { FrontWeaponSlot, FrontOffhandSlot, BackWeaponSlot, BackOffhandSlot };
@@ -385,7 +384,7 @@ namespace FiresRPGClasses.Combat
             BarSide from = data.ActiveBar;
             data.ActiveBar = ClassPlayerData.Other(data.ActiveBar);
             EquipBar(player, data.Active);
-            // 0.1.142 (Fire: "a bar swap animation ... so we can tell when we're swapping"): vanilla's hide / show weapons trigger
+            // A visible cue that the bars swapped: vanilla's hide / show weapons trigger
             if (BarMemory.SwapAnimation) player.m_zanim?.SetTrigger("equip_hip");
             FiresRPGClassesPlugin.Log?.LogDebug($"[Bars] swap {from} -> {data.ActiveBar}: {BarMemory.TypeKey(BarWeapon(data.ActiveBar), BarOffHand(data.ActiveBar))}{(BarMemory.SwapAnimation ? ", anim equip_hip" : "")}");
             BarSwapped?.Invoke(from, data.ActiveBar);
@@ -401,7 +400,7 @@ namespace FiresRPGClasses.Combat
             ClassPlayerData data = ClassPlayerStore.Local;
             Player player = Player.m_localPlayer;
             if (data == null || player == null) return;
-            // With VAInventory's bar slots the bar's weapon is the slot's, never what happens to be held (Fire).
+            // With VAInventory's bar slots the bar's weapon is the slot's, never what happens to be held.
             if (HasBarSlots) return;
             // Wolf Form unequips the bar's weapon and puts it back after: the bar keeps its record meanwhile.
             if (WerewolfKit.FormActive) return;
@@ -414,7 +413,7 @@ namespace FiresRPGClasses.Combat
             string offHandPrefab = offHand?.m_dropPrefab != null ? offHand.m_dropPrefab.name : "";
             if (bar.WeaponPrefab == weaponPrefab && bar.OffHandPrefab == offHandPrefab) return;
 
-            bool remembered = BarMemory.OnWeaponChange(data, data.ActiveBar, weapon, offHand, FallbackArchetype(weapon, offHand, data.Inactive.Archetype));   // 0.1.142
+            bool remembered = BarMemory.OnWeaponChange(data, data.ActiveBar, weapon, offHand, FallbackArchetype(weapon, offHand, data.Inactive.Archetype));
             bar.WeaponPrefab = weaponPrefab;
             bar.OffHandPrefab = offHandPrefab;
 
@@ -529,7 +528,7 @@ namespace FiresRPGClasses.Combat
             if (string.IsNullOrEmpty(nodeId)) return SlotAvailability.Empty;
             if (!IsUsable(bar)) return SlotAvailability.BarUnusable;
             // Wolf Form empties the hands on purpose (the claws are the weapon): not a temporary swap.
-            // 0.1.126 (R-1013BS): the race classes (Werewolf, Vampire) have no weapon - the race is their requirement - so a held weapon that
+            // The race classes (Werewolf, Vampire) have no weapon - the race is their requirement - so a held weapon that
             // differs from the bar's recorded one is never "WrongWeapon" for them (Howl was refused with a lent Club in hand).
             bool raceClass = bar.Archetype == WerewolfClass.Archetype || bar.Archetype == VampireClass.Archetype;
             if (side == data.ActiveBar && !raceClass && !WerewolfKit.FormActive && !HoldingBarWeapon(side)) return SlotAvailability.WrongWeapon;

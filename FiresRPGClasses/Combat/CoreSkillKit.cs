@@ -13,9 +13,9 @@ namespace FiresRPGClasses.Combat
     /// The kit for the tree nodes Core already has as companion abilities. Each casts what the companion's
     /// ArchetypeAbilitySystem.Use* method casts (one AbilityRPCManager call with the same effect and duration), so the
     /// player's skill and the companion's are one effect. A party skill reaches the tree's radius (the player design) when
-    /// the node has one, else the companion's. Core decides who a cast may touch (ClassTargeting, Core 0.2.138): heals and
+    /// the node has one, else the companion's. Core decides who a cast may touch (ClassTargeting): heals and
     /// buffs only the party (group or guild), debuffs only enemies, a player only when both have PvP on.
-    /// Fire's picks (popup 2026-09-28 18:0x):
+    /// Design choices:
     /// - the five placed skills (Consecration, Rain of Arrows, Meteor, Sanctuary, Purifying Circle) go off at your feet for
     ///   now, until Core has a point-centred apply;
     /// - Resurrection revives the party's defeated companions within reach, each on its owner's peer;
@@ -64,7 +64,7 @@ namespace FiresRPGClasses.Combat
 
         private static float _poisonArmedUntil = -1f;
 
-        // Durations and ranges: ArchetypeAbilitySystem's Use* methods and constants (Core 0.2.138).
+        // Durations and ranges: ArchetypeAbilitySystem's Use* methods and constants.
         private static readonly Dictionary<string, CoreCast> Casts = new Dictionary<string, CoreCast>
         {
             { "tank_fortify",          Cast(Reach.Self,  StatusEffectManager.EFFECT_FORTIFY, 10f) },
@@ -156,8 +156,8 @@ namespace FiresRPGClasses.Combat
             switch (cast.Reach)
             {
                 case Reach.Self:
-                    // R75: a placed skill cast as a self effect (Rain of Arrows, Meteor) never handed its aim to Core, which then
-                    // landed it 8 m in front of the caster. Core 0.2.200 takes the point for the next placed effect.
+                    // a placed skill cast as a self effect (Rain of Arrows, Meteor) hands its aim to Core first; otherwise Core
+                    // lands it 8 m in front of the caster. Core takes the point for the next placed effect.
                     if (node.Targeting.Mode == TargetingMode.Placed && target.Resolved) CorePlacement.Hand(target.Point);
                     return AbilityRPCManager.ApplySelfBuff(caster, cast.Effect, cast.Duration);
                 case Reach.Ally:

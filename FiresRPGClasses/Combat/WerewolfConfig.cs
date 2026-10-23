@@ -8,13 +8,13 @@ namespace FiresRPGClasses.Combat
     /// <summary>
     /// [11 - Werewolf] (Tools\WEREWOLF_CLASS_DESIGN.md §3, §4, §8). Every key is synced from the server (the server decides how strong
     /// a werewolf is and whether the full moon forces the form); the tuning numbers are advanced keys. Bound once per process (the
-    /// ConfigSync-once rule: 0.1.120 bound a section twice on the dedi and Core's ZNet.Awake threw "same key"), on clients and on the
+    /// ConfigSync-once rule: binding a section twice makes Core's ZNet.Awake throw "same key" on a dedicated server), on clients and on the
     /// dedicated server alike, so the server's values are the ones that sync.
     /// </summary>
     internal static class WerewolfConfig
     {
         private const string Section = "11 - Werewolf";
-        // 10-13 config rule: a fixed constant, raised only when a synced key's name/type/meaning changes.
+        // a fixed constant, raised only when a synced key's name/type/meaning changes.
         private const string MinimumSyncedVersion = "0.1.123";
 
         /// <summary>The design's default per-creature rules, in order (first match wins). See <see cref="HowlRules"/>.</summary>
@@ -41,19 +41,17 @@ namespace FiresRPGClasses.Combat
             var synced = new List<ConfigEntryBase>();
 
             FullMoonForcesForm = Add(synced, config.Bind(Section, "Full moon forces Wolf Form", false,
-                Describe("Werewolves are forced into Wolf Form at night under a full moon, until dawn (Fire 10-13: off by default, a server "
-                    + "opt-in). Needs a moon-phase source; none is published yet, so this stays without effect. [Synced with Server]")));
+                Describe("Werewolves are forced into Wolf Form on full-moon nights until dawn (no effect until a moon-phase source exists). [Synced with Server]")));
             NeedServerAnswer = Add(synced, config.Bind(Section, "Wolf Form needs the server answer"   /* 0.1.125: no apostrophe - BepInEx refuses ' in keys and the throw skipped the rest of Awake (R-1013BQ) */, true,
-                Describe("Wolf Form starts only when the server confirms the race (as Wildshape's grant). Off: a client whose server never "
-                    + "answers (no FiresRPGClasses on the server) transforms anyway after 3 s. [Synced with Server]", true)));
+                Describe("Wolf Form starts only once the server confirms the race; off, it starts anyway after 3 s. [Synced with Server]", true)));
             FormModel = Add(synced, config.Bind(Section, "Wolf Form look", "Fenring",
-                Describe("The VCS form shown while transformed (VcsApi.SetForm). It must be on VCS's model allowlist. [Synced with Server]", true)));
+                Describe("The creature model shown in Wolf Form (must be on VCS's model allowlist). [Synced with Server]", true)));
 
             MoveSpeed = Add(synced, config.Bind(Section, "Wolf Form move speed", 0.20f, Range("Extra move speed in Wolf Form (0.20 = +20%). [Synced with Server]", 0f, 1f)));
             StaminaRegen = Add(synced, config.Bind(Section, "Wolf Form stamina regen", 0.25f, Range("Extra stamina regeneration in Wolf Form. [Synced with Server]", 0f, 2f)));
             Jump = Add(synced, config.Bind(Section, "Wolf Form jump", 0.20f, Range("Extra jump in Wolf Form. [Synced with Server]", 0f, 1f)));
             SlashResist = Add(synced, config.Bind(Section, "Wolf Form slash resistance", 0.15f, Range("Less slash damage taken in Wolf Form. [Synced with Server]", 0f, 0.9f)));
-            FireWeakness = Add(synced, config.Bind(Section, "Wolf Form fire weakness", 0.20f, Range("More fire damage taken in Wolf Form (folklore). [Synced with Server]", 0f, 2f)));
+            FireWeakness = Add(synced, config.Bind(Section, "Wolf Form fire weakness", 0.20f, Range("More fire damage taken in Wolf Form. [Synced with Server]", 0f, 2f)));
 
             ClawBase = Add(synced, config.Bind(Section, "Claws slash damage", 30f, Range("Claw slash damage at class level 0, before the Unarmed skill and Claws' rank. [Synced with Server]", 0f, 500f)));
             ClawPerLevel = Add(synced, config.Bind(Section, "Claws slash per class level", 2f, Range("Claw slash damage added per class level. [Synced with Server]", 0f, 20f)));
@@ -64,11 +62,8 @@ namespace FiresRPGClasses.Combat
             RageCooldown = Add(synced, config.Bind(Section, "Blood Rage cooldown", 300f, Range("Blood Rage: seconds before it can trigger again. [Synced with Server]", 10f, 3600f)));
 
             HowlRules = Add(synced, config.Bind(Section, "Howl creature rules", DefaultHowlRules,
-                new ConfigDescription("What Howl does to each enemy within its radius: an ordered list of 'match:effect', first match wins. "
-                    + "Match = a faction (AnimalsVeg, ForestMonsters, Undead, Demon, MountainMonsters, SeaMonsters, PlainsMonsters, Dverger, "
-                    + "MistlandsMonsters, AshlandsMonsters...), a prefab name (Troll), or a tag: Boss, Elite (Fires Monster Overhaul tier 3+), "
-                    + "Tough (max health at or above 'Howl fear health'), Tamed, Player, * (anything). Effect = Fear, Stagger, StaggerHalf, "
-                    + "Debuff (ClassHowlDread: -10% damage dealt, +10% taken, 8 s) or None. [Synced with Server]")));
+                Describe("What Howl does to nearby enemies: an ordered match:effect list (match = faction, prefab, Boss, Elite, Tough, Tamed, Player or *; "
+                    + "effect = Fear, Stagger, StaggerHalf, Debuff or None), first match wins. [Synced with Server]", true)));
             HowlFearHealth = Add(synced, config.Bind(Section, "Howl fear health", 600f, Range("Howl: creatures at or above this max health count as Tough. [Synced with Server]", 1f, 100000f)));
             HowlFearSeconds = Add(synced, config.Bind(Section, "Howl fear seconds", 4f, Range("Howl: how long a frightened creature flees. [Synced with Server]", 0.5f, 30f)));
             HowlTauntSeconds = Add(synced, config.Bind(Section, "Howl hybrid taunt seconds", 6f, Range("Howl with a taunt class on the other bar: how long enemies are taunted. [Synced with Server]", 0.5f, 30f)));

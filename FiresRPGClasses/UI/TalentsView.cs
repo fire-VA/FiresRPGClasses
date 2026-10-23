@@ -11,8 +11,8 @@ using UnityEngine.UI;
 namespace FiresRPGClasses.UI
 {
     /// <summary>
-    /// Classes > Talents: Fire's tree T3 (boards TreePaths and ClassTank..ClassHealer). A crest strip on the left picks
-    /// the archetype (Fire, 2026-09-29); the tree has the tier labels down the left, three path columns with their
+    /// Classes > Talents: tree layout T3 (boards TreePaths and ClassTank..ClassHealer). A crest strip on the left picks
+    /// the archetype; the tree has the tier labels down the left, three path columns with their
     /// headers, and each node as a ring with its icon, rank pips, name and level. Two nodes of one variant group share a
     /// dashed "Variants" box. Connectors are one mesh (<see cref="UILineGraphic"/>). Clicking a node opens its card:
     /// this rank and the next, cost, and "Learn for N points". Reset previews the refund before it runs.
@@ -27,9 +27,8 @@ namespace FiresRPGClasses.UI
         private const float LegendHeight = 40f;
         private const float TierLabelWidth = 128f;
         private const float PathHeaderHeight = 54f;
-        // 2b ([classes-ui]): hosted in the Fires hub = the shared kit NodeLayout (pitch 118, no overlaps); otherwise today's numbers, unchanged.
-        // 0.1.150 (Fire 10-16 overlaps): the 118-pitch kit layout is OFF again until the scrolling GraphCanvas step (own key + golden);
-        // hosted pages are now the old page size scaled to fit, so the known-good node numbers below apply in the hub too.
+        // Hosted in the Fires hub this could use the shared kit NodeLayout (pitch 118), but that layout overlapped nodes, so it
+        // stays OFF until a scrolling graph canvas exists; hosted pages are the old page size scaled to fit, so the known-good node numbers below apply in the hub too.
         private static bool Hub => false;
         private static float NodeWidth => Hub ? 150f : 112f;
         private static float NodeHeight => Hub ? FiresCore.UI.Shell.Kit.NodeLayout.Pitch : 96f;
@@ -55,7 +54,7 @@ namespace FiresRPGClasses.UI
         private bool _confirmingReset;
         private float _nodeScale = 1f;
 
-        /// <summary>The row a node sits in: ultimates in the Ultimates row whatever tier the data gives them (R82: Tank's
+        /// <summary>The row a node sits in: ultimates in the Ultimates row whatever tier the data gives them (e.g. Tank's
         /// Hold the Line is tier "starter" in the yaml and landed in the Starter row).</summary>
         private static NodeTier RowOf(ClassTreeNode node) => TalentRules.IsUltimate(node) ? NodeTier.Ultimate : node.Tier;
 
@@ -88,7 +87,7 @@ namespace FiresRPGClasses.UI
         {
             _page = page;
 
-            // Fire 10-01: a click on the window's empty background closes the open card. This sits under everything on the
+            // A click on the window's empty background closes the open card. This sits under everything on the
             // page, so it only gets clicks nothing else took.
             RectTransform backdrop = ClassesStyle.Rect(page, "Backdrop", Vector2.zero, Vector2.one);
             Button close = backdrop.gameObject.AddComponent<Button>();
@@ -205,8 +204,8 @@ namespace FiresRPGClasses.UI
             ClassesStyle.Clear(_header);
             int unspent = data.Progress.UnspentSkillPoints(TalentRules.Rates);
 
-            // Two rows: the name, points and Reset on top; under them, the weapons this class takes (Fire 10-01: "clearly
-            // state what weapons are accepted for each class"). Read from the bars' own rule, WeaponArchetypes.
+            // Two rows: the name, points and Reset on top; under them, the weapons this class takes, stated
+            // plainly. Read from the bars' own rule, WeaponArchetypes.
             RectTransform top = ClassesStyle.Rect(_header, "Top", new Vector2(0f, 0.38f), Vector2.one);
             RectTransform weapons = ClassesStyle.Rect(_header, "Weapons", Vector2.zero, new Vector2(1f, 0.38f));
             ClassesStyle.Label(weapons, "Text", "<color=#f0b44c>Weapons:</color>  " + WeaponArchetypes.WeaponsLine(_shown), 14f,
@@ -305,7 +304,7 @@ namespace FiresRPGClasses.UI
             _grid.offsetMin = new Vector2(TierLabelWidth, 0f);
             _grid.offsetMax = new Vector2(0f, -PathHeaderHeight);
             // Six tiers share the tree's height; at the default window a row is ~75 px, less than a full-size node (96),
-            // which made nodes overlap the rows around them (R82). Nodes shrink to fit their row, never grow past 1.
+            // which made nodes overlap the rows around them. Nodes shrink to fit their row, never grow past 1.
             float rowHeight = _grid.rect.height / Tiers.Length;
             _nodeScale = rowHeight > 1f ? Mathf.Clamp(rowHeight / (NodeHeight + 6f), 0.55f, 1f) : 1f;
 
@@ -368,7 +367,7 @@ namespace FiresRPGClasses.UI
             float first = -(count - 1) * spacing / 2f;
 
             // A variant group (both learnable, one slotted) gets the boards' box. Its caption lives in the legend: inside a
-            // tier row there is no room for a line of text without it running into the row above (R82 shots).
+            // tier row there is no room for a line of text without it running into the row above.
             bool variants = count > 1 && nodes.All(n => !string.IsNullOrEmpty(n.VariantGroup))
                             && nodes.Select(n => n.VariantGroup).Distinct().Count() == 1;
             if (variants)
@@ -477,7 +476,7 @@ namespace FiresRPGClasses.UI
                 subLabel.rectTransform.offsetMax = new Vector2(4f, 15f);
             }
 
-            // A node with no handler yet (28 Druid / Necromancer nodes, 10-08) must not read as a working talent: greyed
+            // A node with no handler yet must not read as a working talent: greyed
             // icon, and the sub line says so.
             if (!FiresRPGClasses.Combat.ClassSkillKit.Implements(node.Id))
             {
@@ -591,7 +590,7 @@ namespace FiresRPGClasses.UI
             ClassTree tree = ClassTrees.Tree(node.Archetype);
             string pathName = tree?.Paths.FirstOrDefault(p => p.Id == node.PathId)?.DisplayName;
 
-            // Fire 10-01: the card says what kind of talent it is and what it does, in plain words, never the slot numbers or
+            // The card says what kind of talent it is and what it does, in plain words, never the slot numbers or
             // enum names; then what the next rank adds and what it costs.
             CardText("Title", node.DisplayName, 20f, ClassesStyle.Gold, true);
             if (!FiresRPGClasses.Combat.ClassSkillKit.Implements(node.Id))
@@ -637,7 +636,7 @@ namespace FiresRPGClasses.UI
                 ClassesStyle.Paint(learn, ClassesStyle.ButtonKind.Primary, can);
             }
 
-            // Beside the node: to its right when it sits in the left half of the tree, else to its left. Fire 10-01: no
+            // Beside the node: to its right when it sits in the left half of the tree, else to its left. No
             // docked panel; a click on empty space or Esc closes it (CloseOverlay).
             LayoutRebuilder.ForceRebuildLayoutImmediate(_card);
             Vector2 at = _tree.InverseTransformPoint(ring.TransformPoint(ring.rect.center));
@@ -671,7 +670,7 @@ namespace FiresRPGClasses.UI
             return string.Join("  ·  ", parts.ToArray());
         }
 
-        /// <summary>Fire's three kinds. A dodge replacement and an automatic ability are passives the player doesn't cast.</summary>
+        /// <summary>The three kinds. A dodge replacement and an automatic ability are passives the player doesn't cast.</summary>
         internal static string KindOf(ClassTreeNode node)
         {
             if (TalentRules.IsUltimate(node)) return "Ultimate";
@@ -698,8 +697,8 @@ namespace FiresRPGClasses.UI
         {
             if (node == null) return "";
             if (!string.IsNullOrEmpty(node.Description)) return node.DescriptionAt(rank);
-            // A passive Core runs through this mod's PassiveKit: its sentence with the real numbers at this rank (Fire 10-01:
-            // "none of our passives actually explain what they do"). From PassiveKit's own constants, so it can't drift.
+            // A passive Core runs through this mod's PassiveKit: its sentence with the real numbers at this rank, so every
+            // passive explains what it does. From PassiveKit's own constants, so it can't drift.
             string kit = Combat.PassiveKit.EffectLine(node.Id, rank);
             if (!string.IsNullOrEmpty(kit)) return kit;
             return FiresCore.Classes.ClassAbilityRegistry.GetAbility(node.Id)?.Description ?? "";
@@ -714,7 +713,7 @@ namespace FiresRPGClasses.UI
                 + " points, " + costs.Sum() + " in all.";
             if (rank >= node.MaxRank)
                 return (node.MaxRank == 1 ? "Learned." : "All " + node.MaxRank + " ranks learned.") + all;
-            if (ClassTrees.IsParagonRank(rank + 1))   // 0.1.132: ranks 4+ cost 1 Paragon point each
+            if (ClassTrees.IsParagonRank(rank + 1))   // ranks 4+ cost 1 Paragon point each
                 return "Rank " + rank + " of " + node.MaxRank + ". Rank " + (rank + 1) + " costs 1 Paragon point (you have "
                        + data.Progress.UnspentParagonPoints() + ")." + all;
             int next = ClassTrees.RankCost(rank + 1);
@@ -816,7 +815,7 @@ namespace FiresRPGClasses.UI
         }
 
         /// <summary>
-        /// How a skill is aimed, in player words (Fire 10-01: "10 m AoE", never "AroundYou 10 m radius"). Every targeting
+        /// How a skill is aimed, in player words ("10 m AoE", never "AroundYou 10 m radius"). Every targeting
         /// mode has a phrase here, so no enum name reaches a card.
         /// </summary>
         internal static string Describe(TargetingSpec spec)

@@ -20,12 +20,12 @@ namespace FiresRPGClasses.UI
         Achievements,
         Class,
         Summons,
-        Paragon   // appended (10-14) so the existing values keep their numbers
+        Paragon   // appended last so the existing values keep their numbers
     }
 
     /// <summary>
     /// A board with something open over it (a talent card, a list). Esc closes that first and only closes the window when
-    /// nothing was open (Fire 10-01).
+    /// nothing was open.
     /// </summary>
     public interface IClassesOverlay
     {
@@ -43,9 +43,9 @@ namespace FiresRPGClasses.UI
     }
 
     /// <summary>
-    /// The Classes window, laid out as Fire's mockups (Tools\ClassesUI_Mockups, layout B): three top tabs - Skills,
+    /// The Classes window, laid out as the design mockups (layout B): three top tabs - Skills,
     /// Achievements, Classes - and inside Classes a row of pills for its views. It still opens full size over a hidden
-    /// inventory (Fire, 2026-09-29: there is no room beside VAInventory), on its own canvas so no vanilla panel is forked.
+    /// inventory (there is no room beside VAInventory), on its own canvas so no vanilla panel is forked.
     /// class_test drives it through <c>_tabButtons</c> / <c>_pages</c> / <c>_current</c>, keyed by <see cref="ClassesTab"/>:
     /// the Skills and Achievements tabs and the Classes pills are all registered there.
     /// Plan: Tools\CLASSES_UI_PLAN.md
@@ -80,13 +80,13 @@ namespace FiresRPGClasses.UI
         private ClassesTab _current = ClassesTab.Skills;
         internal ClassesTab CurrentTab => _current;
 
-        // UI overhaul 2a ([classes-ui]): while hosted in the Fires hub the pages live in the shell's content area; their home
-        // parent and offsets are kept so they go back to this window unchanged (override OFF = today's window, byte for byte).
+        // While hosted in the Fires hub the pages live in the shell's content area; their home
+        // parent and offsets are kept so they go back to this window unchanged (override OFF = the standalone window, unchanged).
         private readonly Dictionary<RectTransform, (Vector2 min, Vector2 max)> _pageHome = new Dictionary<RectTransform, (Vector2, Vector2)>();
         private bool _pagesAdopted;
 
-        // 0.1.150 (Fire 10-16, "overlaps all over the place" on 0.1.149): stretching the pages to the hub's smaller content area
-        // relaid every view (icons over the next row, pills on the bars, tiny talent labels). The pages now keep the OLD window's
+        // Stretching the pages to the hub's smaller content area would relay every view (icons over the next row, pills on
+        // the bars, tiny talent labels). Instead the pages keep the OLD window's
         // exact page rects inside a scaler the size of the old window minus its header, and the scaler gets ONE uniform scale to
         // fit the hub content. Every view renders exactly as in the old window, only scaled.
         private RectTransform _hubScaler;
@@ -174,15 +174,14 @@ namespace FiresRPGClasses.UI
         private static bool IsClassesView(ClassesTab tab) => tab != ClassesTab.Skills && tab != ClassesTab.Achievements;
 
         // Opened over the inventory / crafting menu (its Classes tab, the Skills button, or the key): the inventory is hidden
-        // while this window is up, not drawn behind it, and comes back on close with the chest it had open (Fire, 2026-09-29).
+        // while this window is up, not drawn behind it, and comes back on close with the chest it had open.
         private bool _hidInventory;
         private Container _inventoryContainer;
 
-        // 0.1.150 (R-D2: "Shift+K did not open the Classes window" while hosted): open = the old window, OR the hub showing our pages.
-        // 0.1.166 (Fire, live R 10-15: F1 opened the hub, F1 again left the OLD empty Classes window on screen): under the override the
-        // legacy root is first built by AdoptPages -> EnsureBuilt, and CreatePanel makes it ACTIVE. The hub covered it; on hub close the
-        // pages went home inactive and the empty root (tab strip + X) stayed. Hosted, the root is never shown: hidden on adopt, on hub
-        // close and if ever found up. Override OFF: untouched (Open/Close own it as before).
+        // Open = the standalone window, OR the hub showing our pages.
+        // Under the override the legacy root is first built by AdoptPages -> EnsureBuilt, and CreatePanel makes it ACTIVE. The hub
+        // covers it, but on hub close the pages go home inactive and the empty root (tab strip + X) would stay on screen. Hosted, the
+        // root is never shown: hidden on adopt, on hub close and if ever found up. Override OFF: untouched (Open/Close own it).
         private int _legacyHides;
         private void HideLegacyRoot(string why)
         {
@@ -200,17 +199,20 @@ namespace FiresRPGClasses.UI
             if (OpenKey != null) return;
             OpenKey = new KeyBinding(config, Section, "OpenClasses", KeyCode.K, BindingContext.Gameplay);
             PanelPosition = config.Bind(Section, "ClassesWindowPosition", Vector2.zero,
-                "Where the Classes window sits. Drag it by its header to set this.");
+                new ConfigDescription("Where the Classes window sits; drag it by its header to set this.", null,
+                    new System.ComponentModel.BrowsableAttribute(false)));
             PanelSize = config.Bind(Section, "ClassesWindowSize", DefaultPanelSize,
-                "How big the Classes window is. Drag the bottom-right corner to set this.");
+                new ConfigDescription("How big the Classes window is; drag its bottom-right corner to set this.", null,
+                    new System.ComponentModel.BrowsableAttribute(false)));
             ScrollSpeed = config.Bind(Section, "ScrollSpeed", 1f,
-                new ConfigDescription("How fast the Classes window's lists scroll, as a multiple of vanilla's Skills list (1 = the same feel).",
-                    new AcceptableValueRange<float>(0.25f, 8f)));
+                new ConfigDescription("How fast the Classes window's lists scroll (1 = like vanilla's Skills list).",
+                    new AcceptableValueRange<float>(0.25f, 8f), new FiresCore.Sync.ConfigurationManagerAttributes { IsAdvanced = true }));
 
-            // Fire (2026-09-29): larger by default, ~85% of the screen height (the canvas scales from 1920x1080). A window
+            // Larger by default, ~85% of the screen height (the canvas scales from 1920x1080). A window
             // saved smaller comes back to the new default once, centred; resizing and dragging still work after.
             ConfigEntry<bool> resized = config.Bind(Section, "ClassesWindowEnlarged", false,
-                "Set by the mod once the Classes window was brought up to the larger default (a one-time reset). Leave it alone.");
+                new ConfigDescription("Set by the mod after a one-time window resize; leave it alone.", null,
+                    new System.ComponentModel.BrowsableAttribute(false)));
             if (!resized.Value)
             {
                 if (PanelSize.Value.y < DefaultPanelSize.y)
@@ -231,9 +233,9 @@ namespace FiresRPGClasses.UI
             _views.Add(new UltimatesView());
             _views.Add(new BarsView());
             _views.Add(new PassivesView());
-            _views.Add(new ParagonView());   // 10-14 Fire: ESO Champion-Point constellations
+            _views.Add(new ParagonView());   // ESO-style Champion-Point constellations
             _views.Add(new ClassPickerView());
-            // Last pill, so hiding it for other classes leaves no gap (Fire 10-08: its own tab).
+            // Last pill, so hiding it for other classes leaves no gap.
             _views.Add(new SummonsView());
             _views.Add(new AchievementsView());
             BarController.BarsChanged += OnBarsChanged;
@@ -259,7 +261,7 @@ namespace FiresRPGClasses.UI
             if (OpenKey == null) return;
             if (ClassesHub.Hosted && _root != null && _root.activeSelf) HideLegacyRoot("found active while hosted");
             if (Player.m_localPlayer == null) { Close(); return; }
-            // Fire 10-09: typing anywhere (chat, F5 console, a search bar) never opens or closes the window ("k" in chat did).
+            // typing anywhere (chat, F5 console, a search bar) never opens or closes the window.
             if (FiresCore.Input.FiresInputBlock.IsTyping()) return;
             if (OpenKey.IsPressed()) Toggle();
             // hosted: the hub owns Esc (it asks ClassesHub.OnEscape first, so an open card still closes before the hub)
@@ -291,7 +293,7 @@ namespace FiresRPGClasses.UI
 
         public void Open()
         {
-            // 2a: every entry point (the inventory tab, the Skills button, the key) lands here; hosted = the Fires hub instead.
+            // every entry point (the inventory tab, the Skills button, the key) lands here; hosted = the Fires hub instead.
             if (ClassesHub.Hosted)
             {
                 FiresRPGClassesPlugin.Log?.LogDebug($"[ClassesHub] open -> Fires hub '{ClassesHub.ModuleId}' on '{ClassesHub.SubId(_current)}'");
@@ -316,13 +318,12 @@ namespace FiresRPGClasses.UI
 
         public static ConfigEntry<float> ScrollSpeed { get; private set; }
 
-        // Core's scroll areas start at 120, which crawled in game (Fire, 2026-09-29: "dead slow"): Valheim's input module hands
+        // Core's scroll areas start at 120, which crawls in game: Valheim's input module hands
         // the lists a small wheel delta and its own lists make up for it with a higher sensitivity. Match vanilla's Skills list,
         // times the ScrollSpeed setting, on every list in the window (the boards build theirs once; run on each open).
         private const float FallbackScrollSensitivity = 120f;
-        // 0.1.157 (Fire: "the passives ui screen ... scrolling FAR too slow"): under the hub the pages live in ClassesHubScaler,
-        // outside _root, so the old pass never reached them; and one flat value is ~1 row on Passives' 88 px cards. Now every
-        // list in both trees gets one rule: at least RowsPerNotch rows (short rows: 3 lines) per wheel notch, never below vanilla.
+        // Under the hub the pages live in ClassesHubScaler, outside _root, so both trees are covered; and one flat value is
+        // ~1 row on Passives' 88 px cards. Every list gets one rule: at least RowsPerNotch rows (short rows: 3 lines) per wheel notch, never below vanilla.
         private const float RowsPerNotchTall = 2f, LinesPerNotch = 3f, TallRow = 60f;
         private static readonly HashSet<string> _loggedScroll = new HashSet<string>();
 
@@ -473,7 +474,7 @@ namespace FiresRPGClasses.UI
 
         public void Close()
         {
-            // 0.1.150: hosted, closing the Classes "window" closes the hub (tests and the key call Close too)
+            // hosted, closing the Classes "window" closes the hub (tests and the key call Close too)
             if (_pagesAdopted && FiresCore.UI.Shell.FiresShell.IsOpen) { FiresCore.UI.Shell.FiresShell.Close(); return; }
             if (_root == null) return;
             _root.SetActive(false);
@@ -515,7 +516,7 @@ namespace FiresRPGClasses.UI
                 page.Value.gameObject.SetActive(page.Key == tab);
             foreach (IClassesView view in _views)
                 if (view.Tab == tab) view.Refresh();
-            ApplyScrollSpeed();   // 0.1.157: after Refresh, so lists filled on show are measured
+            ApplyScrollSpeed();   // after Refresh, so lists filled on show are measured
             if (_pagesAdopted) ClassesHub.MirrorSubTab(_current);   // 2a: a view's own "go to" keeps the hub's sub-tab row in step
         }
 
@@ -571,8 +572,7 @@ namespace FiresRPGClasses.UI
             // gaps between the tabs still drag the window.
             header.transform.SetSiblingIndex(0);
 
-            // Fire 10-09: the corner drew a plain square (a tinted Image with no sprite). It wears a drawn grip now: three
-            // diagonal ridges in the corner, the usual resize mark.
+            // a tinted Image with no sprite would draw a plain square, so the corner wears a drawn grip: three diagonal ridges in the corner, the usual resize mark.
             Image grip = UIBuilderHelper.CreateImage(root, "ResizeGrip",
                 new Vector2(1f, 0f), new Vector2(1f, 0f), new Color(0.9f, 0.75f, 0.45f, 0.85f));
             grip.sprite = GripSprite();
@@ -633,11 +633,11 @@ namespace FiresRPGClasses.UI
             _tabButtons[ClassesTab.Skills] = TopTab(strip, 0, "Skills", () => Show(ClassesTab.Skills));
             _tabButtons[ClassesTab.Achievements] = TopTab(strip, 1, "Achievements", () => Show(ClassesTab.Achievements));
             _classesTab = TopTab(strip, 2, "Classes", () => Show(_lastClassesView));
-            // 10-14 (Fire: "i thought we were adding an fcc tab here?"): a top-level launcher for the Fires Character Creator.
+            // A top-level launcher for the Fires Character Creator.
             // Top level, not a Classes pill: the look isn't a class view, and it opens FCC's own window rather than a page here.
             // Soft link (FccApi by reflection); no FCC, no tab.
             // Built always and shown / hidden on every Open (RefreshAppearanceTab): if the Character Creator loads after this
-            // window is built, the tab still appears. Fire 10-14: "Skills achievement class appearance", the last header tab.
+            // window is built, the tab still appears. It is the last header tab.
             _appearanceTab = TopTab(strip, 3, "Appearance", OpenAppearance);
             RefreshAppearanceTab();
 
@@ -656,7 +656,7 @@ namespace FiresRPGClasses.UI
                     new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), () => Show(tab));
                 RectTransform rect = pill.GetComponent<RectTransform>();
                 rect.pivot = new Vector2(0f, 0.5f);
-                // 10-14 (Fire: every label fits its button): a pill grows to its caption, never below PillWidth
+                // every label fits its button: a pill grows to its caption, never below PillWidth
                 TMPro.TMP_Text caption = pill.GetComponentInChildren<TMPro.TMP_Text>(true);
                 float width = caption != null ? Mathf.Max(PillWidth, caption.GetPreferredValues(caption.text).x + 32f) : PillWidth;
                 rect.sizeDelta = new Vector2(width, ClassesStyle.Target);

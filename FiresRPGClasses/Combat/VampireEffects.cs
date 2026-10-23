@@ -41,9 +41,9 @@ namespace FiresRPGClasses.Combat
             if (db.GetStatusEffect(name.GetStableHashCode()) != null) return 0;
             var effect = ScriptableObject.CreateInstance<T>();
             effect.name = name;
-            effect.m_name = effect.DisplayName;       // 0.1.132: the template never shows the internal id
+            effect.m_name = effect.DisplayName;       // the template never shows the internal id
             effect.m_tooltip = effect.Description;
-            // 10-14 (SE icon inventory: Sunburnt is added by hash, so the template's icon is the only one it ever gets):
+            // Sunburnt is added by hash, so the template's icon is the only one it ever gets:
             // Core's Setup copies EffectIcon into m_icon, and a hash add clones the template, so set both here.
             effect.EffectIcon = effect.m_icon = UI.ClassIcons.ForEffect(name);
             db.m_StatusEffects.Add(effect);
@@ -66,7 +66,7 @@ namespace FiresRPGClasses.Combat
     /// <summary>§5 mild sunlight: 10% less stamina regeneration (Life Drain's "off by day" is VampireKit's).</summary>
     public class SunlightEffect : CompanionStatusEffectBase
     {
-        // 0.1.132 (Fire's shot: "Human granted you ClassSunlight (86400s)"): a readable name, no timer (removed on leaving the sun).
+        // a readable name (not "ClassSunlight (86400s)"), no timer (removed on leaving the sun).
         public override string DisplayName => "Sunburnt";
         public override string Description => "In direct sunlight: -10% stamina regeneration and no Life Drain. A Duskbloom Stew wards it off.";
 

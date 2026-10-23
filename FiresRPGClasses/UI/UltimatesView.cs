@@ -12,7 +12,7 @@ using UnityEngine.UI;
 namespace FiresRPGClasses.UI
 {
     /// <summary>
-    /// Classes > Ultimates, from Fire's board UltimatesView (doc 16). On the left, every ultimate this character can reach,
+    /// Classes > Ultimates, from the UltimatesView board (doc 16). On the left, every ultimate this character can reach,
     /// grouped by the front archetype, the back archetype and the hybrid pair. Each card has its cost and cooldown, which
     /// bar slots it, and its own level with the XP toward the next. On the right, the selected one's level tree: Base and
     /// Empowered on the trunk, then the two morph branches (Morph 25, Refine 40, Extend 55, Hasten 70, Capstone 85,

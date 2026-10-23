@@ -8,8 +8,8 @@ using UnityEngine;
 namespace FiresRPGClasses.Combat
 {
     /// <summary>
-    /// A little class XP for the everyday actions (Fire 10-02: "Ideally any action you make should be able to give you a little
-    /// bit of XP even map exploration"). Each pays a share of the current level's cost through ClassXp.Award on the local
+    /// A little class XP for the everyday actions, map exploration
+    /// included. Each pays a share of the current level's cost through ClassXp.Award on the local
     /// player's own client (the class record lives in the character's .fch), under its own rolling hourly cap of
     /// <see cref="HourlyCapShare"/> of a level, so an hour of one thing never shuts out another:
     /// - exploring: every <see cref="ExploreAreaPerAward"/> m2 of map the player's own walk or sail reveals for the first time,

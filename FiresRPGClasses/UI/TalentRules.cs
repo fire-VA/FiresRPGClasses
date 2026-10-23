@@ -54,7 +54,7 @@ namespace FiresRPGClasses.UI
             if (IsUltimate(node)) { why = "Grows by use"; return false; }
             int rank = Rank(data, node);
             if (rank >= node.MaxRank) { why = "All ranks learned"; return false; }
-            bool paragon = ClassTrees.IsParagonRank(rank + 1);   // 0.1.132: ranks 4+ cost 1 Paragon point each
+            bool paragon = ClassTrees.IsParagonRank(rank + 1);   // ranks 4+ cost 1 Paragon point each
             cost = paragon ? 1 : ClassTrees.RankCost(rank + 1);
             if (ClassPlayerStore.LocalIsProtected) { why = "Progress protected (see the log)"; return false; }
             if (data.Progress.Level < node.MinLevel) { why = "Unlocks at level " + node.MinLevel; return false; }
@@ -99,7 +99,7 @@ namespace FiresRPGClasses.UI
         }
 
         /// <summary>
-        /// Doc 13 / Fire 10-01 ("enforce the master points rule"): a Master node needs MasterPointsRequiredInPath points spent
+        /// Doc 13's master points rule: a Master node needs MasterPointsRequiredInPath points spent
         /// in its own path first. <paramref name="inPath"/> is what is spent there now. Other tiers always pass.
         /// </summary>
         public static bool MasterPointsMet(ClassPlayerData data, ClassTreeNode node, out int inPath)

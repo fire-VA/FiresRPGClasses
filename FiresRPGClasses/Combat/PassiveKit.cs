@@ -16,7 +16,7 @@ namespace FiresRPGClasses.Combat
     ///   with duration 0, only when missing, so a running cooldown or stack count is never reset): Unyielding, Execute,
     ///   Death Wish, Rampage (stacks from the player's kills). Berserk Rage (automatic) is the companion's trigger: 12 s of
     ///   rage below 35% health, then a 20 s cooldown.
-    /// - Core's ability text, built for players (Fire, popups 2026-09-28 20:4x and 21:1x): Iron Wall, Parry Mastery,
+    /// - Core's ability text, built for players: Iron Wall, Parry Mastery,
     ///   Blessed Defense, Bloodlust, Backstab, Assassinate, Chain Casting, Eitr Mastery / Spiritual Connection, Endurance
     ///   Training, Fury, Martial Arts, Steady Aim, Headshot, Emergency Heal; and the companion-AI automatics as small
     ///   bonuses: Shield Block, Blessed Shield, Spellcasting, Healing Staff, Kiting Expertise, Intercept.
@@ -29,7 +29,7 @@ namespace FiresRPGClasses.Combat
         private const float RageSeconds = 12f;
         private const float RageCooldownSeconds = 20f;
 
-        // Fire 10-01 "make the passive ranks scale": every Core-backed passive below reads the player's rank in it (rank 1 = the
+        // Passive ranks scale: every Core-backed passive below reads the player's rank in it (rank 1 = the
         // value it always had), the shape of the yaml talents beside them. Ranks are read once a second in Tick (RankIn).
         private const string IronWallNodeId = "tank_iron_wall";
         private static readonly float[] IronWallBlockedCut = { 0.6f, 0.65f, 0.7f };
@@ -52,7 +52,7 @@ namespace FiresRPGClasses.Combat
         private const float InterceptRange = 5f;
         private static readonly float[] InterceptCut = { 0.1f, 0.15f, 0.2f };
         private const string InterceptZdoKey = "FiresRPGClasses_Intercept";
-        // The guarding player's rank, for the party members' peers (0.1.62; a peer that only sets the bool counts as rank 1).
+        // The guarding player's rank, for the party members' peers (a peer that only sets the bool counts as rank 1).
         private const string InterceptRankZdoKey = "FiresRPGClasses_InterceptRank";
 
         private const string BloodlustNodeId = "berserker_bloodlust";
@@ -62,8 +62,8 @@ namespace FiresRPGClasses.Combat
         private const string RampageNodeId = "berserker_rampage";
         private static readonly float[] RampagePerStack = { 0.1f, 0.15f, 0.2f };
         private const string FuryNodeId = "berserker_fury";
-        // 0.1.131 (Fire 10-14): the stack COUNT is a hard max for the HUD/network ([13 - Balance] "Fury max stacks", 10 -> 20); the bonus
-        // starts at "Fury full stacks" (10) at +30% as before, and each stack past it adds the same share again through SoftCap.Soft (knee 30%).
+        // The stack COUNT is a hard max for the HUD/network ([13 - Balance] "Fury max stacks"); the bonus
+        // starts at "Fury full stacks" (10) at +30%, and each stack past it adds the same share again through SoftCap.Soft (knee 30%).
         private static int FuryMax => Mathf.Max(1, BalanceConfig.Value(BalanceConfig.FuryMaxStacks, 20));
         private static int FuryFull => Mathf.Max(1, BalanceConfig.Value(BalanceConfig.FuryFullStacks, 10));
         private const float FuryDamage = 1.3f;   // the fallback for the knee: +30% at full stacks
@@ -84,7 +84,7 @@ namespace FiresRPGClasses.Combat
         private const string MartialArtsNodeId = "monk_martial_arts";
         private const float MartialArtsDamage = 1.2f;
         private const float ComboStep = 0.05f;
-        private const float ComboMax = 0.25f;   // 0.1.131: the fallback knee of the combo bonus (SoftCap.Soft), no longer a ceiling
+        private const float ComboMax = 0.25f;   // the fallback knee of the combo bonus (SoftCap.Soft), not a ceiling
         private static int ComboMaxHits => Mathf.Max(1, BalanceConfig.Value(BalanceConfig.ComboMaxHits, 20));   // the hard hit COUNT
         private const float ComboWindowSeconds = 2f;
         private const string MonkStaminaNodeId = "monk_stamina";
@@ -115,7 +115,7 @@ namespace FiresRPGClasses.Combat
         private const string CounterstrikeNodeId = "rogue_counterstrike";
         private const float CounterstrikeWindowSeconds = 3f;
         private const string StoneSkinNodeId = "monk_stone_skin";
-        // Headtaker: full stamina on a killing blow, and (Fire, popup 2026-09-28 23:5x) +30% DAMAGE for 5 s in place of the
+        // Headtaker: full stamina on a killing blow, and +30% DAMAGE for 5 s in place of the
         // text's attack speed, which Valheim has no stat for.
         private const string HeadtakerNodeId = "berserker_headtaker";
         private const float HeadtakerDamage = 1.3f;
@@ -141,7 +141,7 @@ namespace FiresRPGClasses.Combat
         };
 
         // Pressure Points: "every {5th / 4th / 3rd} consecutive hit on the same target staggers it". The yaml's "5th" doesn't
-        // parse as a number, so the rank picks it: 6 - rank. A chain breaks after 2 s without a hit (Fire's default rule).
+        // parse as a number, so the rank picks it: 6 - rank. A chain breaks after 2 s without a hit.
         private const string PressurePointsNodeId = "monk_pressure_points";
         private const float PressureChainSeconds = 2f;
         private const float InstantStagger = 100f;
@@ -172,11 +172,11 @@ namespace FiresRPGClasses.Combat
         private static float _lastComboHit = float.NegativeInfinity;
         private static float _lastCaltrops = float.NegativeInfinity;
         private static bool _lastShotFull;
-        /// <summary>0.1.95: Deadeye reads whether the last shot left at full draw.</summary>
+        /// <summary>Deadeye reads whether the last shot left at full draw.</summary>
         internal static bool LastShotFull => _lastShotFull;
 
-        /// <summary>0.1.95: Pain Fuels Me adds Fury from hits taken (the same counter and drain as Fury's hits dealt).</summary>
-        /// <summary>0.1.131: Fury's damage bonus at <paramref name="stacks"/> (>= full): knee x stacks / full, through SoftCap.Soft.</summary>
+        /// <summary>Pain Fuels Me adds Fury from hits taken (the same counter and drain as Fury's hits dealt).</summary>
+        /// <summary>Fury's damage bonus at <paramref name="stacks"/> (>= full): knee x stacks / full, through SoftCap.Soft.</summary>
         private static float FuryBonus(int stacks)
         {
             float knee = BalanceConfig.Value(BalanceConfig.FuryBonusKnee, FuryDamage - 1f);
@@ -198,8 +198,7 @@ namespace FiresRPGClasses.Combat
 
         /// <summary>
         /// What a Core-backed passive does at a rank, as a player sentence from the very per-rank tables the hooks above read
-        /// (Fire 10-01: every passive card states its effect with real numbers, now and at the next rank; [classes-ui]'s
-        /// TalentsView asks this first). Parry Mastery also scales with the class level. Null for a node this does not
+        /// (every passive card states its effect with real numbers, now and at the next rank; TalentsView asks this first). Parry Mastery also scales with the class level. Null for a node this does not
         /// describe (its yaml text, or Core's description, is the card's).
         /// </summary>
         public static string EffectLine(string nodeId, int rank)
@@ -458,7 +457,7 @@ namespace FiresRPGClasses.Combat
         }
 
         /// <summary>
-        /// Caltrops (Fire, 21:2x: "your way"): when the vanilla roll runs, Core's Caltrops (slow + pierce ticks, 5 s) goes on
+        /// Caltrops: when the vanilla roll runs, Core's Caltrops (slow + pierce ticks, 5 s) goes on
         /// the enemies within 3 m of where the roll started. ApplyAoEEffect centres on the caster and follows ClassTargeting,
         /// so only enemies are hit. Once per 5 s.
         /// </summary>

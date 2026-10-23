@@ -9,7 +9,7 @@ using UnityEngine;
 namespace FiresRPGClasses.Combat
 {
     /// <summary>
-    /// The Werewolf class kit (Tools\WEREWOLF_CLASS_DESIGN.md §3-§5, LOCKED 10-13). The class needs the werewolf race, not a weapon
+    /// The Werewolf class kit (design doc WEREWOLF_CLASS_DESIGN.md §3-§5). The class needs the werewolf race, not a weapon
     /// (<see cref="WerewolfRace"/>, read by WeaponArchetypes so a bar without the race greys the class out and keeps its points).
     /// - Wolf Form (skill, 30 s / 120 s): the server grants it (<see cref="WerewolfServer"/>, Wildshape's validator pattern), then the
     ///   player ZDO bool rpg_wolf_active is set, VCS shows the Fenring (VcsApi.SetForm by reflection; refused = stats without the
@@ -281,12 +281,12 @@ namespace FiresRPGClasses.Combat
             float radius = node.Targeting.Radius > 0f ? node.Targeting.Radius : HowlRadius;
             Vector3 at = player.transform.position;
             PlayHowlSound(at);
-            // 0.1.128 (Fire, R-1013BU: "just stands there not moving at all"): the Howl plays vanilla's one-shot Roar emote, in wolf form
+            // The Howl plays vanilla's one-shot Roar emote so the player visibly reacts, in wolf form
             // and as a human alike (the swapped Fenring follows the player rig). Player.StartEmote syncs the emote to every peer.
             bool roared = player.StartEmote(HowlEmote, true);
             Log($"Howl: emote '{HowlEmote}' {(roared ? "started" : "refused (busy: attacking, sitting or in the air)")}, wolf form {FormActive}");
             float scale = Mathf.Clamp(radius / 8f, 0.5f, 2.5f);
-            // 0.1.131 (Fire, R-1013BZ): the taunt shockwave + ground slam read as a rock break - dropped. The Howl is the Roar emote
+            // No taunt shockwave or ground slam: they read as a rock break. The Howl is the Roar emote
             // + the Bjorn's own alert roar (PlayHowlSound); no vanilla ring fits the theme, so none.
 
             string allyBuff = PassiveOn(PackBondId) ? WerewolfEffects.HowlPack : WerewolfEffects.Howl;
@@ -328,7 +328,7 @@ namespace FiresRPGClasses.Combat
             }
         }
 
-        // 0.1.127 (R-1013BT howl_boss "enemies none"): Core's ApplySingleEffect treats every name outside its own debuff list as a
+        // Core's ApplySingleEffect treats every name outside its own debuff list as a
         // BUFF, so ClassHowlDread was refused on the boss (not a party member) and nothing was sent. Vanilla's SEMan.AddStatusEffect
         // by hash applies it on the owner (its own RPC_AddStatusEffect when this peer doesn't own the boss). The enemy check is
         // already EnemiesAround's (ClassTargeting.IsEnemyTarget). The 8 s is HowlDreadEffect's Duration.
@@ -402,7 +402,7 @@ namespace FiresRPGClasses.Combat
         private static void PlayHowlSound(Vector3 at)
         {
             if (ZNetScene.instance == null) return;
-            // 0.1.131 (Fire's pick): the Bjorn's ALERT roar - vanilla Bjorn.MonsterAI.m_alertedEffects plays sfx_bear_idle (Unbjorn:
+            // The Bjorn's ALERT roar - vanilla Bjorn.MonsterAI.m_alertedEffects plays sfx_bear_idle (Unbjorn:
             // sfx_unbjorn_idle). Played by its own prefab name, a local sound effect like EffectList.Create spawns.
             foreach (string sfx in HowlSfx)
             {
@@ -663,7 +663,7 @@ namespace FiresRPGClasses.Combat
     /// </summary>
     internal static class LunarClock
     {
-        // Galaxies' moon (timed from Vedr's seasons): static Galaxies.GalaxiesApi.IsFullMoon(), add-only contract with [seasons], read by
+        // Galaxies' moon (timed from Vedr's seasons): static Galaxies.GalaxiesApi.IsFullMoon(), add-only contract, read by
         // reflection once. Galaxies missing or older than the API: never a full moon.
         private static System.Func<bool> s_isFull;
         private static bool s_looked;

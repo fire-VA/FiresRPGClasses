@@ -62,9 +62,10 @@ namespace FiresRPGClasses.Combat
         public static void Bind(ConfigFile config)
         {
             Style = config.Bind(Section, "Cast style", CastStyle.QuickWithIndicator,
-                "How placed and aimed skills are committed: hold to aim and release, press then click, or place at the crosshair at once.");
+                new ConfigDescription("How aimed skills are cast: hold and release, press then click, or instantly at the crosshair.", null,
+                    new FiresCore.Sync.ConfigurationManagerAttributes { IsAdvanced = true }));
             SmartHeal = config.Bind(Section, "Smart heal", true,
-                "An ally skill with nobody under the crosshair goes to the most injured ally in range, else you.");
+                "Ally skills with nobody under the crosshair go to the most injured ally in range, or you.");
         }
 
         public static void BeginAiming(string nodeId)
@@ -90,7 +91,7 @@ namespace FiresRPGClasses.Combat
             GroundRingKind kind = RingKindFor(node);
             if (!target.Resolved)
             {
-                // Fire 10-12: an invalid spot still shows the marker - at the edge of the range along the aim, in Core's
+                // An invalid spot still shows the marker - at the edge of the range along the aim, in Core's
                 // "Invalid" ring colour when it has one - so the player sees why LMB does nothing.
                 if (node.Targeting.Mode != TargetingMode.Placed || GameCamera.instance == null) { ReleasePreview(); return; }
                 Vector3 fwd = GameCamera.instance.transform.forward; fwd.y = 0f;
@@ -220,7 +221,7 @@ namespace FiresRPGClasses.Combat
             return character.IsTamed();
         }
 
-        // ---- Fire 10-12: target-picking skills queue too; the body they would land on glows (green friendly, red hostile) ----
+        // ---- target-picking skills queue too; the body they would land on glows (green friendly, red hostile) ----
         private static readonly RaycastHit[] TargetHits = new RaycastHit[16];
         private static readonly Color FriendlyGlow = new Color(0.25f, 1f, 0.35f) * 0.6f;
         private static readonly Color HostileGlow = new Color(1f, 0.2f, 0.15f) * 0.6f;

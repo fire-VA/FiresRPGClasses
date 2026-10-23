@@ -44,12 +44,12 @@ namespace FiresRPGClasses.Combat
             bool boss = pkg.ReadBool();
             bool summoned = pkg.ReadBool();
             Vector3 position = pkg.ReadVector3();
-            // 0.1.72: the tier multiplier rides at the end; a sender before it stops after the position.
+            // The tier multiplier rides at the end; an older sender stops after the position.
             float tier = pkg.GetPos() < pkg.Size() ? pkg.ReadSingle() : 1f;
             ClassXp.OnDeath(prefab, maxHealth, level, boss, summoned, position, tier);
         }
 
-        // Fires Monster Overhaul's tiers (doc 20/21, [release] 10-07: kill XP x1 / x1.5 / x3 / x6): its public
+        // Fires Monster Overhaul's tiers (kill XP x1 / x1.5 / x3 / x6): its public
         // MonsterTiers.XpMultiplier(Character) when it is installed, so the table has one owner; otherwise the same synced ZDO
         // int it keeps ("fmo_tier", 0 Normal .. 3 Champion) read here. No Fires Monster Overhaul, no tier: x1.
         private static readonly int ZdoTier = "fmo_tier".GetStableHashCode();

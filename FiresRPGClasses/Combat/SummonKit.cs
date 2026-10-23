@@ -8,7 +8,7 @@ using UnityEngine;
 namespace FiresRPGClasses.Combat
 {
     /// <summary>
-    /// The summoning ladders (Tools\CLASSES_DRUID_NECROMANCER.md section 5b, Fire's S1-S4) on Core's SummonApi: the Druid's Pack
+    /// The summoning ladders (Tools\CLASSES_DRUID_NECROMANCER.md section 5b, ladders S1-S4) on Core's SummonApi: the Druid's Pack
     /// path calls beasts, the Necromancer's Bone path raises the dead. Each rung is a vanilla creature at the design's scale,
     /// spawned tamed by Core next to the caster, with the node's {time} (or its duration) as the timer. Core keeps the shared
     /// cap (2, +1 per 15 levels, max 6; the oldest goes first), the timer, portals and logout.
@@ -34,7 +34,7 @@ namespace FiresRPGClasses.Combat
         private const string DruidFx = "vfx_spawn";
         private const int BaseCap = 2;
         private const int LevelsPerCap = 15;
-        private const int MaxCap = 6;   // 0.1.131: the fallback of [13 - Balance] "Summon server limit" (synced, performance)
+        private const int MaxCap = 6;   // the fallback of [13 - Balance] "Summon server limit" (synced, performance)
         private const float DefaultSeconds = 60f;
 
         // The ZDO mark a summon's Humanoid.Start reads to pick its loadout, so a reload keeps it an archer.
@@ -70,7 +70,7 @@ namespace FiresRPGClasses.Combat
             }
         }
 
-        /// <summary>Fire S2: 2, +1 per 15 class levels, at most 6.</summary>
+        /// <summary>Design S2: 2, +1 per 15 class levels, at most 6.</summary>
         internal static int Cap() => Mathf.Min(Mathf.Max(1, BalanceConfig.Value(BalanceConfig.SummonServerMax, MaxCap)), BaseCap + PossessionKit.ClassLevel() / LevelsPerCap);
 
         private static bool Summon(Rung rung, ClassTreeNode node, Character caster)
@@ -120,7 +120,7 @@ namespace FiresRPGClasses.Combat
         }
 
         // The Raise Archer keeps only the skeleton's bow sets (or gets the vanilla skeleton bow), every time it loads; the Raise Skeleton
-        // (round 12: vanilla's random sets sometimes made it a second archer) keeps only the sets and weapons without a bow.
+        // (vanilla's random sets could make it a second archer) keeps only the sets and weapons without a bow.
         [HarmonyPatch(typeof(Humanoid), "Start")]
         internal static class SummonLoadoutOnStart
         {

@@ -12,10 +12,10 @@ namespace FiresRPGClasses.UI
     /// <summary>
     /// UI overhaul #14 (Tools\golden\ui_overhaul\hotbars\PLAN.md, port row "Class front/back"): with Core's [UI] Fires UI override ON and
     /// Core's hotbar kit present (0.2.528+), the class bars are two kit HotbarRows (front Normal, back Behind) in the same FiresClassBars
-    /// container, keeping its offset, drag and config keys, fed by [wishbone]'s ClassBarModel. Otherwise (override off, OR an older Core)
+    /// container, keeping its offset, drag and config keys, fed by ClassBarModel. Otherwise (override off, OR an older Core)
     /// the cloned HotKeyElement path in ClassesHud.cs runs unchanged.
-    /// 0.1.164 ([wishbone]: kit-typed fields on ClassesHud made the whole HUD fail to load on Core &lt; 0.2.528, override off included):
-    /// every kit type now lives in the nested KitBars class, held as object and reached only from NoInlining methods behind KitAvailable,
+    /// Kit-typed fields on ClassesHud would make the whole HUD fail to load on Core &lt; 0.2.528 (override off included), so
+    /// every kit type lives in the nested KitBars class, held as object and reached only from NoInlining methods behind KitAvailable,
     /// so ClassesHud never touches a kit type on an older Core.
     /// </summary>
     public partial class ClassesHud
@@ -53,8 +53,7 @@ namespace FiresRPGClasses.UI
             }
             bool ok = kit ? KitEnsureBuilt() : EnsureBuilt();
             if (ok) _builtKit = kit;
-            // 0.1.167 ([wishbone]; Fire's hand test: NO dock line for the bars): TryDock was only called inside the clone path's EnsureBuilt,
-            // so the kit bars never registered. Now after either build; TryDock returns at once when this container is already registered
+            // TryDock runs after either build (not only the clone path's EnsureBuilt), so the kit bars register too; it returns at once when this container is already registered
             // and logs "registered" or "not docked: <why>" the first time for each container.
             if (ok) TryDock();
             return ok;
@@ -76,7 +75,7 @@ namespace FiresRPGClasses.UI
         [MethodImpl(MethodImplOptions.NoInlining)]
         private float KitBackAlpha() => KitBars.BackAlpha(_backBarAlpha.Value);
 
-        // 0.1.173 (Fire "REAL resize"; Core 0.2.574+ SizeChanged, VAInventory 1.0.231 hotbar pattern): Core sets the bars' rect size per axis
+        // Real resize (Core 0.2.574+ SizeChanged, same pattern as VAInventory's hotbar): Core sets the bars' rect size per axis
         // (diagonal grip = both, straight grip = one) and calls this; the 8 slots of each bar re-flow into cols x rows at their own size
         // (never stretched or scaled): a wide rect = 8x1 (today), narrower = 4x2, 3x3, 2x4. The back bar follows the front's grid above it.
         private void OnBarsResized(Vector2 want)
@@ -117,7 +116,7 @@ namespace FiresRPGClasses.UI
                 return m;
             }
 
-            /// <summary>Fire's back-bar opacity (0.70 = the kit's BehindAlpha) unless the player changed [5 - HUD] BackBarAlpha from
+            /// <summary>The approved back-bar opacity (0.70 = the kit's BehindAlpha) unless the player changed [5 - HUD] BackBarAlpha from
             /// its 0.55 default; then their value. OFF keeps reading the key as before.</summary>
             internal static float BackAlpha(float configured) => Mathf.Approximately(configured, 0.55f) ? FiresTokens.BehindAlpha : configured;
 
@@ -153,9 +152,8 @@ namespace FiresRPGClasses.UI
                 // Core 0.2.528: the key chip sits centred BELOW each slot (2 px gap, 15 px tall), so the front row keeps today's HintSpace
                 // (18) under it; the Behind row (pivot bottom-centre, x0.72, set by the kit) goes BehindBottom (74.1) up, today's back row.
                 CentreRow(_front.Root, HintSpace);
-                // 0.1.168 ([wishbone]; Fire 10-15: the FRONT bar overlapped the BACK bar): FiresTokens.BehindBottom (74.1 = 64 x 0.72 + 10 + 18)
-                // is a top-of-back sum used as the back's BOTTOM, so the back row started inside the front row. The back row's bottom is
-                // now the front row's real top (its laid-out height x its scale, above the hint strip) + RowGap, as the approved mockup.
+                // FiresTokens.BehindBottom (74.1 = 64 x 0.72 + 10 + 18) is a top-of-back sum; used as the back's BOTTOM it would start
+                // the back row inside the front row. So the back row's bottom is the front row's real top (its laid-out height x its scale, above the hint strip) + RowGap, as the approved mockup.
                 float frontTop = HintSpace + _front.Root.rect.height * _front.Root.localScale.y;
                 BackBottom = frontTop + RowGap;
                 CentreRow(_back.Root, BackBottom);
@@ -198,7 +196,7 @@ namespace FiresRPGClasses.UI
                 return HintSpace + (rows * size + (rows - 1) * HintSpace) + RowGap + (rows * size + (rows - 1) * gap) * FiresTokens.BehindScale;
             }
 
-            /// <summary>0.1.173: cols = the slots that fit the width (fewer when the height fits more rows), rows = ceil(8 / cols); the front
+            /// <summary>Cols = the slots that fit the width (fewer when the height fits more rows), rows = ceil(8 / cols); the front
             /// grid's rows are a key chip apart, the back grid sits RowGap above it. At today's size this is exactly today's 8x1 layout.</summary>
             internal void Relayout(Vector2 want)
             {

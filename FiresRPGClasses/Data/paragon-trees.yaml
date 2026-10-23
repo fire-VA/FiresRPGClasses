@@ -4,7 +4,7 @@
 # value approaches limit (percent). Stars feeding one stat are summed first, then one curve. effectFormat: Latin-1, {value}.
 # revision: raise it whenever the shipped trees change. An install's copy with a lower revision is backed up and replaced.
 schema: 1
-revision: 1
+revision: 2
 trees:
   - id: warfare
     name: Warfare
@@ -1026,7 +1026,7 @@ stars:
     limit: 0
     links: []
     pos: [0.873, 0.428]
-    effectFormat: '+{value}% breath underwater, a fifth as much swim speed'
+    effectFormat: '-{value}% swim stamina, a fifth as much swim speed'
   - id: F2.S4
     name: 'Gale Runner'
     shortName: 'Gale Runner'
@@ -1842,7 +1842,7 @@ stars:
     limit: 0
     links: []
     pos: [0.572, 0.873]
-    effectFormat: 'on paths: +{value}% speed, no walk stamina'
+    effectFormat: 'on paths: +{value}% speed, no run stamina'
   - id: C3.S3
     name: 'Wind Caller'
     shortName: 'Wind Caller'

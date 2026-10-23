@@ -27,8 +27,8 @@ namespace FiresRPGClasses.State
         private static long _localId;
 
         /// <summary>
-        /// The local player's record, loaded on first use and cached for that player object AND character id. Fire 10-12:
-        /// levels leaked between characters. Vanilla's Player.Load merges a profile's keys into m_customData without clearing
+        /// The local player's record, loaded on first use and cached for that player object AND character id, so
+        /// levels never leak between characters. Vanilla's Player.Load merges a profile's keys into m_customData without clearing
         /// it, and the id is only set by PlayerProfile.LoadPlayerData, so the cache never forms before the id is known
         /// (id 0: a read-only stand-in, not cached) and drops itself when the id changes under the same object.
         /// </summary>
@@ -86,7 +86,7 @@ namespace FiresRPGClasses.State
                 long id = player.GetPlayerID();
                 if (data.OwnerId != 0L && id != 0L && data.OwnerId != id)
                 {
-                    // Another character's record in this character's save (the 10-12 leak): never used; this character starts
+                    // Another character's record in this character's save (a leak from another character): never used; this character starts
                     // blank, and its first save writes its own record over the foreign one.
                     Debug.LogWarning(LogPrefix + " " + player.GetPlayerName() + " (character " + id + ") carried the class record of character "
                         + data.OwnerId + "; it is ignored and this character starts a fresh class record.");
@@ -158,15 +158,15 @@ namespace FiresRPGClasses.State
         }
 
         /// <summary>
-        /// Core 0.2.156 (schema 4, Fire 2026-09-29): talent ranks cost 1/2/3 points, not 1 each. A schema 3 record that no
+        /// Core 0.2.156 (schema 4): talent ranks cost 1/2/3 points, not 1 each. A schema 3 record that no
         /// longer fits its earned points is refunded once to re-spend, before any reconcile could wipe it at every load.
         /// </summary>
         private static ClassPlayerData Upgrade(Player player, ClassPlayerData data, string raw)
         {
             int from = data.Progress.Schema;
             string name = player.GetPlayerName();
-            // 0.1.161 (Fire 10-15 via the lead: no backup data on the rig): the upgrade no longer keeps a copy of the old record
-            // (it was a 2nd key in the character + a file under BepInEx\config, which also broke the no-files-in-config rule)
+            // The upgrade keeps no copy of the old record (a second key in the character or a file under BepInEx\config would
+            // leave stale data behind and put a data file in the config folder)
             Debug.Log(LogPrefix + " class record " + name + ": upgrading from schema " + from + " (no backup copy kept)");
 
             ProgressionRates rates = ProgressionSettings.IsInitialized
@@ -189,7 +189,7 @@ namespace FiresRPGClasses.State
 
 
         /// <summary>
-        /// Core's record schema as loaded at RUNTIME ([generator]): a const would be baked into this build and go stale at
+        /// Core's record schema as loaded at RUNTIME: a const would be baked into this build and go stale at
         /// the next Core bump.
         /// </summary>
         public static readonly int CurrentSchema =

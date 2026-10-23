@@ -8,12 +8,12 @@ using UnityEngine.UI;
 namespace FiresRPGClasses.UI
 {
     /// <summary>
-    /// Classes > Paragon (Fire approved Tools\mockup_paragon_eso_scale.png, 10-14): ESO Champion-Point constellations. One tree
+    /// Classes > Paragon: ESO-style Champion-Point constellations. One tree
     /// at a time (tree tabs), drawn as a star map: 4 cluster quadrants, tier rings T1 (centre) to T4 (outer), bridges on the
     /// quadrant borders, link lines lit between learned stars. Right column: the selected star's card (Buy rank / Slot), the
     /// tier progress, the 4 slots of every tree, a legend.
     ///
-    /// Fire's build rules: every button sized to its caption; shared fonts (ClassesStyle.Label = Core UIFontConfig, Latin-1);
+    /// Layout rules: every button sized to its caption; shared fonts (ClassesStyle.Label = Core UIFontConfig, Latin-1);
     /// star labels never overlap (short names on the map, full name in the hover; a label that can't be placed clear of the
     /// others is dropped and the hover still names it); every star has a hover tooltip (FiresHoverTip + ParagonUi.Tooltip).
     /// Data only through <see cref="ParagonSource"/> (ParagonUi, contract §9 of Tools\RPG_PARAGON_TALENT_PLAN.md).
@@ -26,14 +26,17 @@ namespace FiresRPGClasses.UI
         private const float Pad = 24f;
         private const float HeaderHeight = 40f;
         private const float SideWidth = 340f;
-        // 0.1.152 (Fire: one constellation per page "gives us more room for this info panel"): figure mode = a wider side panel, bigger text
-        private static float SideW => ParagonFigures.On ? 560f : SideWidth;
-        // 0.1.153 (R-E4: the 4th slot cell ran ~45 px past the panel): cells sized from the panel's inner width (Place insets 14 each side)
+        // One constellation per page leaves room for a wider side panel with bigger text.
+        private const float FigureSideWidth = 560f;
+        private const float FigureFontScale = 1.3f;
+        private static float SideW => ParagonFigures.On ? FigureSideWidth : SideWidth;
+        // Slot cells are sized from the panel's inner width (Place insets 14 each side) so the 4th cell never runs past the edge.
         private const float SlotLabelW = 104f, SlotGap = 8f;
         private float SlotCellW() { float inner = (_side != null && _side.rect.width > 1f ? _side.rect.width : SideW) - 28f; return Mathf.Max(48f, (inner - SlotLabelW - 6f - 3f * SlotGap) / 4f); }
-        private static float Fs(float size) => ParagonFigures.On ? Mathf.Round(size * 1.3f) : size;
+        private static float Fs(float size) => ParagonFigures.On ? Mathf.Round(size * FigureFontScale) : size;
         private const float LabelSize = 12f;
-        // 0.1.152 (Fire: one constellation per page): the single-figure view draws bigger stars and labels
+        // The single-figure view draws bigger stars and labels.
+        private const float SingleFigureStarMul = 1.5f, SingleFigureLabelMul = 1.3f;
         private float _starMul = 1f, _labelMul = 1f;
         private readonly Dictionary<string, int> _figIndex = new Dictionary<string, int>();
         private bool _skyHooked;
@@ -99,7 +102,7 @@ namespace FiresRPGClasses.UI
             if (_selected == null || stars.All(s => s.Id != _selected))
                 _selected = stars.FirstOrDefault(s => s.Capstone)?.Id ?? stars.FirstOrDefault()?.Id;
 
-            // 0.1.152: the side/map split follows the mode (figure mode = the wider panel), re-applied on every refresh
+            // the side/map split follows the mode (figure mode = the wider panel), re-applied on every refresh
             _side.offsetMin = new Vector2(-Pad - SideW, 14f);
             _map.offsetMax = new Vector2(-Pad - SideW - 14f, -8f - HeaderHeight - 10f);
             Canvas.ForceUpdateCanvases();
@@ -153,9 +156,9 @@ namespace FiresRPGClasses.UI
             float side = Mathf.Min(w, h);
             float outer = side * 0.46f;   // panel units: pos (0..1) maps onto a side x side square in the middle
             _labelSegments.Clear(); _labelBlocks.Clear();
-            _starMul = 1f; _labelMul = 1f;   // 0.1.152: only the one-figure view enlarges
+            _starMul = 1f; _labelMul = 1f;   // only the one-figure view enlarges
             { Image plate = _map.GetComponent<Image>(); if (plate != null) plate.enabled = true; }
-            if (ParagonFigures.On && BuildSingleFigure(tree, stars, w, h)) return;   // 0.1.152: one figure per page (BuildFigureMap = the 4-up view, kept)
+            if (ParagonFigures.On && BuildSingleFigure(tree, stars, w, h)) return;   // one figure per page; else the ring map below
 
             // rings + their gate captions (on the right of the horizontal axis, clear of the stars)
             for (int t = 1; t <= 4; t++)
@@ -218,146 +221,11 @@ namespace FiresRPGClasses.UI
         private static readonly Color ShapeStar = new Color(0.96f, 0.98f, 1f, 0.9f);
         private static readonly Color LinkHover = new Color(1f, 0.78f, 0.38f, 0.86f);    // the sheets' hover gold
 
-        /// <summary>
-        /// [classes-ui] Constellation mode (ParagonFigures, Fire-approved sheets): each branch's figure in its own quadrant (by the
-        /// cluster's angle, as the corner titles were), the Paragon stars on the figure's outline points, the figure's lines and
-        /// curves drawn as the constellation, small shape stars on the other outline points. Unlock links show only when lit
-        /// (both ends learned) or touching the selected star (gold dashes, the sheets' hover). Bridges sit between the stars they
-        /// link. False (no figure for this tree) = the ring map.
-        /// </summary>
-        private bool BuildFigureMap(ParagonSource.Tree tree, List<ParagonSource.Star> stars, float w, float h)
-        {
-            var figs = new Dictionary<string, (ParagonFigures.Figure fig, Vector2 origin, float scale)>();
-            foreach (ParagonSource.Cluster c in tree.Clusters)
-            {
-                string branch = c.Id;
-                if (!ParagonFigures.TryGet(branch, out var fig))
-                {
-                    // the cluster id may not be the branch code: take it from one of its stars
-                    ParagonSource.Star any = stars.FirstOrDefault(s => s.Cluster == c.Id && !s.Bridge);
-                    branch = ParagonFigures.BranchOf(any?.Id);
-                    if (!ParagonFigures.TryGet(branch, out fig)) continue;
-                }
-                float a = c.AngleDeg * Mathf.Deg2Rad;
-                bool right = Mathf.Cos(a) > 0f, bottom = Mathf.Sin(a) > 0f;
-                float qw = w * 0.5f, qh = h * 0.5f;
-                // 0.1.150: each quadrant = a 38-unit title band at its bottom (title + branch, both INSIDE the quadrant) and the
-                // figure frame fitted into the rest with label room around it (the frame is 80 % of the space, labels sit outside it)
-                const float band = 38f;
-                float scale = Mathf.Min((qw - 40f) / ParagonFigures.FrameW, (qh - band - 30f) / ParagonFigures.FrameH) * 0.82f;
-                var qb = new Vector2(right ? qw * 0.5f : -qw * 0.5f, bottom ? -qh * 0.5f : qh * 0.5f);   // quadrant centre
-                var qc = qb + new Vector2(0f, band * 0.5f);                                              // figure centre, above the band
-                figs[c.Id] = (fig, qc, scale);
-
-                float bandBottom = qb.y - qh * 0.5f;
-                TextMeshProUGUI title = ClassesStyle.Label(_map, "Figure_" + fig.Branch, fig.Title, 14f,
-                    new Color(0.91f, 0.85f, 0.72f, 0.75f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), TextAlignmentOptions.MidlineLeft);
-                title.fontStyle = FontStyles.Italic;
-                title.rectTransform.sizeDelta = new Vector2(qw - 24f, 18f);
-                title.rectTransform.anchoredPosition = new Vector2(qb.x, bandBottom + 26f);
-                TextMeshProUGUI sub = ClassesStyle.Label(_map, "FigureBranch_" + fig.Branch, c.Name, 11f,
-                    new Color(tree.Colour.r, tree.Colour.g, tree.Colour.b, 0.8f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), TextAlignmentOptions.MidlineLeft);
-                sub.rectTransform.sizeDelta = new Vector2(qw - 24f, 14f);
-                sub.rectTransform.anchoredPosition = new Vector2(qb.x, bandBottom + 10f);
-                _labelBlocks.Add(new Rect(qb.x - qw * 0.5f, bandBottom, qw, band));   // star labels stay out of the title band
-            }
-            if (figs.Count == 0) return false;
-
-            Vector2 At((ParagonFigures.Figure fig, Vector2 origin, float scale) f, Vector2 p) =>
-                f.origin + new Vector2((p.x - ParagonFigures.FrameW * 0.5f) * f.scale, (ParagonFigures.FrameH * 0.5f - p.y) * f.scale);
-
-            RectTransform figRect = ClassesStyle.Rect(_map, "FigureLines", Vector2.zero, Vector2.one);
-            UILineGraphic figLines = figRect.gameObject.AddComponent<UILineGraphic>();
-            figLines.raycastTarget = false;
-            RectTransform anchors = ClassesStyle.Rect(_map, "FigureAnchors", Vector2.zero, Vector2.one);
-            RectTransform Anchor(string name, Vector2 p)
-            {
-                RectTransform r = ClassesStyle.Fixed(anchors, name, new Vector2(0.5f, 0.5f), new Vector2(1f, 1f));
-                r.anchoredPosition = p;
-                return r;
-            }
-
-            // Paragon star positions on their figure points
-            var pos = new Dictionary<string, Vector2>();
-            foreach (ParagonSource.Star s in stars)
-            {
-                if (s.Bridge || !figs.TryGetValue(s.Cluster ?? "", out var f)) continue;
-                string role = ParagonFigures.RoleOf(s.Id);
-                if (role != null && f.fig.Nodes.TryGetValue(role, out string key) && f.fig.Points.TryGetValue(key, out Vector2 p))
-                    pos[s.Id] = At(f, p);
-            }
-            // bridges (and any star without a figure point): between the stars they link, else the map centre
-            foreach (ParagonSource.Star s in stars)
-            {
-                if (pos.ContainsKey(s.Id)) continue;
-                var ends = s.Links.Where(pos.ContainsKey).Select(l => pos[l]).ToList();
-                pos[s.Id] = ends.Count > 0 ? ends.Aggregate(Vector2.zero, (acc, v) => acc + v) / ends.Count : Vector2.zero;
-            }
-
-            // the figures: lines, curves, shape stars
-            int segs = 0, shapes = 0;
-            foreach (var kv in figs)
-            {
-                var f = kv.Value;
-                var used = new HashSet<string>(f.fig.Nodes.Values);
-                foreach (string[] l in f.fig.Lines)
-                {
-                    if (!f.fig.Points.TryGetValue(l[0], out Vector2 a) || !f.fig.Points.TryGetValue(l[1], out Vector2 b)) continue;
-                    figLines.Add(Anchor(f.fig.Branch + "_" + l[0], At(f, a)), Anchor(f.fig.Branch + "_" + l[1], At(f, b)), 1.6f, FigureLine);
-                    _labelSegments.Add(new[] { At(f, a), At(f, b) });
-                    segs++;
-                }
-                foreach (string[] cv in f.fig.Curves)
-                {
-                    List<Vector2> pts = ParagonFigures.Sample(f.fig, cv);
-                    for (int i = 0; i < pts.Count - 1; i++)
-                    {
-                        figLines.Add(Anchor(f.fig.Branch + "_c" + segs + "a", At(f, pts[i])), Anchor(f.fig.Branch + "_c" + segs + "b", At(f, pts[i + 1])), 1.6f, FigureLine);
-                        _labelSegments.Add(new[] { At(f, pts[i]), At(f, pts[i + 1]) });
-                        segs++;
-                    }
-                }
-                foreach (KeyValuePair<string, Vector2> p in f.fig.Points)
-                {
-                    if (used.Contains(p.Key)) continue;
-                    RectTransform dot = ClassesStyle.Fixed(_map, "Shape_" + f.fig.Branch + "_" + p.Key, new Vector2(0.5f, 0.5f), new Vector2(5f, 5f));
-                    dot.anchoredPosition = At(f, p.Value);
-                    ClassesStyle.Fill(dot, ClassesStyle.Circle(16, ShapeStar, ShapeStar, 1f), Color.white);
-                    shapes++;
-                }
-            }
-            figRect.SetAsFirstSibling();
-            anchors.SetAsFirstSibling();
-
-            _lines = ClassesStyle.Rect(_map, "Lines", Vector2.zero, Vector2.one).gameObject.AddComponent<UILineGraphic>();
-            _lines.raycastTarget = false;
-            var rects = new Dictionary<string, RectTransform>();
-            var byId = stars.ToDictionary(s => s.Id);
-            foreach (ParagonSource.Star s in stars) rects[s.Id] = DrawStar(tree, s, pos[s.Id]);
-            var drawn = new HashSet<string>();
-            int linkCount = 0;
-            foreach (ParagonSource.Star s in stars)
-                foreach (string l in s.Links)
-                {
-                    if (!rects.ContainsKey(l) || !drawn.Add(string.CompareOrdinal(s.Id, l) < 0 ? s.Id + "|" + l : l + "|" + s.Id)) continue;
-                    bool lit = s.Rank > 0 && byId[l].Rank > 0;
-                    bool hover = _selected != null && (s.Id == _selected || l == _selected);
-                    if (!lit && !hover) continue;
-                    _lines.Add(rects[s.Id], rects[l], lit ? 2.5f : 2f, lit ? tree.Colour : LinkHover, !lit);
-                    linkCount++;
-                }
-            PlaceLabels(stars, pos);
-            if (_figureLogged.Add(tree.Id))
-                FiresRPGClassesPlugin.Log?.LogDebug($"[Paragon] tree {tree.Id}: constellation figures {string.Join(",", figs.Values.Select(f => f.fig.Branch).ToArray())}, "
-                    + $"{pos.Count} stars placed, {segs} figure segments, {shapes} shape stars, {linkCount} links shown (lit/selected)");
-            return true;
-        }
-        private static readonly HashSet<string> _figureLogged = new HashSet<string>();
         private static readonly HashSet<string> _labelLogged = new HashSet<string>();
 
-        // ---- 0.1.152: one constellation per page (Fire 10-16, mock Tools\mockup_paragon_cleanup\single_view\*_sky_*) ----------
+        // ---- one constellation per page ---------------------------------------------------------------------
         // A top bar (< prev name . "The Axe . Gatherer" . 4 dots . next name >) floats on the sky; ONE figure fills the rest; the
-        // map has no panel: the hub's live sky (Core 0.2.499 FiresShell.SkyTexture) shows through; bridge stars sit at the map
+        // map has no panel: the hub's live sky (FiresShell.SkyTexture) shows through; bridge stars sit at the map
         // edge toward the neighbour they link. The mouse wheel over the map steps figures too.
         private const float TopBar = 70f;
 
@@ -391,7 +259,7 @@ namespace FiresRPGClasses.UI
             Texture sky = FiresCore.UI.Shell.FiresShell.SkyTexture;
             _skyImage.texture = sky;
             _skyImage.enabled = sky != null;
-            // 0.1.153: no hub sky (override OFF window, hub closed): keep the old dark-blue map plate so the stars never sit on the bare window
+            // no hub sky (standalone window, hub closed): keep the old dark-blue map plate so the stars never sit on the bare window
             Image plate = _map.GetComponent<Image>();
             if (plate != null) plate.enabled = sky == null;
             if (sky != null)
@@ -413,7 +281,7 @@ namespace FiresRPGClasses.UI
             _figIndex.TryGetValue(tree.Id, out int idx);
             idx = Mathf.Clamp(idx, 0, figs.Count - 1); _figIndex[tree.Id] = idx;
             var cur = figs[idx];
-            _starMul = 1.5f; _labelMul = 1.3f;
+            _starMul = SingleFigureStarMul; _labelMul = SingleFigureLabelMul;
 
             // no panel: the sky shows through
             // (the plate follows the sky: UpdateSky turns it off only while a sky texture is shown)
@@ -477,8 +345,7 @@ namespace FiresRPGClasses.UI
             drawn = drawn.Where(s => pos.ContainsKey(s.Id)).ToList();
             // bridges touching this figure: left edge if they reach the previous figure, right edge otherwise
             string prevCluster = figs[(idx + figs.Count - 1) % figs.Count].c.Id;
-            // 0.1.153 (R-E4: "0 bridges" on The Axe): the yaml bridges have an empty links list and a cluster (CB1 in C1...), so a
-            // bridge shows on its OWN cluster's figure (right edge, toward the next) as well as on any figure it links to (either direction)
+            // the yaml bridges can have an empty links list and a cluster (CB1 in C1...), so a bridge shows on its OWN cluster's figure (right edge, toward the next) as well as on any figure it links to (either direction)
             var drawnIds = new HashSet<string>(drawn.Select(d => d.Id));
             var bridges = stars.Where(s => s.Bridge && (s.Cluster == cur.c.Id || s.Links.Any(drawnIds.Contains) || drawn.Any(d => d.Links.Contains(s.Id)))).ToList();
             int li = 0, ri = 0;
@@ -590,7 +457,7 @@ namespace FiresRPGClasses.UI
 
         private RectTransform DrawStar(ParagonSource.Tree tree, ParagonSource.Star s, Vector2 at)
         {
-            float size = (s.Capstone ? 30f : s.Slottable ? 22f : 16f) * _starMul;   // 0.1.152: x1.5 in the one-figure view
+            float size = (s.Capstone ? 30f : s.Slottable ? 22f : 16f) * _starMul;   // _starMul enlarges the one-figure view
             RectTransform rect = ClassesStyle.Fixed(_map, "Star_" + s.Id, new Vector2(0.5f, 0.5f), new Vector2(size + 12f, size + 12f));
             rect.anchoredPosition = at;
             Color col = s.Rank > 0 ? tree.Colour : s.Unlocked ? OpenStar : LockedStar;
@@ -621,17 +488,16 @@ namespace FiresRPGClasses.UI
                 RectTransform sel = ClassesStyle.Fixed(rect, "Selected", new Vector2(0.5f, 0.5f), new Vector2(size + 18f, size + 18f));
                 ClassesStyle.Fill(sel, ClassesStyle.Circle(96, Color.clear, ClassesStyle.Gold, 4f), Color.white);
             }
-            // every star: the full name + ParagonUi's explanation on hover (Fire 10-14)
+            // every star: the full name + ParagonUi's explanation on hover
             FiresHoverTip.Attach(rect.gameObject, s.Name, "", () => ParagonSource.Tooltip(id));
             return rect;
         }
 
         /// <summary>
-        /// Short names under (else above, right, left of) each star, never overlapping another label or star (Fire 10-14).
+        /// Short names under (else above, right, left of) each star, never overlapping another label or star.
         /// Passives also get their rank. A label with no clear spot is left off; its hover still names it (logged).
         /// </summary>
-        // 0.1.150 (Fire 10-16: constellation labels on top of each other and on the figure lines): in figure mode the figure's
-        // line segments and the figure titles are obstacles too, and a label tries 8 spots around its star instead of 4.
+        // In figure mode the figure's line segments and title bar are label obstacles too, so labels never sit on the lines.
         private readonly List<Vector2[]> _labelSegments = new List<Vector2[]>();
         private readonly List<Rect> _labelBlocks = new List<Rect>();
 
@@ -667,11 +533,10 @@ namespace FiresRPGClasses.UI
                     s.Unlocked ? ClassesStyle.Text : ClassesStyle.LockedText, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), TextAlignmentOptions.Center);
                 label.textWrappingMode = TextWrappingModes.NoWrap;
                 label.overflowMode = TextOverflowModes.Overflow;
-                // 0.1.153 (R-E4: "Bountiful" on its own halo): a capstone's label clears its halo (size + 10), not just the star
+                // a capstone's label clears its halo (size + 10), not just the star
                 float r = ((s.Capstone ? 30f : s.Slottable ? 22f : 16f) * _starMul + (s.Capstone ? 10f : 0f)) * 0.5f + 4f;
                 Vector2 p = pos[s.Id];
-                // 0.1.169 (R-NIGHT4, 1024x768: "Parry Expert" dropped on Fitness figure 2 at 886x748): before giving up, the same two rings
-                // with the name wrapped onto two lines (multi-word names), then at 0.85 and 0.72 size. Logged per figure (fallbacks named).
+                // Small screens crowd the labels: before giving up, the same two rings are tried with the name wrapped onto two lines (multi-word names), then at 0.85 and 0.72 size. Logged per figure (fallbacks named).
                 float baseSize = LabelSize * _labelMul;
                 int sp = name.IndexOf(' ');
                 string wrapped = sp > 0 ? name.Substring(0, sp) + "\n" + name.Substring(sp + 1) : null;
@@ -695,7 +560,7 @@ namespace FiresRPGClasses.UI
                         p + new Vector2(r + size.x * 0.5f, 0f), p - new Vector2(r + size.x * 0.5f, 0f),
                         p + new Vector2(r + size.x * 0.5f, -r - size.y * 0.5f), p + new Vector2(-r - size.x * 0.5f, -r - size.y * 0.5f),
                         p + new Vector2(r + size.x * 0.5f, r + size.y * 0.5f), p + new Vector2(-r - size.x * 0.5f, r + size.y * 0.5f),
-                        // 0.1.155 (R-E4: Tool Care dropped): a second, wider ring before giving up
+                        // a second, wider ring before giving up
                         p + new Vector2(0f, -2f * r - size.y * 0.5f - 6f), p + new Vector2(0f, 2f * r + size.y * 0.5f + 6f),
                         p + new Vector2(2f * r + size.x * 0.5f + 6f, 0f), p - new Vector2(2f * r + size.x * 0.5f + 6f, 0f),
                         p + new Vector2(2f * r + size.x * 0.5f, -2f * r - size.y * 0.5f), p + new Vector2(-2f * r - size.x * 0.5f, -2f * r - size.y * 0.5f),
@@ -715,8 +580,8 @@ namespace FiresRPGClasses.UI
                 }
                 if (!placed) { Object.Destroy(label.gameObject); dropped++; droppedNames.Add(name); }
             }
-            // 0.1.159 (lead: finish the dropped-label search): at the default log level, per figure, with the names, so the
-            // 12-figure FiresClassTest step can count them (0 = PASS). Same text once per figure + count (no per-frame spam).
+            // Logged at the default level, per figure, with the names, so the automated class test can count dropped labels.
+            // Same text once per figure + count (no per-frame spam).
             int fig = _figIndex.TryGetValue(_tree ?? "", out int fi) ? fi : 0;
             string key = $"{_tree}|{fig}|{dropped}|{_map.rect.width:0}";
             if (_labelLogged.Add(key))
@@ -736,8 +601,7 @@ namespace FiresRPGClasses.UI
 
         // ---- side column: card, tier progress, slots, legend --------------------------------------------------
 
-        // 0.1.155 (Fire 10-16 on 0.1.154: "text at the bottom bleeding over the edge" with a long two-line star): the panel is
-        // built, measured against its inner height, and rebuilt with the description at a smaller size (1.3 -> 1.15 -> 1.0, then
+        // A long description could bleed past the bottom edge, so the panel is built, measured against its inner height, and rebuilt with the description at a smaller size (1.3 -> 1.15 -> 1.0, then
         // at most 2 lines per description line with an ellipsis) until it fits. The legend is ONE hover row ("Legend (hover)").
         private float _descMul = 1f;
         private int _descMaxLines;
@@ -758,7 +622,7 @@ namespace FiresRPGClasses.UI
             if (_sideLogged != key)
             {
                 _sideLogged = key;
-                { string msg = $"[Paragon] side panel: content {used:0} of {inner:0} ({fit}, description x{_descMul:0.##}{(_descMaxLines > 0 ? ", 2 lines max" : "")}) for '{_selected}'"; if (used > inner) FiresRPGClassesPlugin.Log?.LogWarning(msg); else FiresRPGClassesPlugin.Log?.LogInfo(msg); }   // 0.1.156 ([seasons]): visible at the default log level
+                { string msg = $"[Paragon] side panel: content {used:0} of {inner:0} ({fit}, description x{_descMul:0.##}{(_descMaxLines > 0 ? ", 2 lines max" : "")}) for '{_selected}'"; if (used > inner) FiresRPGClassesPlugin.Log?.LogWarning(msg); else FiresRPGClassesPlugin.Log?.LogInfo(msg); }   // visible at the default log level
             }
         }
         private string _sideLogged;
@@ -816,7 +680,7 @@ namespace FiresRPGClasses.UI
             int next = Enumerable.Range(1, 4).Select(t => Gate(tree, t)).FirstOrDefault(g => g > spent);
             string prog = next > 0 ? $"Spent in {tree.Name}: {spent}  -  next tier at {next}" : $"Spent in {tree.Name}: {spent}  -  every tier open";
             ClassesStyle.Label(Row(ref y, Fs(18f)), "Progress", prog, Fs(13f), ClassesStyle.Text, Vector2.zero, Vector2.one);
-            // 0.1.155 (Fire: "the t4 sitting akwardly far over"): the bar is inset by TierInset on both sides, so the last label centres
+            // the bar is inset by TierInset on both sides, so the last label centres
             // on its own tick fully inside the panel; a small tick mark on the bar at each real threshold (gate / last gate).
             const float TierInset = 22f;
             RectTransform barRow = Row(ref y, Fs(12f));
@@ -847,8 +711,8 @@ namespace FiresRPGClasses.UI
             foreach (ParagonSource.Tree t in trees)
             {
                 RectTransform row = Row(ref y, Fs(46f));
-                // R3 10-14: the label hung on a zero-width anchor with a centred pivot, so half of it sat left of the panel
-                // ("arfare"); pin its left edge to the row instead.
+                // pin the label's left edge to the row: a zero-width anchor with a centred pivot would put half of it
+                // left of the panel.
                 RectTransform treeLabel = ClassesStyle.Label(row, "Tree", t.Name, Fs(14f), t.Colour, new Vector2(0f, 0f), new Vector2(0f, 1f),
                     TextAlignmentOptions.MidlineLeft, true).rectTransform;
                 treeLabel.pivot = new Vector2(0f, 0.5f);
@@ -866,7 +730,7 @@ namespace FiresRPGClasses.UI
                     Image face = ClassesStyle.Fill(cell, ClassesStyle.Box(4, ClassesStyle.Hex("#1a140f"), star != null ? t.Colour : ClassesStyle.Line, 2), Color.white, true);
                     string text = star != null ? (string.IsNullOrEmpty(star.ShortName) ? star.Name : star.ShortName) : "empty";
                     TextMeshProUGUI cap = ClassesStyle.Label(cell, "Name", text, 10f, star != null ? ClassesStyle.Text : ClassesStyle.LockedText, Vector2.zero, Vector2.one, TextAlignmentOptions.Center);
-                    cap.enableAutoSizing = true; cap.fontSizeMin = Fs(9f); cap.fontSizeMax = Fs(11f);   // 0.1.151: was 7 px; wraps to 2 lines, ellipsis past that (hover names it)
+                    cap.enableAutoSizing = true; cap.fontSizeMin = Fs(9f); cap.fontSizeMax = Fs(11f);   // wraps to 2 lines, ellipsis past that (hover names it)
                     cap.textWrappingMode = TextWrappingModes.Normal; cap.overflowMode = TextOverflowModes.Ellipsis; cap.maxVisibleLines = 2;
                     if (star != null)
                     {
@@ -891,7 +755,7 @@ namespace FiresRPGClasses.UI
             });
             if (ParagonFigures.On)
             {
-                // 0.1.155: one row; the five lines are its hover
+                // one row; the five lines are its hover
                 TextMeshProUGUI lg = ClassesStyle.Label(Row(ref y, Fs(18f)), "Legend", "Legend (hover)   -   hover any star for what it does", Fs(12f), ClassesStyle.Muted, Vector2.zero, Vector2.one);
                 lg.raycastTarget = true;
                 FiresHoverTip.Attach(lg.gameObject, "Paragon legend", legendText);
@@ -943,7 +807,7 @@ namespace FiresRPGClasses.UI
             y += 6f;
         }
 
-        /// <summary>Sizes a button to its caption plus padding (Fire: labels always fit their button); returns its width.</summary>
+        /// <summary>Sizes a button to its caption plus padding so labels always fit their button; returns its width.</summary>
         private static float FitButton(Button b, float x, float height, bool fromRight = false)
         {
             TMP_Text cap = b.GetComponentInChildren<TMP_Text>(true);

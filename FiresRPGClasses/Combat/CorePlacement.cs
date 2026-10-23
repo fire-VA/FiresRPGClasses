@@ -4,8 +4,8 @@ using UnityEngine;
 namespace FiresRPGClasses.Combat
 {
     /// <summary>
-    /// Hands a placed skill's aim to Core's next placed area effect (CompanionStatusEffectBase.SetNextPlacement, Core 0.2.200,
-    /// [generator]). An older Core lacks it: the first call finds out, logs once, and the effect keeps Core's own placement.
+    /// Hands a placed skill's aim to Core's next placed area effect (CompanionStatusEffectBase.SetNextPlacement, Core 0.2.200).
+    /// An older Core lacks it: the first call finds out, logs once, and the effect keeps Core's own placement.
     /// </summary>
     internal static class CorePlacement
     {

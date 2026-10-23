@@ -35,11 +35,9 @@ namespace FiresRPGClasses.Data
             { ArchetypeClass.Tank, ArchetypeClass.Ranger };
         private static readonly ArchetypeClass[] RangerRogue =
             { ArchetypeClass.Ranger, ArchetypeClass.Rogue };
-        private static readonly ArchetypeClass[] RogueMonk =
-            { ArchetypeClass.Rogue, ArchetypeClass.Monk };
         private static readonly ArchetypeClass[] TankBerserkerMonk =
             { ArchetypeClass.Tank, ArchetypeClass.Berserker, ArchetypeClass.Monk };
-        // Druid / Necromancer (Fire 10-07): one more allowed archetype on their rows; the row's first stays the default.
+        // Druid / Necromancer: one more allowed archetype on their rows; the row's first stays the default.
         private static readonly ArchetypeClass[] MonkBerserkerDruid =
             { ArchetypeClass.Monk, ArchetypeClass.Berserker, ArchetypeClass.Druid };
         private static readonly ArchetypeClass[] RogueMonkNecromancer =
@@ -154,7 +152,7 @@ namespace FiresRPGClasses.Data
 
         /// <summary>
         /// The other direction: every weapon setup that can drive this archetype ("Sword and shield", "Battleaxe"...), read
-        /// from the same rule so the labels can never disagree with what a bar accepts. Fire 10-01: say plainly which
+        /// from the same rule so the labels can never disagree with what a bar accepts, and say plainly which
         /// weapons each class takes.
         /// </summary>
         public static IReadOnlyList<string> WeaponsFor(ArchetypeClass archetype)

@@ -3,7 +3,7 @@ using System.Diagnostics;
 
 namespace FiresRPGClasses.Combat
 {
-    /// <summary>0.1.119 (perf audit): time and call counts of a few hot hooks, one Debug line per hook every 60 s.</summary>
+    /// <summary>Time and call counts of a few hot hooks, one Debug line per hook every 60 s.</summary>
     internal static class PerfProbe
     {
         private sealed class Slot { public long Ticks; public int Calls; }

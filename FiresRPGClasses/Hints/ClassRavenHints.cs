@@ -16,7 +16,7 @@ using UnityEngine;
 namespace FiresRPGClasses.Hints
 {
     /// <summary>
-    /// Hugin teaches the classes (Fire 10-01, via [lead]): seven raven hints through vanilla's own tutorial system, so each is
+    /// Hugin teaches the classes: seven raven hints through vanilla's own tutorial system, so each is
     /// shown once per character, at the first moment it matters:
     /// - fires_classes_window: the first spawn.
     /// - fires_classes_pick: the first time the Classes window is open.
@@ -26,7 +26,7 @@ namespace FiresRPGClasses.Hints
     /// - fires_classes_attributes: the first unspent attribute point.
     /// - fires_classes_skills: the first talent rank bought.
     /// Every text is written from the live rules (key chords, server rates, rank costs, slot levels, weapons per class), so it
-    /// can't drift from the code. [classes-ui]'s compendium entries (UI\ClassesHelp.cs) render Topic/Text live from here, which
+    /// can't drift from the code. The compendium entries (UI\ClassesHelp.cs) render Topic/Text live from here, which
     /// is why the tutorial texts carry no label: Raven adds a label-less text to no saved compendium copy.
     /// </summary>
     public static class ClassRavenHints
@@ -39,7 +39,7 @@ namespace FiresRPGClasses.Hints
         public const string AttributesKey = "fires_classes_attributes";
         public const string SkillsKey = "fires_classes_skills";
 
-        private const string Section = "6 - UI";   // 0.1.112: was [Hints] (one entry)
+        private const string Section = "6 - UI";
         private const float TickSeconds = 1f;
         private const float SettleSeconds = 8f;
         private const float GapSeconds = 20f;
@@ -97,8 +97,7 @@ namespace FiresRPGClasses.Hints
         {
             if (Enabled != null) return;
             Enabled = config.Bind(Section, "Raven hints", true,
-                "On: Hugin teaches the classes, once per character, the first time each part matters (the Classes window, picking "
-                + "a class, the two bars, weapons, talent and attribute points, kinds of talent). Off for test bots.");
+                "Hugin explains each part of the classes once per character, the first time it matters.");
         }
 
         // ---- when ------------------------------------------------------------------------------------------------------
@@ -129,11 +128,11 @@ namespace FiresRPGClasses.Hints
             }
             ClassPlayerData data = ClassPlayerStore.Local;
             if (player == null || data == null || !ClassTrees.IsLoaded) return;
-            // 0.1.67: every text joins vanilla's list up front, whatever the HUD; only the raven's offer waits (R: ui_classes found
-            // pick/bars/weapon "not registered" once every test hid the HUD and no offer ever ran).
+            // Every text joins vanilla's list up front, whatever the HUD; only the raven's offer waits, so a hidden HUD never
+            // leaves a hint unregistered.
             EnsureRegistered();
             Watch(data);
-            // Fire 10-02 ("hide the HUD for all of the tests"): no raven while the HUD is hidden (Ctrl+F3); the hint stays unseen and
+            // No raven while the HUD is hidden (Ctrl+F3); the hint stays unseen and
             // comes once the HUD is back.
             if (player.IsDead() || player.InIntro() || Hud.IsUserHidden() || Time.time - _playerSince < SettleSeconds || Time.time < _nextOfferAt) return;
 
@@ -336,7 +335,7 @@ namespace FiresRPGClasses.Hints
             float perLevel = rates.AttributePointsPerLevel;
             if (perLevel >= 1f) text.Append("Every class level brings ").Append(perLevel.ToString("0.#")).Append(" of them");
             else if (perLevel > 0f) text.Append("One comes every ").Append(Mathf.RoundToInt(1f / perLevel)).Append(" class levels");
-            if (perLevel > 0f) text.Append(", up to ").Append(rates.AttributePointsMaximum).Append(". ");
+            if (perLevel > 0f) text.Append(rates.AttributePointsMaximum > 0 ? ", up to " + rates.AttributePointsMaximum + ". " : ", with no cap. ");   // a maximum of 0 means no cap
             text.Append("Spend them on the ").Append(O("Character")).Append(" page of the Classes window. What one point gives:");
             foreach (AttributeKind kind in Enum.GetValues(typeof(AttributeKind)))
             {

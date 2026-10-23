@@ -9,7 +9,7 @@ using UnityEngine.UI;
 namespace FiresRPGClasses.UI
 {
     /// <summary>
-    /// The Achievements tab, from Fire's board Achievements. On the left, the categories with their counts: each
+    /// The Achievements tab. On the left, the categories with their counts: each
     /// catalogue's own groups, "All" first. On the right, "N of M completed" with a bar, then a row per achievement:
     /// icon, name, description, then "Completed" or a progress bar with "6 / 10", and the score on the right. It shows
     /// every catalogue registered with Core's <see cref="AchievementBridge"/>: Valheim's own always, RPG Maker's when

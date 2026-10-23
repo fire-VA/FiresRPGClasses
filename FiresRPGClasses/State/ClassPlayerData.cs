@@ -16,7 +16,7 @@ namespace FiresRPGClasses.State
         public int Schema = ClassPlayerStore.CurrentSchema;
 
         /// <summary>
-        /// The character this record belongs to (PlayerProfile id, Player.GetPlayerID). Fire 10-12: class levels showed up on
+        /// The character this record belongs to (PlayerProfile id, Player.GetPlayerID), so class levels never show up on
         /// another character. Stamped on save; a record stamped for a different character is never used. 0 = not stamped yet
         /// (older records), adopted by the character that loads it. Optional field: no schema bump, older builds ignore it.
         /// </summary>
@@ -30,7 +30,7 @@ namespace FiresRPGClasses.State
 
         public readonly List<SavedBar> SavedBars = new List<SavedBar>();
 
-        /// <summary>0.1.142 (BarMemory): each bar's layout per weapon type, key "Front|BloodMagic.2H".</summary>
+        /// <summary>BarMemory: each bar's layout per weapon type, key "Front|BloodMagic.2H".</summary>
         public readonly Dictionary<string, BarLayout> WeaponBars = new Dictionary<string, BarLayout>(StringComparer.Ordinal);
 
         public readonly Dictionary<string, UltimateProgress> Ultimates =
@@ -38,7 +38,7 @@ namespace FiresRPGClasses.State
 
         /// <summary>
         /// One-time class XP already paid that vanilla does not track itself: "creature:&lt;prefab&gt;" and "boss:&lt;prefab&gt;" first
-        /// kills (ClassXp, 0.1.55). A record without it loads with an empty set.
+        /// kills (ClassXp). A record without it loads with an empty set.
         /// </summary>
         public readonly HashSet<string> Firsts = new HashSet<string>(StringComparer.Ordinal);
 

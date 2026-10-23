@@ -6,7 +6,7 @@ using FiresCore.Sync;
 namespace FiresRPGClasses.Combat
 {
     /// <summary>
-    /// [13 - Balance] (0.1.131, Fire 10-14: ESO-style builds, gate by effort not flat caps). Stack COUNTS keep a hard max (UI and
+    /// [13 - Balance] (ESO-style builds: gate by effort, not flat caps). Stack COUNTS keep a hard max (UI and
     /// network); the BONUS they give runs through SoftCap.Soft with the old cap as its knee. Summon counts stay hard limits, but as
     /// server performance keys. Every key is synced from the server and advanced. Bound once per process (ConfigSync-once rule),
     /// from AttributeEffects.Bind (both the client and the dedicated-server paths call that).
@@ -30,23 +30,23 @@ namespace FiresRPGClasses.Combat
             var floats = new List<ConfigEntry<float>>();
 
             FuryMaxStacks = Int(ints, config, "Fury max stacks", 20, 1, 100,
-                "Berserker Fury: the most stacks it can hold (a hard count for the HUD and network; was 10).");
+                "Berserker Fury: the most stacks it can hold.");
             FuryFullStacks = Int(ints, config, "Fury full stacks", 10, 1, 100,
-                "Fury's bonus starts at this many stacks (+knee at exactly this count, as before); each stack beyond adds the same share again, softened.");
+                "Fury's full bonus is reached at this many stacks; extra stacks add a softened bonus.");
             FuryBonusKnee = Float(floats, config, "Fury bonus knee", 0.30f, 0f, 5f,
-                "Fury's damage bonus at full stacks (0.30 = +30%, the old fixed bonus) and the knee of its soft curve.");
+                "Fury's damage bonus at full stacks (0.30 = +30%), softened beyond that.");
             ComboMaxHits = Int(ints, config, "Monk combo max hits", 20, 1, 200,
-                "Martial Arts: the most combo hits counted (hard count; at +5% per hit).");
+                "Martial Arts: the most combo hits counted (+5% per hit).");
             ComboBonusKnee = Float(floats, config, "Monk combo bonus knee", 0.25f, 0f, 5f,
-                "Martial Arts combo bonus: the old +25% cap, now the knee; more hits keep adding, softened.");
+                "Martial Arts combo bonus at full value (0.25 = +25%), softened beyond that.");
             SummonServerMax = Int(ints, config, "Summon server limit", 6, 1, 50,
-                "Server performance limit: the most class summons (2 + 1 per 15 class levels) one player can hold.");
+                "The most class summons one player can have at once.");
             LegionServerMax = Int(ints, config, "Legion server limit", 10, 1, 100,
-                "Server performance limit: the most thralls Necromancer Legion raises at once.");
+                "The most thralls Necromancer Legion raises at once.");
             CooldownReductionKnee = Float(floats, config, "Cooldown reduction knee", 0.40f, 0f, 0.95f,
-                "Generic class cooldown reduction (CooldownTracker.Scaled): full value up to this share, then it approaches the limit.");
+                "Class cooldown reduction counts fully up to this share, then shrinks toward the limit.");
             CooldownReductionLimit = Float(floats, config, "Cooldown reduction limit", 0.80f, 0f, 0.95f,
-                "Generic class cooldown reduction never reaches this share (asymptote), so no skill becomes free.");
+                "Class cooldown reduction never reaches this share, so no skill becomes free.");
 
             try
             {

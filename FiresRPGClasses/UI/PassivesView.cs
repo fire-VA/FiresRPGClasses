@@ -13,7 +13,7 @@ using UnityEngine.UI;
 namespace FiresRPGClasses.UI
 {
     /// <summary>
-    /// Classes > Passives, from Fire's board PassivesView (doc 19's always-on grid): the equipped strip with every slot the
+    /// Classes > Passives, from the board PassivesView (doc 19's always-on grid): the equipped strip with every slot the
     /// character will ever have (locked ones say the level or Valor that opens them), filter chips, a card for every tree
     /// passive and automatic ability with its rank pips and status, and a detail well for the selected one with Equip /
     /// Unequip and "Open in tree". Passives are always on, whichever bar is active.

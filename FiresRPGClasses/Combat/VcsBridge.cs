@@ -16,8 +16,9 @@ namespace FiresRPGClasses.Combat
     /// </summary>
     internal static class VcsBridge
     {
-        // 0.1.138 (Fire 10-14, Tools\VCS_TO_FCC_REBRAND_PLAN.md §3/§5): VCS becomes Fires Character Creator. FccApi has the same
+        // VCS was renamed Fires Character Creator (Tools\VCS_TO_FCC_REBRAND_PLAN.md §3/§5). FccApi has the same
         // members; it's looked up first, VcsApi stays as the fallback so either mod (or a rollback) keeps working.
+        private const float ApiRetrySeconds = 5f;   // a missed lookup is retried this often until the look mod loads
         private const string FccTypeName = "FiresCharacterCreator.FccApi";
         private const string TypeName = "ValheimCustomizationStudio.VcsApi";
         private static bool _apiTried;
@@ -29,12 +30,12 @@ namespace FiresRPGClasses.Combat
         {
             get
             {
-                // 10-14 ([classes-ui]): a miss is no longer cached for the session. Asked before Fires Character Creator had loaded,
-                // the old code kept null forever, so the Character page button and the Appearance tab never showed. A miss
-                // retries at most every 5 s; a hit is kept.
+                // A miss is not cached for the session: asked before Fires Character Creator has loaded, a cached null would
+                // hide the Character page button and the Appearance tab forever. A miss retries at most every
+                // ApiRetrySeconds; a hit is kept.
                 if (_api != null || (_apiTried && Time.unscaledTime < _apiRetryAt)) return _api;
                 _apiTried = true;
-                _apiRetryAt = Time.unscaledTime + 5f;
+                _apiRetryAt = Time.unscaledTime + ApiRetrySeconds;
                 _api = AccessTools.TypeByName(FccTypeName) ?? AccessTools.TypeByName(TypeName);
                 FiresRPGClassesPlugin.Log?.LogDebug($"[Races] character API: {(_api == null ? "none yet (neither Fires Character Creator nor VCS; retrying)" : _api.FullName)}");
                 return _api;
@@ -100,7 +101,7 @@ namespace FiresRPGClasses.Combat
             try { return (bool)_isInForm.Invoke(null, new object[] { player }); }
             catch { return false; }
         }
-    
+
         // VCS 0.8.6+ race contract (Tools\VAMPIRE_CLASS_DESIGN.md §9): bool SetRace(Player, string race) applies the look, saves the
         // pre-turn look once, publishes ZDO rpg_race; "Werewolf" answers false when model swaps are off / Fenring isn't allowlisted
         // (the caller keeps the disease and retries at the next login); "Human" always works. string GetRace(Player).
@@ -145,7 +146,7 @@ namespace FiresRPGClasses.Combat
             try { return _getRace.Invoke(null, new object[] { player }) as string ?? ""; } catch { return ""; }
         }
 
-        /// <summary>VcsApi.SetArmorHidden (VCS 0.8.8+, Fire: armour hidden in wolf form, stats kept); false without it.</summary>
+        /// <summary>VcsApi.SetArmorHidden (VCS 0.8.8+: armour hidden in wolf form, stats kept); false without it.</summary>
         internal static bool SetArmorHidden(Player player, bool hidden)
         {
             Resolve();

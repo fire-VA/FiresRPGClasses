@@ -9,7 +9,7 @@ using UnityEngine;
 namespace FiresRPGClasses.UI
 {
     /// <summary>
-    /// UI overhaul #14, possession chips (Fire approved Tools\golden\ui_overhaul\hotbars\bar_rpg_possess.png): with the override ON and
+    /// UI overhaul #14, possession chips (approved look: Tools\golden\ui_overhaul\hotbars\bar_rpg_possess.png): with the override ON and
     /// Core's hotbar kit present, the possessed form's attacks are a kit HotbarRow in the same spot as the strip (under the vanilla
     /// hotbar's bottom-left, PlaceStrip). Keys LMB / MMB / Alt under each slot (Core 0.2.528 layout); the Alt + wheel pick is Selected;
     /// a caption keeps the form's name, time left and health. Built once per form, then only repainted. Every kit type lives in the
@@ -77,7 +77,7 @@ namespace FiresRPGClasses.UI
                         if (icon == null)   // creature attacks often have no icon: the short name stands in, inside the slot
                             ClassesStyle.Label(s.Root, "AttackName", Pretty(attacks[i].Name), 12f, ClassesStyle.Text, Vector2.zero, Vector2.one, TextAlignmentOptions.Center).raycastTarget = false;
                     }
-                    // 0.1.173: a player-given strip size (Core resize) re-flows the new form's slots into it; none = today's 1 x n row
+                    // A player-given strip size (Core resize) re-flows the new form's slots into it; none = today's 1 x n row
                     if (_h._stripDocked && ClassesHudSizes.TryGet(StripDockId, out Vector2 saved)) { ClassesHudSizes.ResizeKeepTopLeft(strip, saved); Relayout(saved); }
                     FiresRPGClassesPlugin.Log?.LogInfo($"[Classes] possession: kit row for {handle.Creature.name}: {count} attack(s) (LMB {handle.MainIndex}, MMB {handle.SpecialIndex}, current {handle.CurrentIndex})");
                 }
@@ -99,7 +99,7 @@ namespace FiresRPGClasses.UI
 
             private const float CaptionW = 220f, CaptionGap = 12f, CaptionBelowH = 40f, Chip = 17f, RowStep = 18f;
 
-            /// <summary>0.1.173: the caption stays beside the slots while the width leaves room for it (today), else goes under them; the
+            /// <summary>The caption stays beside the slots while the width leaves room for it (today), else goes under them; the
             /// slots take cols = what fits (fewer when the height fits more rows), rows a key chip apart. Today's size = today's 1 x n row.</summary>
             internal void Relayout(Vector2 want)
             {

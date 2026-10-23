@@ -20,8 +20,7 @@ namespace FiresRPGClasses.UI
         {
             if (_takeOver != null) return;
             _takeOver = config.Bind(Section, "SkillsButtonOpensClasses", true,
-                "The inventory's Skills button opens the Classes window (with Valheim's skills as its first "
-                + "tab). Turn off to get the vanilla skills dialog back.");
+                "The inventory's Skills button opens the Classes window instead of the vanilla skills dialog.");
         }
 
         [HarmonyPrefix]

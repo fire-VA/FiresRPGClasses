@@ -35,14 +35,14 @@ namespace FiresRPGClasses.ExtraSkills
 
         private static ConfigEntry<float> F(ConfigFile c, string key, float def, string desc, float min, float max)
         {
-            ConfigEntry<float> e = c.Bind(Section, key, def, new ConfigDescription(desc + " [Synced with Server]", new AcceptableValueRange<float>(min, max)));
+            ConfigEntry<float> e = c.Bind(Section, key, def, new ConfigDescription(desc + " [Synced with Server]", new AcceptableValueRange<float>(min, max), new ConfigurationManagerAttributes { IsAdvanced = true }));
             Floats.Add(e);
             return e;
         }
 
         private static ConfigEntry<int> I(ConfigFile c, string key, int def, string desc, int min, int max)
         {
-            ConfigEntry<int> e = c.Bind(Section, key, def, new ConfigDescription(desc + " [Synced with Server]", new AcceptableValueRange<int>(min, max)));
+            ConfigEntry<int> e = c.Bind(Section, key, def, new ConfigDescription(desc + " [Synced with Server]", new AcceptableValueRange<int>(min, max), new ConfigurationManagerAttributes { IsAdvanced = true }));
             Ints.Add(e);
             return e;
         }
@@ -93,7 +93,7 @@ namespace FiresRPGClasses.ExtraSkills
                 {
                     DisplayName = FiresRPGClassesPlugin.PluginName + " extra skills",
                     CurrentVersion = FiresRPGClassesPlugin.PluginVersion,
-                    // 10-13 config rule: raised only when a synced key changes; 0.1.112 renamed the section ("ExtraSkills" -> "8 - Extra skills").
+                    // Raised only when a synced key changes (last: the section was renamed "ExtraSkills" -> "8 - Extra skills").
                     MinimumRequiredVersion = "0.1.112",
                     ModRequired = false,
                 };

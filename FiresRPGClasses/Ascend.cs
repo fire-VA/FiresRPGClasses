@@ -18,22 +18,23 @@ namespace FiresRPGClasses
     [BepInDependency("com.Fire.FiresRPGmaker", BepInDependency.DependencyFlags.SoftDependency)]
     // Ordering, not a requirement. ClassesInventoryTab resolves VAInventory's registry by reflection, and
     // AccessTools.TypeByName only sees assemblies ALREADY LOADED - so without this BepInEx was free to load us
-    // first (it did: FiresRPGClasses at log line 218, VAInventory at 280) and the lookup came back null.
+    // first, and then the lookup comes back null.
     [BepInDependency("com.Fire.VAInventory", BepInDependency.DependencyFlags.SoftDependency)]
     public class FiresRPGClassesPlugin : BaseUnityPlugin
     {
         public const string PluginGUID = "com.Fire.FiresRPGClasses";
         public const string PluginName = "FiresRPGClasses";
-        public const string PluginVersion = "0.1.174";
+        public const string PluginVersion = "0.1.192";
 
         private const string HostObjectName = "FiresRPGClasses_Host";
 
         internal static ManualLogSource Log;
+        internal static FiresRPGClassesPlugin Instance;   // hosts rpgclasses_paragon_test's coroutine
 
         private Harmony _harmony;
         private GameObject _host;
 
-        // 0.1.111 (Fire 10-13: every config accurate and easy to read; Tools\CONFIG_AUDIT_20261013.md) + 0.1.112 (sensible grouping). Runs
+        // Keeps old config files readable after the sections were renamed and regrouped. Runs
         // at the top of Awake, BEFORE any bind, when every value in the file is still an "orphan" BepInEx reads at bind time:
         // 1) the legacy keys nothing reads any more (the split-bool MoveBars set, the old "Skill modifier") are removed;
         // 2) each value under an old section moves to its new numbered section (same key, same value), so the bind finds it there.
@@ -90,14 +91,15 @@ namespace FiresRPGClasses
         private void Awake()
         {
             Log = Logger;
-            TidyConfig();   // 0.1.111/0.1.112 (Fire 10-13 config audit): before any bind
+            Instance = this;
+            TidyConfig();   // before any bind
             FiresRPGClassesBanner.PrintBig();
             ExtraSkills.ExtraSkillSystem.Init(Config); // Agility, Endurance, Vigor, Intellect, Hoarder (config + sync on client and server)
-            // 0.1.122 (Fire 10-13, Tools\OCEAN_TO_FAT_PLAN.md stage 2): the ocean (breath, drowning, treading water, the Pearl effects) moved to
-            // FAT 0.2.890's VerdantsAscent.Ocean.OceanKit, which activates once this assembly no longer has FiresRPGClasses.Ocean.OceanKit and
-            // imports the [10 - Ocean] values from this cfg (left in place for it).
+            // The ocean (breath, drowning, treading water, the Pearl effects) lives in FAT's VerdantsAscent.Ocean.OceanKit, which
+            // activates once this assembly has no FiresRPGClasses.Ocean.OceanKit and imports the [10 - Ocean] values from this cfg
+            // (left in place for it).
 
-            // Classes turns on Core's locational hits (Fire, 2026-09-28 19:41; Tools\LOCATIONAL_HITS.md). Only a server's (or
+            // Classes turns on Core's locational hits (Tools\LOCATIONAL_HITS.md). Only a server's (or
             // single player's) call counts, so this mod goes on servers too; servers without Classes stay vanilla. Safe before
             // Core has bound its sync: Core's BindToSync recomputes with every enabler recorded so far.
             FiresCore.Combat.LocationalDamage.Enable(PluginName);
@@ -107,7 +109,7 @@ namespace FiresRPGClasses
             // Core's test, not batch mode: the headless test bot is a batch-mode CLIENT and keeps the whole mod.
             if (FiresCore.Lifecycle.FiresMod.IsDedicatedServer)
             {
-                // The one server patch (0.1.55): monsters the server owns die here, and class XP needs their death broadcast.
+                // The one server patch: monsters the server owns die here, and class XP needs their death broadcast.
                 // Character.OnDeath is in the server build too.
                 try { ClassKillNetwork.InstallServer(PluginGUID + ".deaths"); }
                 catch (System.Exception e) { Log.LogWarning("class XP death broadcast not installed: " + e.Message); }
@@ -122,12 +124,12 @@ namespace FiresRPGClasses
                 // keys bind here once so their server values sync; the Bat Form skill is registered on both peers (FiresSkillRegistry).
                 try { VampireConfig.Bind(Config); VampireServer.RegisterValidators(); VampireSkill.Register(false); }
                 catch (System.Exception e) { Log.LogWarning("Vampire server check not installed: " + e.Message); }
-                // 0.1.133: [13 - Races] (catching / curing vampirism + lycanthropy) binds here once so its server values sync.
+                // [13 - Races] (catching / curing vampirism + lycanthropy) binds here once so its server values sync.
                 try { RaceConfig.Bind(Config); }
                 catch (System.Exception e) { Log.LogWarning("Races config not bound: " + e.Message); }
-                // 0.1.78: the [Synced with Server] attribute keys need their ConfigSync here too, or clients keep their local values.
+                // The [Synced with Server] attribute keys need their ConfigSync here too, or clients keep their local values.
                 AttributeEffects.Bind(Config);
-                // 0.1.134: Paragon is client-only (ranks + slots in the local class record, SE_Paragon applied by the owner, no server
+                // Paragon is client-only (ranks + slots in the local class record, SE_Paragon applied by the owner, no server
                 // validation or sync), so the catalog isn't loaded here; said once so a server log shows it was decided, not missed.
                 Log.LogDebug("[Paragon] catalog: not loaded on a dedicated server (Paragon picks and effects are the local player's)");
                 Log.LogInfo(PluginName + " " + PluginVersion + " loaded on a dedicated server: locational hits enabled, deaths broadcast for class XP, attribute keys synced, nothing else runs here.");
@@ -135,8 +137,7 @@ namespace FiresRPGClasses
             }
 
             ClassTreeLoader.Initialize();
-            // 0.1.134 (R2: the Paragon tab was empty): 0.1.133 never loaded the constellations, so ParagonUi had 0 trees. Its own
-            // try/catch: a bad paragon-trees.yaml must not skip the rest of set-up.
+            // The Paragon constellations, in their own try/catch: a bad paragon-trees.yaml must not skip the rest of set-up.
             try { Paragon.ParagonCatalog.Initialize(); Log.LogDebug($"[Paragon] catalog: {Paragon.ParagonCatalog.Trees.Count} tree(s), loaded from {Paragon.ParagonCatalog.LoadedFrom}"); }
             catch (System.Exception e) { Log.LogWarning("[Paragon] catalog not loaded: " + e); }
             CoreSkillKit.RegisterAll();
@@ -152,17 +153,17 @@ namespace FiresRPGClasses
             CcKit.RegisterAll();
             PossessionKit.RegisterAll();
             SummonKit.RegisterAll();
-            DruidNecroPassives.RegisterAll();   // 0.1.79: the Druid / Necromancer passives (Fire 10-08)
-            DruidNecroKit.RegisterAll();   // 0.1.80: Regrowth, Barkskin, Bone Wall
+            DruidNecroPassives.RegisterAll();   // the Druid / Necromancer passives
+            DruidNecroKit.RegisterAll();   // Regrowth, Barkskin, Bone Wall
             WerewolfConfig.Bind(Config);   // the Werewolf (Tools\WEREWOLF_CLASS_DESIGN.md): [11 - Werewolf], synced
             WerewolfKit.RegisterAll();     // Wolf Form, Howl, Alpha and the werewolf passives
             VampireConfig.Bind(Config);    // the Vampire (Tools\VAMPIRE_CLASS_DESIGN.md): [12 - Vampire], synced
             VampireKit.RegisterAll();      // Bat Form, Blood Frenzy, Mesmerise, Crimson Tide, the vampire passives, the Bat Form skill
-            RaceConfig.Bind(Config);       // 0.1.133: catching / curing vampirism + lycanthropy (Tools\VAMPIRE_CLASS_DESIGN.md §6), [13 - Races], synced
-            // 0.1.141 ([wishbone], Fire 10-14): class / race movement styles; registers with Core's movement contract only when its key is on
+            RaceConfig.Bind(Config);       // catching / curing vampirism + lycanthropy (Tools\VAMPIRE_CLASS_DESIGN.md §6), [13 - Races], synced
+            // Class / race movement styles; registers with Core's movement contract only when its key is on
             try { BarMemory.Bind(Config); } catch (System.Exception e) { Log.LogWarning("[Bars] memory keys not bound: " + e.Message); }
             try { ClassMovement.Bind(Config); ClassMovement.Register(); } catch (System.Exception e) { Log.LogWarning("[Movement] class movement not set up: " + e.Message); }
-            // Core 0.2.196's class-weapon hook; an older Core lacks it and the weapon pick keeps Core's own fallback.
+            // Core's class-weapon hook; an older Core lacks it and the weapon pick keeps Core's own fallback.
             try { ClassWeaponHook.Install(); Log.LogInfo("class weapon hook set (Core's weapon pick keeps the class bar's weapon kind)"); }
             catch (System.Exception e) { Log.LogInfo($"class weapon hook not set: this Core has none ({e.GetType().Name})"); }
             UltimateCatalog.Rebuild();
@@ -173,16 +174,16 @@ namespace FiresRPGClasses
             TargetingController.Bind(Config);
             AttributeEffects.Bind(Config);
             ClassesPanel.BindConfig(Config);
-            ClassesHub.BindConfig(Config);   // UI overhaul 2a: [UI] Classes in hub (default off)
-            ParagonFigures.BindConfig(Config);   // [classes-ui] constellation figures (default off)
+            ClassesHub.BindConfig(Config);   // [6 - UI] Classes in hub
+            ParagonFigures.BindConfig(Config);   // constellation figures (default off)
             ClassesHud.BindConfig(Config);
             ClassIcons.BindConfig(Config);
             InventoryGuiOnOpenSkillsPatch.BindConfig(Config);
-            SkillsDialogSkin.BindConfig(Config);   // UI overhaul #19 ([classes-ui])
+            SkillsDialogSkin.BindConfig(Config);
 
             _harmony = new Harmony(PluginGUID);
-            // 0.1.145 ([lead] R-PROOF2): one patch class at a time, so a bad target logs its name and the rest still attach
-            // (0.1.141's SlowFall threw out of PatchAll and skipped everything below it in Awake).
+            // One patch class at a time, so a bad target logs its name and the rest still attach
+            // (a single throw out of PatchAll would skip everything below it in Awake).
             int patched = 0, failed = 0;
             foreach (System.Type type in AccessTools.GetTypesFromAssembly(typeof(FiresRPGClassesPlugin).Assembly))
             {
@@ -190,7 +191,7 @@ namespace FiresRPGClasses
                 catch (System.Exception e) { failed++; Log.LogError($"Harmony patch class {type.FullName} not attached: {e.GetBaseException().Message}"); }
             }
             string patchLine = $"{PluginName} {PluginVersion}: {patched} Harmony patch class(es) attached, {failed} failed";
-            if (failed > 0) Log.LogWarning(patchLine); else Log.LogInfo(patchLine);   // 0.1.146 ([seasons]): readable at the default level
+            if (failed > 0) Log.LogWarning(patchLine); else Log.LogInfo(patchLine);   // readable at the default log level
 
             _host = new GameObject(HostObjectName);
             _host.transform.SetParent(transform, false);
@@ -199,8 +200,8 @@ namespace FiresRPGClasses
             {
                 _host.AddComponent<ClassesPanel>();
                 try { ClassesHub.Register(); } catch (System.Exception e) { Log.LogWarning("[ClassesHub] " + e.Message); }
-                // 0.1.159: the hub Stats tab card (Core 0.2.511+). Wrapped HERE too: on an older Core the card class's own type load (its
-                // StatRow field) throws before its try/catch runs, and that must not stop the rest of Awake (the 0.1.141 SlowFall lesson).
+                // The hub Stats tab card. Wrapped HERE too: on an older Core the card class's own type load (its
+                // StatRow field) throws before its try/catch runs, and that must not stop the rest of Awake.
                 try { ClassStatsSection.Register(); } catch (System.Exception e) { Log.LogInfo("[ClassStats] card not registered (" + e.GetBaseException().GetType().Name + "): Core older than 0.2.511?"); }
                 _host.AddComponent<ClassesHud>();
                 _host.AddComponent<ClassesPossessionHud>();
@@ -214,8 +215,8 @@ namespace FiresRPGClasses
             Log.LogInfo(PluginName + " " + PluginVersion + " loaded. Trees from " + ClassTrees.LoadedFrom
                 + "; " + ClassTrees.TotalPointCostOfEveryTree() + " points fill every tree. Hotbar hand-offs: "
                 + string.Join(", ", ClassKeys.DeclaredHandOffs().ToArray()));
-            UI.StatusIcons.Install();   // class buff/debuff icons = the skill's tree icon (Core 0.2.404's IconResolver; older Core: swatches)
-            Log.LogDebug($"{PluginName} {PluginVersion}: Awake finished (every set-up step ran)");   // 0.1.125: a throw above can't hide again (R-1013BQ)
+            UI.StatusIcons.Install();   // class buff/debuff icons = the skill's tree icon (Core's IconResolver; older Core: swatches)
+            Log.LogDebug($"{PluginName} {PluginVersion}: Awake finished (every set-up step ran)");   // proves no throw above cut set-up short
         }
 
         private void OnDestroy()
@@ -238,8 +239,13 @@ namespace FiresRPGClasses
             WerewolfServer.Initialize();   // Wolf Form's request (a listen host answers it) and the server's answer
             WerewolfKit.ResetSession();
             VampireKit.ResetSession();
+#if FIRES_TESTS
             ClassesUiDump.Register();
+#endif
             ClassAdminCommands.Register();
+#if FIRES_TESTS
+            Paragon.RpgParagonTest.Register();   // rpgclasses_paragon_test (cheat, Test worlds only)
+#endif
             FiresRPGClassesPlugin.Log?.LogDebug("[ClassAdmin] class_* console commands registered");
             CooldownTracker.Clear();
             ClassPlayerStore.Forget();
@@ -261,7 +267,7 @@ namespace FiresRPGClasses
             if (adjusted > 0)
                 FiresRPGClassesPlugin.Log.LogInfo("Reconciled " + adjusted
                     + " point or passive entries against the current progression settings.");
-            // Fire 10-01, "enforce the master points rule": a Master talent bought before the rule existed (or on a path that
+            // The master points rule: a Master talent bought before the rule existed (or on a path that
             // no longer holds enough points) is refunded here, once, at load.
             int refunded = UI.TalentRules.RevalidateMasters(data, __instance);
             if (adjusted > 0 || refunded > 0) ClassPlayerStore.SaveLocal();

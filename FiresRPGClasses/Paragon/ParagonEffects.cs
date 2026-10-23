@@ -7,7 +7,7 @@ using UnityEngine;
 namespace FiresRPGClasses.Paragon
 {
     /// <summary>
-    /// What the Paragon stars DO (Tools\RPG_PARAGON_TALENT_PLAN.md §8). v1 (0.1.132): every star whose effect is a plain stat is live
+    /// What the Paragon stars DO (Tools\RPG_PARAGON_TALENT_PLAN.md §8). Every star whose effect is a plain stat is live
     /// through one status effect on the local player, RPG_Paragon; the others say "(effect coming soon)" in their tooltip and are listed
     /// once in the log. Active = a passive with a rank, or a slottable with a rank that is slotted (4 per tree).
     /// A star's value is ParagonStarDef.ValueAt(rank) (its own Soft / Asymptote curve), in percent. The same stat from several stars is
@@ -47,13 +47,19 @@ namespace FiresRPGClasses.Paragon
         internal const string SeName = "RPG_Paragon";
         internal static readonly int SeHash = SeName.GetStableHashCode();
         private static readonly Dictionary<Stat, float> _totals = new Dictionary<Stat, float>();
+        // Effects outside the Stat enum, keyed by the yaml's effectFormat text.
+        // Each owner's file (Paragon\Effects\*.cs) declares its texts with [ParagonEffectSet] and reads its total with TX(format).
+        private static readonly Dictionary<string, float> _xtotals = new Dictionary<string, float>(StringComparer.Ordinal);
+
+        /// <summary>The summed FRACTION (5% = 0.05; a flat amount = value / 100) of every bought star whose effect text is <paramref name="format"/>.</summary>
+        public static float TX(string format) => format != null && _xtotals.TryGetValue(format, out float v) ? v : 0f;
         private static bool _loggedDormant;
         private static SE_Paragon _template;
 
         public static IReadOnlyDictionary<Stat, float> Totals => _totals;
 
         /// <summary>True when this star's effect is implemented (its text maps to a stat).</summary>
-        public static bool IsLive(string starId) => StatsOf(ParagonCatalog.Star(starId)) != null;
+        public static bool IsLive(string starId) { var s = ParagonCatalog.Star(starId); return StatsOf(s) != null || (s != null && ParagonEffectSets.Has(s.EffectFormat)); }
 
         private static Stat[] StatsOf(ParagonStarDef s)
         {
@@ -68,6 +74,8 @@ namespace FiresRPGClasses.Paragon
             Player me = Player.m_localPlayer;
             if (me == null) return;
             _totals.Clear();
+            _xtotals.Clear();
+            _active.Clear();
             var slotted = new HashSet<string>();
             foreach (ParagonTreeDef t in ParagonCatalog.Trees) foreach (string id in ParagonUi.Slotted(t.Id)) if (id != null) slotted.Add(id);
             int live = 0, dormant = 0;
@@ -78,8 +86,13 @@ namespace FiresRPGClasses.Paragon
                 if (rank <= 0) continue;
                 if (s.Kind == ParagonStarKind.Slottable && !slotted.Contains(s.Id)) continue;
                 Stat[] stats = StatsOf(s);
-                if (stats == null) { dormant++; dormantNames.Add(s.Id); continue; }
                 float v = s.ValueAt(rank) / 100f;
+                _active.Add((s, v));   // every counted star (bought; slottables only while slotted), its own fraction
+                if (stats == null)
+                {
+                    if (ParagonEffectSets.Has(s.EffectFormat)) { _xtotals[s.EffectFormat] = TX(s.EffectFormat) + v; live++; continue; }
+                    dormant++; dormantNames.Add(s.Id); continue;
+                }
                 foreach (Stat st in stats) _totals[st] = (_totals.TryGetValue(st, out float x) ? x : 0f) + v;
                 live++;
             }
@@ -96,7 +109,7 @@ namespace FiresRPGClasses.Paragon
         {
             SEMan seman = me.GetSEMan();
             if (seman == null) return;
-            bool any = _totals.Values.Any(v => Mathf.Abs(v) > 0.00001f);
+            bool any = _totals.Values.Any(v => Mathf.Abs(v) > 0.00001f) || _xtotals.Values.Any(v => Mathf.Abs(v) > 0.00001f);
             bool has = seman.HaveStatusEffect(SeHash);
             if (!any) { if (has) seman.RemoveStatusEffect(SeHash, true); return; }
             if (has) return;   // SE_Paragon reads the live totals every call
@@ -106,10 +119,17 @@ namespace FiresRPGClasses.Paragon
                 _template.name = SeName;
                 _template.m_name = "Paragon";
                 _template.m_tooltip = "Your Paragon stars.";
+                _template.m_icon = UI.ClassIcons.ForEffect(SeName);   // Icons\Effects\se_RPG_Paragon.png
                 _template.m_ttl = 0f;
             }
             seman.AddStatusEffect(_template, true);
         }
+
+        // For ClassStatsApi (one row per star): the stars Refresh counted, each with its own FRACTION (ValueAt(rank) / 100).
+        private static readonly List<(ParagonStarDef star, float fraction)> _active = new List<(ParagonStarDef star, float fraction)>();
+        internal static IReadOnlyList<(ParagonStarDef star, float fraction)> ActiveStars => _active;
+        /// <summary>The Stat-enum stats this star's text maps to (Map), or null.</summary>
+        internal static Stat[] StatsOfStar(ParagonStarDef s) => StatsOf(s);
 
         internal static float T(Stat s) => _totals.TryGetValue(s, out float v) ? v : 0f;
     }

@@ -24,7 +24,9 @@ namespace FiresRPGClasses.UI
         private const float StripBottom = 330f;      // above the default bars (190) and their two rows
         private const float SummonWidth = 230f;
         private const float SummonRow = 34f;
-        private const float SummonColGap = 10f;   // 0.1.173: between summon columns after a resize
+        private const float SummonColGap = 10f;   // between summon columns after a resize
+        private const float StripHeight = 74f;
+        private const float HintLookupSeconds = 1f;   // how often a missing FiresMounts hint is searched for
 
         private RectTransform _root;
         private RectTransform _strip;
@@ -62,7 +64,7 @@ namespace FiresRPGClasses.UI
 
         private void Update()
         {
-            ClassesHudSizes.Tick();   // 0.1.173: saves a settled resize (nothing while idle)
+            ClassesHudSizes.Tick();   // saves a settled resize (nothing while idle)
             if (Player.m_localPlayer == null || HudHidden()) { SetActive(false); return; }
             if (!EnsureBuilt()) return;
             SetActive(true);
@@ -71,14 +73,14 @@ namespace FiresRPGClasses.UI
             if (!_dirty && Time.unscaledTime < _nextPaint) return;
             _dirty = false;
             _nextPaint = Time.unscaledTime + RepaintSeconds;
-            // 0.1.120 (perf audit: both panels were destroyed and rebuilt as GameObjects 5x a second): rebuilt only when what they show
+            // Rebuilding both panels as GameObjects on every repaint is costly, so each is rebuilt only when what it shows
             // changes - a signature of the shown values (whole seconds, health in 1% steps), no allocation to compute it.
             PossessHandle handle = PossessionApi.Current;
             int sigP = PossessionSig(handle);
             if (sigP != _sigPossession) { _sigPossession = sigP; PaintPossession(handle); }
-            // 0.1.166: while Core's HUD dock owns the strip, PlaceStrip writes nothing (Core holds its position every frame)
-            // 0.1.167 (Fire's hand test: the strip never registered without a possession): placed once at build too, possessed or not,
-            // so it can register (and show in layout mode) before the first possession
+            // While Core's HUD dock owns the strip, PlaceStrip writes nothing (Core holds its position every frame).
+            // It is placed once at build too, possessed or not, so it can register with the dock (and show in layout mode)
+            // before the first possession.
             if ((handle != null || !_firstPlaced) && !StripDocked) { PlaceStrip(); _firstPlaced = true; }
             SyncPossessionDock(_placedHow != null && _placedHow.StartsWith("under the hotbar", System.StringComparison.Ordinal));
             IReadOnlyList<SummonInfo> summons = SummonApi.MySummons();
@@ -90,10 +92,9 @@ namespace FiresRPGClasses.UI
         private string _placedHow;
         private bool _firstPlaced;
 
-        // 0.1.120 (Fire 10-13: the attack-select strip sat in the middle of the screen; "top left, underneath the hotbar, where our own
-        // riding HUD goes"): the same spot as FiresMounts' riding-controls hint - its top-left at the hotbar's bottom-left, 6 px below,
+        // The attack-select strip sits top left, under the hotbar: the same spot as FiresMounts' riding-controls hint - its top-left at the hotbar's bottom-left, 6 px below,
         // read live from vanilla's HotkeyBar (follows resolution and UI scale). When that hint panel is showing too, the strip goes
-        // under it, so the two never overlap. The spot it found is logged once per change (UI rule: log the path found).
+        // under it, so the two never overlap. The spot it found is logged once per change (so the log shows which path was taken).
         private const float GapBelowHotbar = 6f;
         private const string MountsHintName = "FiresMounts_FlightHints";
         private HotkeyBar _hotbar;
@@ -105,9 +106,9 @@ namespace FiresRPGClasses.UI
             if (_hotbar == null && Hud.instance != null) _hotbar = Hud.instance.GetComponentInChildren<HotkeyBar>(true);
             if (_mountsHint == null && Time.unscaledTime >= _nextHintLookup)
             {
-                _nextHintLookup = Time.unscaledTime + 1f;
+                _nextHintLookup = Time.unscaledTime + HintLookupSeconds;
                 GameObject hint = GameObject.Find(MountsHintName);
-                // 0.1.170 ([saddles], FiresMounts 0.1.140): the named object is now an always-active 0x0 host; the visible hint (and the
+                // The named object is an always-active 0x0 host; the visible hint (and the
                 // dock element) is its "Panel" child, active only while shown. Read the Panel when it exists, else the object (older FiresMounts).
                 Transform panel = hint != null ? hint.transform.Find("Panel") : null;
                 _mountsHint = (panel != null ? panel : hint != null ? hint.transform : null) as RectTransform;
@@ -185,8 +186,8 @@ namespace FiresRPGClasses.UI
             CanvasGroup black = Hud.instance.m_loadingScreen;
             if (black != null && black.gameObject.activeInHierarchy && black.alpha > 0.01f) return true;
             if (Menu.IsVisible()) return true;
-            // 0.1.172 ([lead] 10-15 shot: with the large map (M) open the bars drew on top of it at the right edge, through their own
-            // sorting canvas): hidden while the large map is open, as vanilla's hotbar is
+            // Hidden while the large map is open, as vanilla's hotbar is; the strip's own sorting canvas would otherwise
+            // draw it on top of the map
             if (Minimap.IsOpen()) return true;
             return Game.instance != null && Game.instance.IsShuttingDown();
         }
@@ -201,9 +202,9 @@ namespace FiresRPGClasses.UI
 
         private void PaintPossession(PossessHandle handle)
         {
-            // UI overhaul #14: kit attack slots under the override (ClassesPossessionHudKit.cs); a live flip clears the other look first
+            // Kit attack slots under the override (ClassesPossessionHudKit.cs); a live flip clears the other look first
             bool kit = KitOn();
-            if (kit != _kitMode) { _kitMode = kit; ClassesStyle.Clear(_strip); _kit = null; if (!kit) _strip.sizeDelta = new Vector2(StripWidth, 74f); }
+            if (kit != _kitMode) { _kitMode = kit; ClassesStyle.Clear(_strip); _kit = null; if (!kit) _strip.sizeDelta = new Vector2(StripWidth, StripHeight); }
             if (kit) { PaintPossessionKit(handle); return; }
             ClassesStyle.Clear(_strip);
             bool on = handle != null && handle.Creature != null;
@@ -277,8 +278,8 @@ namespace FiresRPGClasses.UI
             _summons.gameObject.SetActive(count > 0);
             if (count == 0) return;
 
-            // 0.1.173 (real resize): a player-given size (Core 0.2.574+, docked) re-flows the entries into columns at their own size;
-            // none = today's one column sized to the list
+            // A player-given size (docked) re-flows the entries into columns at their own size;
+            // none = one column sized to the list
             Vector2 user = default(Vector2);
             bool sized = _summonsDocked && ClassesHudSizes.TryGet(SummonsDockId, out user);
             int cols = 1, rows = count;
@@ -360,7 +361,7 @@ namespace FiresRPGClasses.UI
             canvas.overrideSorting = true;
             canvas.sortingOrder = SortOrder;
 
-            _strip = ClassesStyle.Fixed(_root, "PossessionStrip", new Vector2(0.5f, 0f), new Vector2(StripWidth, 74f));
+            _strip = ClassesStyle.Fixed(_root, "PossessionStrip", new Vector2(0.5f, 0f), new Vector2(StripWidth, StripHeight));
             _strip.pivot = new Vector2(0.5f, 0f);
             _strip.anchoredPosition = new Vector2(0f, StripBottom);
             _strip.gameObject.SetActive(false);

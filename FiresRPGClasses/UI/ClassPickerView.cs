@@ -11,7 +11,7 @@ using UnityEngine.UI;
 namespace FiresRPGClasses.UI
 {
     /// <summary>
-    /// Classes > Class, from Fire's board ClassPicker as he ruled it (Tools\CLASSES_UI_PLAN.md Q1). There is no primary /
+    /// Classes > Class, from the ClassPicker board design. There is no primary /
     /// secondary class record: the archetype belongs to a bar. So the board's Primary / Secondary toggle becomes Front bar /
     /// Back bar, and the eight cards are that bar's choices. The ones its weapon can't drive are dimmed and say so.
     /// The right side previews the picked card: crest, description, signature abilities, and the hybrid each pairing
@@ -205,7 +205,7 @@ namespace FiresRPGClasses.UI
             string about = (Taglines.TryGetValue(archetype, out string tag) ? tag + ". " : "") + (definition?.Description ?? "");
             y = Row(panel, "About", about, 15f, ClassesStyle.Text, y, 40f) + 6f;
 
-            // Which weapons drive it (the bars' own rule): Fire 10-01, "clearly state what weapons are accepted".
+            // Which weapons drive it (the bars' own rule), stated clearly.
             y = Row(panel, "WeaponsHead", "Weapons", 13f, ClassesStyle.Muted, y, 18f);
             y = Row(panel, "Weapons", WeaponArchetypes.WeaponsLine(archetype), 15f, ClassesStyle.Gold, y, 40f) + 4f;
 

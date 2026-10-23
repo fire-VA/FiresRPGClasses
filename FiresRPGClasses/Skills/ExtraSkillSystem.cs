@@ -95,13 +95,19 @@ namespace FiresRPGClasses.ExtraSkills
 
         // ---- call-ins from RPGClasses' existing hooks --------------------------------------------------------------------
 
+        // For ClassStatsApi per-skill rows: each skill's own part, the SAME numbers AddFoodPools / AddCarry add.
+        internal static float HealthPart(Player p) => VigorHealthBonus(Level(p, Vigor));       // Vigor -> max health
+        internal static float StaminaPart(Player p) => AgilityStaminaBonus(Level(p, Agility)); // Agility -> max stamina
+        internal static float EitrPart(Player p) => IntellectEitrBonus(Level(p, Intellect));   // Intellect -> max eitr
+        internal static float CarryPart(Player p) => HoarderCarryBonus(Level(p, Hoarder));     // Hoarder -> carry weight
+
         /// <summary>From AttributeEffects' GetTotalFoodValue hook, after the attribute pools: Vigor health, Agility stamina, Intellect eitr.</summary>
         public static void AddFoodPools(Player player, ref float hp, ref float stamina, ref float eitr)
         {
             if (!Ready || !IsLocal(player)) return;
-            float h = VigorHealthBonus(Level(player, Vigor));
-            float s = AgilityStaminaBonus(Level(player, Agility));
-            float e = IntellectEitrBonus(Level(player, Intellect));
+            float h = HealthPart(player);
+            float s = StaminaPart(player);
+            float e = EitrPart(player);
             hp += h;
             stamina += s;
             eitr += e;
@@ -112,7 +118,7 @@ namespace FiresRPGClasses.ExtraSkills
         public static void AddCarry(Player player, ref float carry)
         {
             if (!Ready || !IsLocal(player)) return;
-            float c = HoarderCarryBonus(Level(player, Hoarder));
+            float c = CarryPart(player);
             carry += c;
             LogOnce("carry", $"carry: skill +{c} (Hoarder); combined with attributes {carry}");
         }

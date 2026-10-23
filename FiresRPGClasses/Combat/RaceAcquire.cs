@@ -14,7 +14,7 @@ namespace FiresRPGClasses.Combat
 {
     /// <summary>
     /// [13 - Races] Catching and curing vampirism / lycanthropy during play (Tools\VAMPIRE_CLASS_DESIGN.md §6, §9, §10;
-    /// WEREWOLF_CLASS_DESIGN.md §9; Fire 10-13, LOCKED). Every key is synced from the server; bound ONCE per process, on the client
+    /// WEREWOLF_CLASS_DESIGN.md §9). Every key is synced from the server; bound ONCE per process, on the client
     /// and the dedicated server alike (the ConfigSync-once rule).
     /// </summary>
     internal static class RaceConfig
@@ -35,18 +35,24 @@ namespace FiresRPGClasses.Combat
             if (_bound) return;
             _bound = true;
             var synced = new List<ConfigEntryBase>();
-            Lycanthropy = Add(synced, config.Bind(Section, "Lycanthropy", true, "Players can catch lycanthropy (Moon-touched) and turn into werewolves during play. [Synced with Server]"));
-            Vampirism = Add(synced, config.Bind(Section, "Vampirism", true, "Players can catch vampirism (Tainted Blood) and turn into vampires during play. [Synced with Server]"));
-            CreationOnly = Add(synced, config.Bind(Section, "Creation only", false, "On: the races come only from character creation; no infection, no turning potions. Cures still work. [Synced with Server]"));
+            Lycanthropy = Add(synced, config.Bind(Section, "Lycanthropy", true, "Players can catch lycanthropy and turn into werewolves during play. [Synced with Server]"));
+            Vampirism = Add(synced, config.Bind(Section, "Vampirism", true, "Players can catch vampirism and turn into vampires during play. [Synced with Server]"));
+            CreationOnly = Add(synced, config.Bind(Section, "Creation only", false, "Races come only from character creation, with no infection or turning potions (cures still work). [Synced with Server]"));
             InfectionChance = Add(synced, config.Bind(Section, "Infection chance per hit", 0.03f, new ConfigDescription(
-                "The chance a hit from an infecting creature gives the disease (0.03 = 3%, Fire 10-13). [Synced with Server]", new AcceptableValueRange<float>(0f, 1f))));
+                "The chance a hit from an infecting creature passes on the disease (0.03 = 3%). [Synced with Server]", new AcceptableValueRange<float>(0f, 1f),
+                new ConfigurationManagerAttributes { IsAdvanced = true })));
             DaysToTurn = Add(synced, config.Bind(Section, "Days to turn", 3f, new ConfigDescription(
-                "In-game days with the disease, uncured, before the player turns (Fire 10-13). [Synced with Server]", new AcceptableValueRange<float>(0.1f, 30f))));
+                "In-game days an uncured player carries the disease before turning. [Synced with Server]", new AcceptableValueRange<float>(0.1f, 30f),
+                new ConfigurationManagerAttributes { IsAdvanced = true })));
             CureMode = Add(synced, config.Bind(Section, "Cure after turning", CurePotions, new ConfigDescription(
-                "How a turned player is cured: the Purifying Draught, a shrine, or both. Fire 10-14: potions now, the shrine later (not built yet; Both works as Potions until it is). [Synced with Server]",
-                new AcceptableValueList<string>(CurePotions, CureShrine, CureBoth))));
-            LycanSources = Add(synced, config.Bind(Section, "Lycanthropy carriers", "Fenring,Fenring_Cultist,Fenring_Cultist_Hildir", "Creature prefabs whose hits can pass on lycanthropy (comma separated). [Synced with Server]"));
-            VampSources = Add(synced, config.Bind(Section, "Vampirism carriers", "Bat", "Creature prefabs whose hits can pass on vampirism (comma separated). [Synced with Server]"));
+                "How a turned player is cured: Purifying Draught, a shrine, or both (the shrine is not built yet). [Synced with Server]",
+                new AcceptableValueList<string>(CurePotions, CureShrine, CureBoth), new ConfigurationManagerAttributes { IsAdvanced = true })));
+            LycanSources = Add(synced, config.Bind(Section, "Lycanthropy carriers", "Fenring,Fenring_Cultist,Fenring_Cultist_Hildir", new ConfigDescription(
+                "Creature prefabs whose hits can pass on lycanthropy (comma separated). [Synced with Server]", null,
+                new ConfigurationManagerAttributes { IsAdvanced = true })));
+            VampSources = Add(synced, config.Bind(Section, "Vampirism carriers", "Bat", new ConfigDescription(
+                "Creature prefabs whose hits can pass on vampirism (comma separated). [Synced with Server]", null,
+                new ConfigurationManagerAttributes { IsAdvanced = true })));
             try
             {
                 _sync = new ConfigSync(FiresRPGClassesPlugin.PluginGUID + ".races")

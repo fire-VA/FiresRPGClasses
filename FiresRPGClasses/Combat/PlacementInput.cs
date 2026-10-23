@@ -3,7 +3,7 @@ using HarmonyLib;
 namespace FiresRPGClasses.Combat
 {
     /// <summary>
-    /// Fire 10-12 (placed skills queue, then LMB places them): while a placement marker is up, LMB places the skill and RMB cancels
+    /// Placed skills queue, then LMB places them: while a placement marker is up, LMB places the skill and RMB cancels
     /// it, so the same clicks must not also swing the weapon or raise the shield. Movement, jump and run pass untouched. The
     /// local player only; one patch on Player.SetControls (RPGClasses had none).
     /// </summary>

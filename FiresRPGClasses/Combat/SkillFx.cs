@@ -5,7 +5,7 @@ using UnityEngine;
 namespace FiresRPGClasses.Combat
 {
     /// <summary>
-    /// 0.1.102 (Fire 10-12, the placeholder audit: five skills showed nothing): one-shot vanilla effects for them, each prefab name
+    /// One-shot vanilla effects for skills that otherwise show nothing, each prefab name
     /// checked against the game's own assets. Spawned through Core's AbilityRPCManager.SpawnFX (the class family's FX path), and
     /// throttled per key so a flurry of hits can't spam them. No per-frame cost when nothing fires.
     /// </summary>

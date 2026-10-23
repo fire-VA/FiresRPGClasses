@@ -11,7 +11,7 @@ using UnityEngine.UI;
 namespace FiresRPGClasses.UI
 {
     /// <summary>
-    /// Classes > Summons, from the mockup Fire picked (10-08, Tools\ClassesUI_Mockups\SummonControls_mockup.png): one row
+    /// Classes > Summons, from the chosen mockup (Tools\ClassesUI_Mockups\SummonControls_mockup.png): one row
     /// per summon (name, health, time left, a Follow / Guard / Attack toggle and X to dismiss it), "Dismiss all" at the top
     /// and an "All summons" toggle under the list. Dismissing asks first ("Dismiss Bear?"; Enter = yes, Esc = no). Everything
     /// goes through Core's SummonApi. The pill shows only for a Druid or Necromancer, or while a summon is still out.

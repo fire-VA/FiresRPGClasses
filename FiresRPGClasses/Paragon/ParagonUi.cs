@@ -32,13 +32,13 @@ namespace FiresRPGClasses.Paragon
     }
 
     /// <summary>
-    /// The Paragon UI contract (Tools\RPG_PARAGON_TALENT_PLAN.md §9, agreed with [classes-ui] 10-14). [classes-ui]'s Paragon tab reflects
+    /// The Paragon UI contract (RPG_PARAGON_TALENT_PLAN.md §9). The Paragon tab reflects
     /// this type (UI\ParagonSource.cs), so names are the contract: add-only. State lives in Core's ClassProgressState (schema 5:
     /// ParagonRanks, ParagonSlotted, earned points from the Valor level); the star definitions in ParagonCatalog (paragon-trees.yaml).
     /// Rules (plan §6 / §8):
     /// - a star unlocks when its tree has the tier's gate spent (0 / 25 / 75 / 150) AND it is an entry (tier 1) or a linked star
     ///   (either direction) has a point;
-    /// - a rank costs 1 Paragon point (Fire: linear); refused past maxRank or with none unspent;
+    /// - a rank costs 1 Paragon point (linear); refused past maxRank or with none unspent;
     /// - slottables count only while slotted, 4 per tree; slotting is refused in combat (an enemy within 15 m) and needs rank 1;
     /// - respec refunds everything in a tree (or all trees with null), like talents.
     /// Every action says why it was refused, saves the record and raises <see cref="Changed"/>.

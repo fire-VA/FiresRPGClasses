@@ -5,8 +5,7 @@ using UnityEngine;
 namespace FiresRPGClasses.UI
 {
     /// <summary>
-    /// [classes-ui] Paragon constellation figures (Fire approved 10-14: "yes ok them"; sheets Tools\mockup_paragon_cleanup\
-    /// warfare_v4 / fitness_v3 / craft_v4, the Warfare and Longship figures traced from his references in refs\). One figure per
+    /// Paragon constellation figures (from the warfare / fitness / craft mockup sheets). One figure per
     /// branch (W1..W4, F1..F4, C1..C4): named outline stars in a 600 x 700 frame, the lines and smooth curves between them (the
     /// constellation itself), and which outline star each Paragon role (1..6, S1..S4) sits on. The data is generated from the
     /// sheet scripts (ParagonFigures.Data.cs), so the game and the approved sheets can't drift. Off: the tier-ring map as before.
@@ -35,11 +34,10 @@ namespace FiresRPGClasses.UI
         internal static void BindConfig(ConfigFile config)
         {
             Enabled = config.Bind("Paragon", "Constellation figures", false,
-                "Classes > Paragon draws each branch as its constellation figure (the bear, the archer, the longship...), the Paragon stars "
-                + "sitting on the figure's outline. Off: the tier-ring star map.");
+                "Draw each Paragon branch as its constellation figure instead of the tier-ring star map.");
         }
 
-        // On with its own key, or whenever the Classes window is hosted in the Fires hub (Fire 10-14: the whole overhaul under the override)
+        // On with its own key, or whenever the Classes window is hosted in the Fires hub (the whole overhaul follows the override)
         internal static bool On => (Enabled != null && Enabled.Value) || ClassesHub.Hosted;
 
         /// <summary>The branch of a star id ("W2.S1" -> "W2"); bridges ("WB1") have no figure.</summary>

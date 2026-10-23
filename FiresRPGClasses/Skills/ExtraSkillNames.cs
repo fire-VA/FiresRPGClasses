@@ -5,7 +5,7 @@ namespace FiresRPGClasses.ExtraSkills
     /// <summary>
     /// The one place a player-facing name of an extra skill comes from (skills dialog, level-up messages, console).
     /// Code ids (and the saved SkillType numbers) stay Agility / Endurance / Vigor / Intellect / Hoarder; only these
-    /// display names may change (Fire 10-12: Acrobatics, Stamina, Fortitude, Arcana, Hoarder).
+    /// display names may change (currently Acrobatics, Stamina, Fortitude, Arcana, Hoarder).
     /// </summary>
     public static class ExtraSkillNames
     {

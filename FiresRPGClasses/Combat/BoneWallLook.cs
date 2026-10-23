@@ -5,7 +5,7 @@ using UnityEngine;
 namespace FiresRPGClasses.Combat
 {
     /// <summary>
-    /// 0.1.99 (Fire 10-12: "the necromancer's bone wall is just a single line of stone 1x2's"): the Bone Wall keeps its three
+    /// So the Bone Wall reads as bones rather than a single line of stone blocks, it keeps its three
     /// stone_wall_2x1 pieces for the collider and the health (unchanged behaviour), but their stone meshes are hidden and each
     /// piece is dressed in vanilla bone props - bone_stack, skull_pile, BonePileSpawner's pile and BoneFragments - staggered in
     /// depth, turned and scaled so the wall reads as heaped bones of varied heights.

@@ -5,7 +5,7 @@ using UnityEngine;
 namespace FiresRPGClasses.Data
 {
     /// <summary>
-    /// The Werewolf class (Tools\WEREWOLF_CLASS_DESIGN.md, LOCKED 10-13). Core's ArchetypeClass ends at Necromancer = 10 and this
+    /// The Werewolf class (Tools\WEREWOLF_CLASS_DESIGN.md). Core's ArchetypeClass ends at Necromancer = 10 and this
     /// mod may not change Core, so the Werewolf is the next number, 11, kept here only. Json.NET saves an enum as its number (and a
     /// dictionary key as "11"), so a record round-trips; the yaml's "class: Werewolf", the console and the UI go through
     /// <see cref="TryParse"/> / <see cref="ClassNames.Of"/>, which know the name. If Core ever adds a named 11 it must be this class.
@@ -53,7 +53,7 @@ namespace FiresRPGClasses.Data
         private static readonly int RaceHash = RaceKey.GetStableHashCode();
         private static readonly int ModelHash = "vcs_model".GetStableHashCode();
         private static readonly int InFormHash = "vcs_in_form".GetStableHashCode();
-        // 0.1.138: Fires Character Creator's names for the same ZDO keys (the rebrand); a peer can run either mod, so both are read.
+        // Fires Character Creator's names for the same ZDO keys (the rebrand); a peer can run either mod, so both are read.
         private static readonly int FccModelHash = "fcc_model".GetStableHashCode();
         private static readonly int FccInFormHash = "fcc_in_form".GetStableHashCode();
         internal static readonly int WolfActiveHash = WolfActiveKey.GetStableHashCode();
@@ -75,7 +75,7 @@ namespace FiresRPGClasses.Data
                 _frame = Time.frameCount;
                 Player p = Player.m_localPlayer;
                 ZDO zdo = p != null && p.m_nview != null && p.m_nview.IsValid() ? p.m_nview.GetZDO() : null;
-                // 0.1.130 (Fire's profiler: ClassesHud): Has() formats its "why" string (boxed bools) and this runs every frame the
+                // Has() formats its "why" string (boxed bools) and this runs every frame the
                 // HUD paints. Only ask it again when one of its ZDO inputs changed.
                 bool hasZdo = zdo != null;
                 string raceNow = hasZdo ? zdo.GetString(RaceHash, "") : null;

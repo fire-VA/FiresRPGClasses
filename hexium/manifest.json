@@ -1,6 +1,6 @@
 {
     "name":  "FiresRPGClasses",
-    "version_number": "0.1.174",
+    "version_number": "0.1.192",
     "website_url":  "https://github.com/fire-VA/FiresRPGClasses",
     "description":  "RPG classes for Valheim: ten archetypes, talent trees, two ability bars, ultimates and a character sheet.",
     "dependencies":  [

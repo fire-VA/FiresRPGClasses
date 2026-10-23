@@ -101,7 +101,7 @@ namespace FiresRPGClasses.UI
             if (!Set(tabType, tab, "Label", TabLabel)) return false;
             if (!Set(tabType, tab, "Build", (Action<RectTransform>)Build)) return false;
             // A LAUNCHER (VAInventory 1.0.35+, where Open wins over Build): the tab opens the full Classes window on the tree,
-            // not a view clamped into the 570x650 crafting panel (Fire, 2026-09-29). Older VAInventory keeps the inline view.
+            // not a view clamped into the 570x650 crafting panel. Older VAInventory keeps the inline view.
             if (Set(tabType, tab, "Open", (Action)OpenFullWindow))
                 FiresRPGClassesPlugin.Log?.LogInfo("[Classes] the inventory tab opens the full Classes window.");
             // Optional extras: a missing one costs ordering or refresh-on-open, not the tab itself.
@@ -115,7 +115,7 @@ namespace FiresRPGClasses.UI
 
         /// <summary>
         /// VAInventory's own Character tab shows a stats list clamped into the crafting panel. With Classes installed it opens
-        /// the full Classes window on its Character board instead (Fire, popup 2026-09-29). InventoryTabs.Register replaces a
+        /// the full Classes window on its Character board instead. InventoryTabs.Register replaces a
         /// tab by Id, so this re-registers VAInventory's id, label and slot as a launcher; without Classes, VAInventory's tab
         /// stays as it is. Needs the launcher form (VAInventory 1.0.35+); an older VAInventory keeps its tab.
         /// </summary>
@@ -131,7 +131,7 @@ namespace FiresRPGClasses.UI
                 if (!Set(tabType, tab, "Id", CharacterTabId) || !Set(tabType, tab, "Label", CharacterTabLabel)
                     || !Set(tabType, tab, "Open", (Action)OpenCharacterBoard)) return;
                 Set(tabType, tab, "Order", CharacterTabOrder);
-                // Fire 10-14: Character and Classes opened the same window, so the Character slot is freed (FiresGuilds puts
+                // Character and Classes would open the same window, so the Character slot is freed (FiresGuilds puts
                 // Guilds there). The launcher stays registered so VAInventory's StatsPanel doesn't re-add its own tab
                 // (it skips the id while HasLauncher is true); IsAvailable = false keeps it out of the row.
                 if (!Set(tabType, tab, "IsAvailable", (Func<bool>)(() => false))) return;

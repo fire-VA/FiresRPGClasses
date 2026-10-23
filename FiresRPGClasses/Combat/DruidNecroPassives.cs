@@ -9,7 +9,7 @@ using UnityEngine;
 namespace FiresRPGClasses.Combat
 {
     /// <summary>
-    /// The Druid and Necromancer passives (Fire 10-08: build the "Not yet implemented" talents; group 1 of the plan). The yaml's
+    /// The Druid and Necromancer passives. The yaml's
     /// numbers at the learned rank, read once a second like PassiveKit's. The hooks are PassiveHooks' / ClassXpHooks' patches
     /// (one patch class per game method); only the hostility check is new (BaseAI.IsEnemy, below).
     /// - Thick Hide: in a form (Wildshape: you possess a beast) the form takes {armor} less physical damage.
@@ -20,7 +20,7 @@ namespace FiresRPGClasses.Combat
     /// - Grave Sense: undead within {range} m get a marker over them that shows through walls (vanilla's NPC text).
     /// - Life Tap: your summons' and your thrall's hits heal you for {heal} of their damage.
     /// - Twin Link: while you possess a thrall, your first summon is kept on Follow.
-    /// - Plague Bearer (0.1.80): a Withered enemy that dies passes Wither to the nearest enemy within {range} m.
+    /// - Plague Bearer: a Withered enemy that dies passes Wither to the nearest enemy within {range} m.
     /// </summary>
     public static class DruidNecroPassives
     {
@@ -35,14 +35,14 @@ namespace FiresRPGClasses.Combat
         private const string PlagueBearer = "necromancer_plague_bearer";
         private static readonly string[] Ids = { ThickHide, BeastTongue, Forager, BoneHarvest, DeathlessWard, GraveSense, LifeTap, TwinLink, PlagueBearer };
 
-        // Plague Bearer (0.1.80): the enemies the local player has Withered, with when it wears off; a dead one passes Wither on.
+        // Plague Bearer: the enemies the local player has Withered, with when it wears off; a dead one passes Wither on.
         private static readonly Dictionary<Character, float> WitheringSet = new Dictionary<Character, float>();
         private const float WitherWatchSeconds = 10f;
 
         internal const string BeastTongueZdo = "rpg_beast_tongue_range";
         internal const string DeathlessWardZdo = "rpg_deathless_ward_range";
 
-        // Wild animals for Beast Tongue: vanilla's AnimalsVeg faction plus the animals in other factions (round 22: the Boar is
+        // Wild animals for Beast Tongue: vanilla's AnimalsVeg faction plus the animals in other factions (the Boar is
         // ForestMonsters, the wolves MountainMonsters, the Lox PlainsMonsters).
         private static readonly HashSet<string> WildAnimals = new HashSet<string>
         {
@@ -176,7 +176,7 @@ namespace FiresRPGClasses.Combat
             Player player = Player.m_localPlayer;
             if (player == null || hit == null || target == null) return;
             Character attacker = hit.GetAttacker();
-            // Alpha Howl (0.1.81): your hits and your summons' while it runs.
+            // Alpha Howl: your hits and your summons' while it runs.
             float howl = DruidNecroKit.HowlBonus;
             if (howl > 0f && attacker != null && (attacker == player || IsMine(player, attacker))) hit.m_damage.Modify(1f + howl);
             if (attacker == player)
@@ -255,7 +255,7 @@ namespace FiresRPGClasses.Combat
                 Player player = a as Player ?? b as Player;
                 Character creature = player == a ? b : a;
                 if (player == null || creature == null || creature.IsPlayer() || creature.IsTamed()) return;
-                // 0.1.119 (perf audit: this runs for every creature's target scans, and GetPrefabName allocated a string each call): the
+                // This runs for every creature's target scans, and GetPrefabName allocates a string per call, so the
                 // player's range is read first (0 for anyone without the passive - the common case returns here), undead before the
                 // animal test, and the wild-animal test cached per creature instance.
                 ZDO zdo = player.m_nview != null && player.m_nview.IsValid() ? player.m_nview.GetZDO() : null;

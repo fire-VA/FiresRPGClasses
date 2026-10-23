@@ -7,7 +7,7 @@ using UnityEngine;
 namespace FiresRPGClasses.Combat
 {
     /// <summary>
-    /// 0.1.95 (Fire #11 batch 3b): the remaining design-only passives, same pattern as PassiveKit2 (read once a second at the
+    /// The remaining design-only passives, same pattern as PassiveKit2 (read once a second at the
     /// player's rank; the hooks look the value up; local player only).
     /// - Pain Fuels Me (Berserker): each hit taken adds {fury} Fury (PassiveKit's Fury; max [13 - Balance] Fury max stacks, 20).
     /// - Unseen (Rogue): hits from Stealth deal double damage, and the first one keeps Stealth (it is put back for the time left).
@@ -17,7 +17,7 @@ namespace FiresRPGClasses.Combat
     /// - Frostbite (Mage): a frost hit slows the target (Core's 20% slow preset) for {dur}.
     /// - Ignite (Mage): a magic fire hit leaves 3 s of burning ground (2 m) dealing {dps} fire per second (at most one per second).
     /// - Overflow (Healer): the overheal part of the player's heal gives the target a class ward (Core's ward presets) for 10 s.
-    /// - Virulence (Rogue, 0.1.96): poison stacks up to {stacks} (Core 0.2.400's ApplyPoisonStack, called by reflection where the
+    /// - Virulence (Rogue): poison stacks up to {stacks} (Core 0.2.400's ApplyPoisonStack, called by reflection where the
     ///   target is owned here; elsewhere, or on an older Core, the plain routed poison with Core's own cap). Plague Burst passes
     ///   on half the dead one's stacks (at least 1) the same way.
     /// </summary>
@@ -32,6 +32,7 @@ namespace FiresRPGClasses.Combat
         private const string Ignite = "mage_ignite";
         private const string Overflow = "healer_overflow";
         private const string Virulence = "rogue_virulence";
+        private const float ReadInterval = 0.25f;   // seconds between re-reads of the passives' ranks
         private const float PoisonTickDamage = 4f;   // Core's poison tick before 0.2.400 kept property values (what players saw)
         private static readonly Dictionary<Character, int> LastStacks = new Dictionary<Character, int>();
         private static System.Reflection.MethodInfo _applyStack, _getStacks, _setStacks;
@@ -83,7 +84,7 @@ namespace FiresRPGClasses.Combat
             Player me = Player.m_localPlayer;
             if (me == null || me.IsDead()) { A.Clear(); B.Clear(); Poisoned.Clear(); Marked.Clear(); return; }
             if (Time.time < _nextTick) return;
-            _nextTick = Time.time + 0.25f;
+            _nextTick = Time.time + ReadInterval;
             A.Clear(); B.Clear();
             Read(PainFuels, "fury", null);
             Read(Unseen, null, null);

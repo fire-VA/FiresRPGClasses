@@ -34,21 +34,21 @@ namespace FiresRPGClasses.Combat
             ClassTreeLoader.Tick();
             PassiveKit.Tick();
             DesignKit.Tick();
-            ActiveKit.Tick();   // 0.1.92: Tracker's pins
-            MoveKit.Tick();     // 0.1.93: Breakwall / Thousand Steps
-            LinkKit.Tick();     // 0.1.93: Lifeline / Spirit Link
-            PassiveKit2.Tick(); // 0.1.94: batch 3a passives
-            PassiveKit3.LateTick(); // 0.1.95: Unseen keeps Stealth after its first hit
-            PassiveKit3.Tick(); // 0.1.95: batch 3b passives
-            ClassProgressApi.Tick(); // 0.1.110: class progress on the player's ZDO (FMO group scaling)
+            ActiveKit.Tick();   // Tracker's pins
+            MoveKit.Tick();     // Breakwall / Thousand Steps
+            LinkKit.Tick();     // Lifeline / Spirit Link
+            PassiveKit2.Tick(); // batch 3a passives
+            PassiveKit3.LateTick(); // Unseen keeps Stealth after its first hit
+            PassiveKit3.Tick(); // batch 3b passives
+            ClassProgressApi.Tick(); // class progress on the player's ZDO (FiresMonsters group scaling)
             ZoneKit.Tick();
             WerewolfKit.Tick(); // Wolf Form's end conditions, Blood Rage, the werewolf passives
             VampireKit.Tick();  // Bat Form's end conditions and skill, sunlight, the vampire passives
             // Before the UI checks below: the bar slots change while the inventory is open.
             BarController.PollBarSlots();
-            // Class XP's gathering: the work the local player hit that is now gone (0.1.55).
+            // Class XP's gathering: the work the local player hit that is now gone.
             ClassXp.Tick();
-            // Hugin's class hints, each the first time it matters (0.1.61).
+            // Hugin's class hints, each the first time it matters.
             Hints.ClassRavenHints.Tick();
 
             if (!ClassKeys.IsBound) return;
@@ -66,7 +66,7 @@ namespace FiresRPGClasses.Combat
 
             if (ClassKeys.BarSwap.IsPressed()) { Swap(); return; }
 
-            // Fire, 2026-09-30: slot 1's key "pulls our weapon bar weapon out" of its VAInventory slot, sheathed or while
+            // Slot 1's key pulls the bar's weapon out of its VAInventory slot, sheathed or while
             // holding something else; with the pair already in hand it swaps bars as before.
             if (BarController.HasBarSlots && ClassKeys.Slot(BarLayout.WeaponSlot).IsPressed())
             {
@@ -100,9 +100,9 @@ namespace FiresRPGClasses.Combat
         private static bool BlockedByUi()
         {
             // The Classes window hides the inventory while it is up, so the inventory check alone let slot keys cast from
-            // inside it (class_test ui_bars, 2026-09-29).
+            // inside it.
             if (UI.ClassesPanel.Instance != null && UI.ClassesPanel.Instance.IsOpen) return true;
-            // Fire 10-09: typing in ANY input field (other mods' search bars too) blocks every mod hotkey.
+            // Typing in ANY input field (other mods' search bars too) blocks every mod hotkey.
             if (FiresCore.Input.FiresInputBlock.IsTyping()) return true;
             if (Chat.instance != null && Chat.instance.HasFocus()) return true;
             if (Menu.IsVisible()) return true;
@@ -153,7 +153,7 @@ namespace FiresRPGClasses.Combat
             ClassTreeNode node = ClassTrees.Node(nodeId);
             if (node == null) return;
 
-            // 0.1.103 (R-1012K: a bot's Swift Mend QUEUED and every later press waited behind it): a scripted press with a point on a
+            // A scripted press would otherwise QUEUE and block every later press behind it, so a scripted press with a point on a
             // skill that lands on a body casts on the body nearest the point (an Ally skill falls back to the caster) - bots never queue.
             if (TargetingController.PicksTarget(node) && ClassKeys.TakePlacedPoint(slot, out Vector3 at))
             {
@@ -173,7 +173,7 @@ namespace FiresRPGClasses.Combat
                 float range = node.Targeting.Range > 0f ? node.Targeting.Range : TargetingController.AimRayLength;
                 Vector3 offset = placed - player.transform.position;
                 if (offset.magnitude > range) placed = player.transform.position + offset.normalized * range;
-                // R71: an Aimed skill that lands on a creature (Hunter's Mark, Death Mark) got only the point and applied nothing -
+                // An Aimed skill that lands on a creature (Hunter's Mark, Death Mark) applies nothing with only a point -
                 // the crosshair path hands it the creature. The brain's point is where its target stands: aim at that creature.
                 if (node.Targeting.Mode == TargetingMode.Aimed && EnemyAt(player, placed) is Character aimed)
                 {
@@ -183,7 +183,7 @@ namespace FiresRPGClasses.Combat
                 Commit(node, CastTarget.At(placed));
                 return;
             }
-            // Fire 10-12: a skill placed away from the caster always QUEUES (a placement marker), whatever the cast style - the hotkey
+            // A skill placed away from the caster always QUEUES (a placement marker), whatever the cast style - the hotkey
             // never casts it; LMB places it, RMB / Esc / the hotkey again cancels (no cooldown until it is cast).
             if ((NeedsAiming(node) || TargetingController.PicksTarget(node)) && (node.Targeting.Mode == TargetingMode.Placed || TargetingController.PicksTarget(node) || TargetingController.Style.Value != CastStyle.Quick))
             {
@@ -300,7 +300,7 @@ namespace FiresRPGClasses.Combat
             if (ClassCastExecutor.LastHandlerRefused) LogRefused(node.Id, "the skill's handler refused");
             else LogCast(node, player, target);
             // A handler that refused (Wildshape on a creature not beaten down yet) costs a short retry wait, not the cooldown.
-            CooldownTracker.Start(node.Id, ClassCastExecutor.LastHandlerRefused ? Mathf.Min(node.Cooldown, RefusedRetrySeconds) : CooldownTracker.Scaled(node.Id, node.Cooldown)); // 0.1.131: generic CDR hook
+            CooldownTracker.Start(node.Id, ClassCastExecutor.LastHandlerRefused ? Mathf.Min(node.Cooldown, RefusedRetrySeconds) : CooldownTracker.Scaled(node.Id, node.Cooldown)); // generic CDR hook
             // One line per cast: the skills drill pairs it with the hit or effect that proves it.
             FiresRPGClassesPlugin.Log.LogInfo($"cast {node.Id} on {(target.TargetCharacter != null ? target.TargetCharacter.m_name : "point " + target.Point.ToString("F1"))} ({node.Targeting.Mode})");
         }
@@ -344,7 +344,7 @@ namespace FiresRPGClasses.Combat
             ClassPlayerStore.SaveLocal();
         }
 
-        /// <summary>Debug, 0.1.123: one line per cast that went off (the boss-fight round counts these against the bot's presses).</summary>
+        /// <summary>Debug: one line per cast that went off (scripted tests count these against the presses).</summary>
         private static void LogCast(ClassTreeNode node, Player player, CastTarget target)
         {
             string on = target.TargetCharacter == null ? (node.Targeting.Mode == TargetingMode.Placed ? "point " + target.Point.ToString("F1") : "self")
@@ -352,7 +352,7 @@ namespace FiresRPGClasses.Combat
             FiresRPGClassesPlugin.Log?.LogDebug($"[Cast] {node.Id} '{node.DisplayName}' by {player.GetPlayerName()} -> {on} (bar {BarController.ActiveSide} slot {SlotHolding(node.Id)})");
         }
 
-        /// <summary>Debug, 0.1.123: one line per refused press, with the reason.</summary>
+        /// <summary>Debug: one line per refused press, with the reason.</summary>
         private static void LogRefused(string nodeId, string reason) =>
             FiresRPGClassesPlugin.Log?.LogDebug($"[Cast] {(string.IsNullOrEmpty(nodeId) ? "?" : nodeId)} refused: {reason}");
 

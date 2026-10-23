@@ -14,7 +14,7 @@ using UnityEngine.UI;
 namespace FiresRPGClasses.UI
 {
     /// <summary>
-    /// Classes > Bars, from Fire's boards BarsEditor and BarsSwap: a card per bar (its weapon, the archetypes that weapon
+    /// Classes > Bars: a card per bar (its weapon, the archetypes that weapon
     /// allows as toggles, the eight slot tiles), the hybrid line, and the pool of skills the edited bar's weapon allows.
     /// A pool tile goes onto a slot by dragging it there, or by clicking a slot and then the tile (or just the tile, which
     /// fills the first empty slot); right-click clears a slot, and dragging one slot onto another swaps them. After a
@@ -152,8 +152,8 @@ namespace FiresRPGClasses.UI
         {
             BarLayout bar = data.Bar(side);
             bool front = side == BarSide.Front;
-            // With VAInventory's bar slots (0.1.51) each bar's weapon and off hand come from its own equipment slots;
-            // without them, from the prefab the bar recorded (0.1.50's behaviour).
+            // With VAInventory's bar slots each bar's weapon and off hand come from its own equipment slots;
+            // without them, from the prefab the bar recorded.
             bool slots = BarController.HasBarSlots;
             ItemDrop.ItemData weapon = slots ? BarController.BarWeapon(side) : Item(bar.WeaponPrefab);
             ItemDrop.ItemData offHand = slots ? BarController.BarOffHand(side) : Item(bar.OffHandPrefab);
@@ -217,7 +217,7 @@ namespace FiresRPGClasses.UI
                 note.rectTransform.offsetMax = new Vector2(-12f, 0f);
                 // The weapons list can run long: shrink to fit the strip rather than cut it off.
                 note.enableAutoSizing = true;
-                note.fontSizeMin = 12f;   // 0.1.151: never below 12 (Fire: readable after the hub scale); wraps instead
+                note.fontSizeMin = 12f;   // stays readable after the hub scale; wraps instead
                 note.textWrappingMode = TextWrappingModes.Normal; note.overflowMode = TextOverflowModes.Ellipsis;
                 note.fontSizeMax = 14f;
 
@@ -264,7 +264,7 @@ namespace FiresRPGClasses.UI
                        || availability == SlotAvailability.BarUnusable
                        || availability == SlotAvailability.NotLearned
                        || availability == SlotAvailability.LevelLocked;
-            // 0.1.143 [classes-ui] (Fire: "no unusable skills shown"), always on since 0.1.148 (no key): a skill this bar's weapon can't drive is drawn
+            // A skill this bar's weapon can't drive is drawn
             // as an empty slot (BarController.CanDrive / the wrong-weapon states) instead of a greyed tile. Ultimate lock unchanged.
             if (!weaponSlot && !string.IsNullOrEmpty(id)
                 && (availability == SlotAvailability.WrongWeapon || availability == SlotAvailability.WrongArchetype
@@ -345,7 +345,7 @@ namespace FiresRPGClasses.UI
                 tile.gameObject.AddComponent<BarsDragSource>().Init(this, id, ultimateSlot, side, slot, sprite);
         }
 
-        /// <summary>Archetypes of slotted skills this bar's weapon can't drive (board BarsSwap's "can't drive Paladin").</summary>
+        /// <summary>Archetypes of slotted skills this bar's weapon can't drive (e.g. "can't drive Paladin").</summary>
         private static List<ArchetypeClass> Undriven(BarSide side, BarLayout bar)
         {
             var list = new List<ArchetypeClass>();
@@ -365,7 +365,7 @@ namespace FiresRPGClasses.UI
             string noun = WeaponNoun(weapon);
             if (weaponGone)
                 return "Your " + noun + " isn't in your inventory, so this bar can't fire. Pick it up again, or load a saved bar.";
-            // Say what each of them does take, so the fix is obvious (Fire 10-01).
+            // Say what each of them does take, so the fix is obvious.
             string takes = string.Join("; ", undriven.Select(a => a + " takes " + WeaponArchetypes.WeaponsLine(a).ToLowerInvariant()).ToArray());
             return "Your " + noun + " can't drive " + string.Join(" or ", undriven.Select(a => a.ToString()).ToArray())
                    + " (" + takes + "). Those skills stay on the bar, greyed out, until you slot skills this weapon allows.";
@@ -879,7 +879,7 @@ namespace FiresRPGClasses.UI
         }
     }
 
-    /// <summary>A pool tile or a filled slot being dragged: a ghost of its icon follows the pointer (board BarsEditor).</summary>
+    /// <summary>A pool tile or a filled slot being dragged: a ghost of its icon follows the pointer.</summary>
     internal sealed class BarsDragSource : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
     {
         internal string NodeId;

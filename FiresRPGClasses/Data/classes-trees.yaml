@@ -5,7 +5,7 @@
 # revision: raise it whenever the shipped trees change. An install's copy with a lower revision is backed up and replaced
 # on the next start (ClassTreeLoader); 2 = the Druid and Necromancer trees (0.1.72); 3 = the Werewolf tree; 4 = the Vampire tree.
 schema: 5
-revision: 4
+revision: 5
 combat:
   bars: {count: 2, slots: 8, weaponSlot: 1, skillSlots: [2, 3, 4, 5, 6, 7], ultimateSlot: 8}
   keys:
@@ -1451,11 +1451,11 @@ classes:
         cooldown: 10
         values:
           targets: [2, 3, 4]
-        text: "Your next arrow passes through up to {targets} enemies (coming later) and deals 20% more damage."
+        text: "Your next arrow passes through up to {targets} enemies and deals 20% more damage."
         ai: {category: Opener, trigger: EnemyInRange}
         builtOn: "Projectile pierce flag (new)"
         rankEffects:
-          - {rank: 2, counter: shieldBreak, effect: "The arrow carries Breach through every enemy it passes (coming later)."}
+          - {rank: 2, counter: shieldBreak, effect: "Breach: no enemy the arrow passes can block or parry it."}
           - {rank: 3, counter: interrupt, effect: "Concussive: the first enemy hit is staggered, which interrupts its cast."}
         variant: ran_adv
       - id: ranger_deadeye

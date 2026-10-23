@@ -5,7 +5,7 @@ using UnityEngine;
 namespace FiresRPGClasses.Data
 {
     /// <summary>
-    /// The Vampire class (Tools\VAMPIRE_CLASS_DESIGN.md, LOCKED 10-13). Core's ArchetypeClass ends at Necromancer = 10, the Werewolf is
+    /// The Vampire class (Tools\VAMPIRE_CLASS_DESIGN.md). Core's ArchetypeClass ends at Necromancer = 10, the Werewolf is
     /// 11 (<see cref="WerewolfClass"/>), and the Vampire is 12, reserved with Core's owner and kept here only until Core names it.
     /// Json.NET saves the enum as its number, so a record round-trips; names go through <see cref="WerewolfClass.TryParse"/> /
     /// <see cref="ClassNames.Of"/>, which know "Vampire" too.
@@ -41,7 +41,7 @@ namespace FiresRPGClasses.Data
                 _frame = Time.frameCount;
                 Player p = Player.m_localPlayer;
                 ZDO zdo = p != null && p.m_nview != null && p.m_nview.IsValid() ? p.m_nview.GetZDO() : null;
-                // 0.1.130 (Fire's profiler: ClassesHud): Has() builds its "why" string, and this runs every frame the HUD paints.
+                // Has() builds its "why" string, and this runs every frame the HUD paints.
                 // Only ask it again when the ZDO's race (the only input) changed.
                 bool hasZdo = zdo != null;
                 string raceNow = hasZdo ? zdo.GetString(RaceHash, "") : null;

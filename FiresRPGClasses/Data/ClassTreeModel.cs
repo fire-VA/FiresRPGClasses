@@ -75,7 +75,7 @@ namespace FiresRPGClasses.Data
         public string RequiresNodeId = "";
         public float Cooldown;
         public string CostText = "";
-        // 0.1.104: an ultimate's yaml "ultimates:" entry, kept for UltimateCatalog (the catalog's data gap: only 18 were hand-written).
+        // an ultimate's yaml "ultimates:" entry, kept for UltimateCatalog (which has no hand-written data for most ultimates).
         public string UltimateResource = "";
         public float UltimateAmount;
         public bool UltimatePercent;
@@ -113,13 +113,13 @@ namespace FiresRPGClasses.Data
         public float Value(string key, int rank, float fallback = 0f)
         {
             if (!Values.TryGetValue(key, out float[] ranks) || ranks.Length == 0) return fallback;
-            if (rank > ranks.Length && ranks.Length >= 2) return Extrapolate(ranks, rank);   // 0.1.132: Paragon ranks past the table
+            if (rank > ranks.Length && ranks.Length >= 2) return Extrapolate(ranks, rank);   // Paragon ranks past the table
             int index = System.Math.Max(0, System.Math.Min(rank, ranks.Length) - 1);
             return ranks[index];
         }
 
         /// <summary>
-        /// 0.1.132 (plan §3): a rank past the yaml table extends the last step through Core's SoftCap. The first extra rank gets
+        /// A rank past the yaml table extends the last step through Core's SoftCap. The first extra rank gets
         /// the full step, later ones less (logarithmic, never nothing). A value falling toward zero (a cooldown, a cost) instead
         /// approaches 10 % of its last value asymptotically and never crosses zero.
         /// </summary>
@@ -143,7 +143,7 @@ namespace FiresRPGClasses.Data
 
         /// <summary>
         /// The yaml text with each {key} filled in from `values:` at this rank (an unlearned node reads rank 1), written the way the
-        /// cards' rank table writes it. A {key} the node has no values for stays as written. (Fire 10-01: the cards showed "{stagger}".)
+        /// cards' rank table writes it. A {key} the node has no values for stays as written.
         /// </summary>
         public string DescriptionAt(int rank)
         {
@@ -203,7 +203,7 @@ namespace FiresRPGClasses.Data
             foreach (ClassTreeNode node in Nodes)
             {
                 if (node.Slot == NodeSlot.Ultimate) continue;
-                // 0.1.132: ranks from ParagonTalentFromRank up are paid in Paragon points, not talent points.
+                // ranks from ParagonTalentFromRank up are paid in Paragon points, not talent points.
                 int talentRanks = System.Math.Min(node.MaxRank, ClassProgressState.ParagonTalentFromRank - 1);
                 for (int rank = 0; rank < talentRanks; rank++)
                     total += rankCosts[rank < rankCosts.Count ? rank : rankCosts.Count - 1];
@@ -224,7 +224,7 @@ namespace FiresRPGClasses.Data
 
     public static class ClassTrees
     {
-        // Core owns the prices (Fire 2026-09-29: ranks cost 1/2/3, as the board shows); the board and Core must agree.
+        // Core owns the prices (ranks cost 1/2/3, as the board shows); the board and Core must agree.
         public static int[] RankCosts => ClassProgressState.RankCosts;
 
         public const int MasterPointsRequiredInPath = 10;
@@ -260,10 +260,10 @@ namespace FiresRPGClasses.Data
         }
 
         /// <summary>
-        /// A Core-backed skill's yaml node carries no cooldown (its numbers live in Core), so it had NONE for players and could be
-        /// cast every frame (class_test class_drill, R63: Inner Peace on consecutive ticks). It takes Core's own companion
+        /// A Core-backed skill's yaml node carries no cooldown (its numbers live in Core), so without this it would have NONE for
+        /// players and could be cast every frame. It takes Core's own companion
         /// cooldown for its kind (ArchetypeAbilitySystem's defaults: self buff 20 s, group 30 s, utility 8 s, expert 45 s, master
-        /// 120 s, ultimate 300 s) - Fire's rule that Core-backed numbers come from Core. Listed in CLASS_KIT_DESIGN_GAPS.md.
+        /// 120 s, ultimate 300 s), since Core-backed numbers come from Core.
         /// </summary>
         private static float CoreCompanionCooldown(ClassTreeNode node)
         {
@@ -289,11 +289,11 @@ namespace FiresRPGClasses.Data
         public static int TotalPointCostOfEveryTree() =>
             Trees.Values.Sum(tree => tree.TotalPointCost(RankCosts));
 
-        /// <summary>Talent points a rank costs; 0 for a rank paid in Paragon points (0.1.132: ParagonTalentFromRank and up).</summary>
+        /// <summary>Talent points a rank costs; 0 for a rank paid in Paragon points (ParagonTalentFromRank and up).</summary>
         public static int RankCost(int nextRank) =>
             nextRank >= ClassProgressState.ParagonTalentFromRank ? 0 : ClassProgressState.RankCost(nextRank);
 
-        /// <summary>0.1.132: buying <paramref name="nextRank"/> costs 1 Paragon point instead of talent points.</summary>
+        /// <summary>Buying <paramref name="nextRank"/> costs 1 Paragon point instead of talent points.</summary>
         public static bool IsParagonRank(int nextRank) => nextRank >= ClassProgressState.ParagonTalentFromRank;
 
         public static IEnumerable<ClassTreeNode> ActivesFor(ArchetypeClass archetype)

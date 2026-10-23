@@ -119,6 +119,27 @@ namespace FiresRPGClasses.Combat
         private static void BeforeFire(Attack __instance) => PassiveKit.OnLocalShot(__instance.m_character);
     }
 
+    // Piercing Shot: the local player's next bow/crossbow projectile takes the armed window.
+    [HarmonyPatch(typeof(Projectile), nameof(Projectile.Setup))]
+    internal static class ClassProjectileSetupHooks
+    {
+        [HarmonyPostfix]
+        private static void AfterSetup(Projectile __instance, Character owner, ItemDrop.ItemData item) => CcKit.OnProjectileSetup(__instance, owner, item);
+    }
+
+    // Piercing Shot: a piercing projectile passes through creatures (vanilla's own m_onlyStopOnTerrain path, per call).
+    // OnHit runs on the projectile's owner (FixedUpdate returns on non-owners), i.e. the shooter.
+    [HarmonyPatch(typeof(Projectile), nameof(Projectile.OnHit))]
+    internal static class ClassProjectileHitHooks
+    {
+        [HarmonyPrefix]
+        private static bool BeforeHit(Projectile __instance, Collider collider, out CcKit.PierceCall __state) =>
+            CcKit.BeforeProjectileHit(__instance, collider, out __state);
+
+        [HarmonyPostfix]
+        private static void AfterHit(Projectile __instance, CcKit.PierceCall __state) => CcKit.AfterProjectileHit(__instance, __state);
+    }
+
     // Healing Staff / Emergency Heal: Core's class heals carry the healer (AbilityHeals.Apply runs on the healer's peer).
     [HarmonyPatch(typeof(AbilityHeals), nameof(AbilityHeals.Apply))]
     internal static class ClassHealHooks

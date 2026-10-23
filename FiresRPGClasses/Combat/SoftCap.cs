@@ -3,8 +3,7 @@ using System;
 namespace FiresRPGClasses.Combat
 {
     /// <summary>
-    /// 0.1.132: a thin forwarder to Core's FiresCore.Curves.SoftCap (Core 0.2.467), the ONE authority for diminishing returns
-    /// (plan §5). Kept so existing callers don't change. Core's curve works on positive values; RPGClasses passes signed ones
+    /// A thin forwarder to Core's FiresCore.Curves.SoftCap, the ONE authority for diminishing returns. Kept so existing callers don't change. Core's curve works on positive values; RPGClasses passes signed ones
     /// (negative = a reduction: stamina cost, damage taken), so the curve runs on the magnitude and the sign is put back.
     /// Soft(raw, knee): raw up to the knee, then knee + knee * ln(1 + (raw - knee) / knee), rising forever.
     /// Asymptote(raw, knee, limit): raw up to the knee, then an exponential approach to the limit, never reaching it.

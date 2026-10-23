@@ -6,13 +6,13 @@ using UnityEngine;
 namespace FiresRPGClasses.Combat
 {
     /// <summary>
-    /// Core's CompanionBrain.ClassWeapon (Core 0.2.196, [generator]): which weapon kind drives the body's ACTIVE class bar, so
-    /// Core's weapon pick keeps it (R72: a Tank was handed a bow at 2.2 m and a Mage a club, and every slot went
+    /// Core's CompanionBrain.ClassWeapon which weapon kind drives the body's ACTIVE class bar, so
+    /// Core's weapon pick keeps it (otherwise a Tank could be handed a bow and every slot would go
     /// WrongArchetype). Class bars exist only for this client's own player, so any other body answers None.
     /// </summary>
     internal static class ClassWeaponHook
     {
-        /// <summary>Throws (MissingField / TypeLoad) on a Core older than 0.2.196; the caller catches it.</summary>
+        /// <summary>Throws (MissingField / TypeLoad) on a Core without ClassWeapon; the caller catches it.</summary>
         internal static void Install() => CompanionBrain.ClassWeapon = Want;
 
         private static CompanionBrain.ClassWeaponWant Want(Humanoid body)

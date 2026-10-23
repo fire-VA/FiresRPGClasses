@@ -13,7 +13,7 @@ using UnityEngine.UI;
 namespace FiresRPGClasses.UI
 {
     /// <summary>
-    /// Classes > Character, from Fire's boards Mastery + LayoutB1: every archetype's mastery on the left (crest, front /
+    /// Classes > Character, from the Mastery + LayoutB1 boards: every archetype's mastery on the left (crest, front /
     /// back badge, points in its tree, "Open tree"), the five attributes on the right with − / + that stage points in
     /// gold until Confirm, the live before → after of every stat those points move (AttributeEffects.Preview), and a
     /// footer with level, XP, Valor and the points to spend.
@@ -225,10 +225,8 @@ namespace FiresRPGClasses.UI
             rule.sizeDelta = new Vector2(0f, 1f);
             ClassesStyle.Fill(rule, null, ClassesStyle.Line);
 
-            // 0.1.151 (Fire 10-16, 114.png: "text descriptions jumbled and overlapped"): the name filled the top 55 % and the
-            // one-line description the bottom 50 %, overlapping by 5 % with no gap, and the description auto-shrank to 10 px to fit
-            // one line. Now: name in the top 42 %, a 4 px gap, then the description in the rest, wrapping to two lines at 13-15 px
-            // (never below 13) and ellipsizing past that, so the two never touch at any window size.
+            // Name in the top 42 %, a 4 px gap, then the description in the rest, wrapping to two lines at 13-15 px
+            // (never below 13) and ellipsizing past that, so the two never overlap at any window size.
             TextMeshProUGUI nameLabel = ClassesStyle.Label(row, "Name", kind.ToString(), 17f, ClassesStyle.Text,
                 new Vector2(0f, 0.58f), new Vector2(0.6f, 1f), TextAlignmentOptions.BottomLeft);
             nameLabel.rectTransform.offsetMax = new Vector2(0f, -2f);
@@ -293,7 +291,7 @@ namespace FiresRPGClasses.UI
         /// <summary>Doc 12 section 8: what each attribute moves (the row's sub-line).</summary>
         /// <summary>
         /// What one point of this attribute does, with the numbers ("Each point: -0.3% attack stamina, -0.3% move stamina,
-        /// +0.2% attack speed"). Fire 10-01 asked whether Agility's attack speed is real; it is, so the row now says how much.
+        /// +0.2% attack speed"). Agility's attack speed is real, so the row says how much.
         /// The rates are read through AttributeEffects.Preview (a blank record plus one point), i.e. the live, server-synced
         /// config values, so the text always matches what the point buys.
         /// </summary>
@@ -402,7 +400,7 @@ namespace FiresRPGClasses.UI
                 0.66f, 0.82f, 22f);
             Stat(_footer, "PassiveSlots", "Passive slots", progress.PassiveSlots.ToString(), 0.82f, 0.94f, 22f);
 
-            // Fire 10-14: the Character Creator opens from the Appearance header tab only ("put it as a header tab"), not from here.
+            // The Character Creator opens from the Appearance header tab only, not from here.
         }
 
 
@@ -420,7 +418,7 @@ namespace FiresRPGClasses.UI
                     if (!_looked)
                     {
                         _looked = true;
-                        // 0.1.138: Fires Character Creator's FccApi first (the VCS rebrand), VCS's VcsApi as the fallback.
+                        // Fires Character Creator's FccApi first (the VCS rebrand), VCS's VcsApi as the fallback.
                         System.Type api = Combat.VcsBridge.Api;
                         _open = api?.GetMethod("OpenEditor", System.Type.EmptyTypes);
                         FiresRPGClassesPlugin.Log?.LogDebug(_open != null ? $"[Classes] {api.FullName}.OpenEditor found: Edit appearance shown."
@@ -445,7 +443,7 @@ namespace FiresRPGClasses.UI
         }
 
         /// <summary>
-        /// Class XP earned this session by source, from [wishbone]'s ClassXp ("This session +1,240 XP: kills 900, gathering 340").
+        /// Class XP earned this session by source, from ClassXp ("This session +1,240 XP: kills 900, gathering 340").
         /// </summary>
         private static string SessionLine()
         {

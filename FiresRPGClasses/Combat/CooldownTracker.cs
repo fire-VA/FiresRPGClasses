@@ -12,9 +12,9 @@ namespace FiresRPGClasses.Combat
         public static void Clear() => ReadyAt.Clear();
 
         /// <summary>
-        /// 0.1.131 (Fire 10-14): the one generic class cooldown-reduction hook. Gear, talents or other mods add a source returning a
+        /// The one generic class cooldown-reduction hook. Gear, talents or other mods add a source returning a
         /// reduction share for a node id (0.10 = -10%); the shares add, then SoftCap.Asymptote ([13 - Balance] knee 40%, limit 80%)
-        /// so stacking keeps paying but no skill becomes free. Nothing registers a source yet, so today this changes no cooldown.
+        /// so stacking keeps paying but no skill becomes free. With no source registered it changes no cooldown.
         /// </summary>
         public static readonly List<Func<string, float>> ReductionSources = new List<Func<string, float>>();
 

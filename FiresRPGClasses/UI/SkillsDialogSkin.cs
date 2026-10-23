@@ -11,8 +11,7 @@ using UnityEngine.UI;
 namespace FiresRPGClasses.UI
 {
     /// <summary>
-    /// UI overhaul #19 (Tools\golden\ui_overhaul\skills\PLAN.md §2; Fire 10-15: the Classes Skills tab IS the skills page under the
-    /// override, the skin lives in RPGClasses). The vanilla SkillsDialog only shows when [6 - UI] SkillsButtonOpensClasses is off (or a
+    /// Under the UI override the Classes Skills tab IS the skills page, so this skin lives in RPGClasses. The vanilla SkillsDialog only shows when [6 - UI] SkillsButtonOpensClasses is off (or a
     /// gamepad path calls it directly). Under the override it gets the kit look: a rounded plate, the total/cap in Gold, rounded row
     /// plates, kit fonts and bar colours, and the gamepad selection highlighted. It's a postfix on Setup with no prefab edits, so vanilla
     /// data, input and gamepad behaviour (incl. the 80 px m_spacing scroll math) stay intact. Override OFF: the postfix returns at the top.
@@ -28,8 +27,8 @@ namespace FiresRPGClasses.UI
         internal static void BindConfig(ConfigFile config)
         {
             if (_on != null) return;
-            _on = config.Bind(Section, "Skin vanilla Skills page", false,   // 0.1.167 fold ([wishbone]): optional vanilla-look change = default OFF (team rule); the rig runs it ON
-                "With FiresUnifiedCore's [UI] Fires UI override on, Valheim's own Skills dialog (shown when SkillsButtonOpensClasses is off) gets the Fires kit look. Override off: always vanilla.");
+            _on = config.Bind(Section, "Skin vanilla Skills page", false,   // an optional change to the vanilla look, so default OFF
+                "With the Fires UI override on, give Valheim's own Skills dialog the Fires look.");
         }
 
         private static bool Active() { try { return _on != null && _on.Value && FiresShell.OverrideOn; } catch { return false; } }
@@ -80,7 +79,7 @@ namespace FiresRPGClasses.UI
                 var eimg = edge.GetComponent<Image>(); eimg.sprite = KitSprites.RoundedOutline(FiresTokens.Radius); eimg.type = Image.Type.Sliced; eimg.color = FiresTokens.Edge; eimg.raycastTarget = false;
             }
 
-            // the dialog's own buttons (Close): rounded kit buttons, Gold text + outline, as [visual]'s mock (skills_vanilla_skin_1920)
+            // the dialog's own buttons (Close): rounded kit buttons, Gold text + outline, as the mockup
             foreach (Button btn in root.GetComponentsInChildren<Button>(true))
             {
                 if (d.m_listRoot != null && btn.transform.IsChildOf(d.m_listRoot)) continue;

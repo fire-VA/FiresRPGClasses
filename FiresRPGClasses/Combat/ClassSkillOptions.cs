@@ -8,7 +8,7 @@ using FiresRPGClasses.State;
 namespace FiresRPGClasses.Combat
 {
     /// <summary>
-    /// What a player-driven bot may press right now, for Core's one brain (CompanionBrain.PickClassSkill, [generator]): every
+    /// What a player-driven bot may press right now, for Core's one brain (CompanionBrain.PickClassSkill): every
     /// Ready slot on the active bar as a Core SkillOption. FDT reads this by reflection, hands it to the brain and presses
     /// the returned slot's key through FiresKeys, so targeting, gates and cooldowns stay RPGClasses' own (the skills drill).
     /// Category / range / flags come from the node's targeting and its yaml values; the table below is the one place to
@@ -46,6 +46,7 @@ namespace FiresRPGClasses.Combat
         // What the brain was offered, at most every few seconds (the skills drill pairs it with Core's choice and FDT's press).
         private const float LogEverySeconds = 3f;
         private static float _nextLog;
+        private const float LogRepeatSeconds = 30f;
         private static string _lastLine;
         private static float _lastLineAt;
 
@@ -58,10 +59,10 @@ namespace FiresRPGClasses.Combat
                     .Where(slot => !string.IsNullOrEmpty(slot == BarLayout.UltimateSlot ? bar.UltimateId : bar.SkillAt(slot)))
                     .Select(slot => slot + ":" + BarController.Availability(ClassPlayerStore.Local.ActiveBar, slot))) + ")"
                 : string.Join(", ", options.Select(o => $"{o.Slot}:{o.Id} {o.Category}{(o.Aoe ? " aoe" : "")}{(o.Heal ? " heal" : "")}{(o.Buff ? " buff" : "")} 0-{o.MaxRange:0} m"));
-            // 0.1.114 (R-1013O: 218x the same Spirit Stag line over ~15 min, at the 3 s cap): Debug, and an unchanged offer for the same
-            // target is logged again only after 30 s.
+            // Debug level, and an unchanged offer for the same target is logged again only after LogRepeatSeconds, so a
+            // long fight doesn't flood the log with identical lines.
             string line = $"ready for the brain vs {(target != null ? target.m_name : "no target")}: {offered}";
-            if (line == _lastLine && UnityEngine.Time.time < _lastLineAt + 30f) return;
+            if (line == _lastLine && UnityEngine.Time.time < _lastLineAt + LogRepeatSeconds) return;
             _lastLine = line; _lastLineAt = UnityEngine.Time.time;
             FiresRPGClassesPlugin.Log.LogDebug(line);
         }
@@ -69,8 +70,7 @@ namespace FiresRPGClasses.Combat
         internal static CompanionBrain.SkillOption Describe(int slot, ClassTreeNode node)
         {
             TargetingSpec aim = node.Targeting;
-            // R75 (Fire: "sitting there doing nothing getting hit when it's out of eitr"): Eitr Well's "regen" read as a HEAL, so
-            // Core kept it for "hurt under 40 %". An eitr restorer is cast when the caster's eitr runs low, and not held back otherwise.
+            // Without this, Eitr Well's "regen" would read as a HEAL and Core would keep it for "hurt under 40 %". An eitr restorer is cast when the caster's eitr runs low, and not held back otherwise.
             if (RestoresEitr(node))
             {
                 Player me = Player.m_localPlayer;
@@ -88,7 +88,7 @@ namespace FiresRPGClasses.Combat
             }
             bool heal = aim.Mode == TargetingMode.Ally || Has(node, HealKeys);
             // Core-backed skills carry no yaml values (their numbers live in Core), so a strike mode is damage by default. Without this
-            // Chi Strike / Flurry read as "Situational" and the brain only tried them early in a fight (R62: only swings).
+            // Chi Strike / Flurry read as "Situational" and the brain only tried them early in a fight.
             bool damage = Has(node, DamageKeys) || aim.Mode == TargetingMode.Melee || aim.Mode == TargetingMode.NextAttack
                 || aim.Mode == TargetingMode.Aimed || aim.Mode == TargetingMode.Dash;
             bool helpful = heal || Has(node, DefensiveKeys) || (!damage && (aim.Mode == TargetingMode.Self || aim.Mode == TargetingMode.Ally));

@@ -8,7 +8,7 @@ using UnityEngine.UI;
 namespace FiresRPGClasses.UI
 {
     /// <summary>
-    /// The Skills tab, from Fire's board Main: category pills (All, Combat, Gathering, Movement, Crafting), a two-column
+    /// The Skills tab, from the Main board design: category pills (All, Combat, Gathering, Movement, Crafting), a two-column
     /// grid of Valheim's skills (icon, name, level, a bar to the next level), and a detail panel for the selected skill
     /// (level, "% to level N", what it does, and any bonus from effects). The board's "Class bonus" line has no data
     /// yet, so it is left out.

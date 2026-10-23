@@ -10,7 +10,7 @@ using UnityEngine;
 namespace FiresRPGClasses.Combat
 {
     /// <summary>
-    /// Druid / Necromancer actives that need no new Core effect (0.1.80, Fire 10-08: build the "Not yet implemented" talents, group 4):
+    /// Druid / Necromancer actives that need no new Core effect:
     /// - Regrowth: the ally under the crosshair (or you) heals {heal} over 10 s, a tenth each second;
     /// - Barkskin: {dr} less damage taken for 10 s (Core's class ward at the nearest preset not above it);
     /// - Bone Wall: a 6 m wall within 20 m, facing you, that blocks enemies and projectiles for {time} s (three vanilla stone walls,
@@ -24,7 +24,7 @@ namespace FiresRPGClasses.Combat
         private const string BoneWallId = "necromancer_bone_wall";
         private const string WitherId = "necromancer_wither";
         private const string PestilenceId = "necromancer_grave_pestilence";
-        // Core 0.2.338's debuffs, by name (an older Core has no such effect: the apply is refused and the poison still lands).
+        // Core's debuffs, by name (an older Core has no such effect: the apply is refused and the poison still lands).
         internal const string Withered = "ClassWithered";
         internal const string Wounded = "ClassWounded";
         private const float WitherSeconds = 10f, PestilenceRadius = 8f, PestilenceSeconds = 10f, ZoneLinger = 1.5f;
@@ -100,7 +100,7 @@ namespace FiresRPGClasses.Combat
                 if (ZoneSystem.instance != null && ZoneSystem.instance.GetGroundHeight(at, out float ground)) at.y = ground;
                 var go = Object.Instantiate(prefab, at, facing);
                 foreach (var wear in go.GetComponentsInChildren<WearNTear>()) wear.m_noRoofWear = true;
-                BoneWallLook.MarkAndDress(go);   // 0.1.99 (Fire 10-12): bones, not stone - same collider and health
+                BoneWallLook.MarkAndDress(go);   // bones, not stone - same collider and health
                 made.Add(go);
             }
             AbilityRPCManager.SpawnFX(target.Point, "vfx_skeleton_death");
@@ -157,7 +157,6 @@ namespace FiresRPGClasses.Combat
             return zone != null;
         }
 
-        // ---- group 5 (0.1.81) -------------------------------------------------------------------------------------------
         // Partial Form: "For 30 s take a library form's movement, health and dodge while keeping your own weapons and skills."
         // Approximation until a real half-form exists: a 20% haste and a 15% ward for 30 s, and only with a form in the library.
         private const string PartialFormId = "druid_partial_form";
@@ -205,7 +204,6 @@ namespace FiresRPGClasses.Combat
             return true;
         }
 
-        // ---- group 6 (0.1.81) -------------------------------------------------------------------------------------------
         // Alpha Howl: "You, your allies and your summons within 15 m deal {dmg} more damage for 10 s." Your hits and your summons'
         // get the bonus on your peer (DruidNecroPassives' Character.Damage hook); other players in range get Core's 25% damage
         // preset only when the rank's bonus reaches 25% (below that they get none yet: Core has no smaller preset).
@@ -265,7 +263,7 @@ namespace FiresRPGClasses.Combat
         // (Core SummonApi, its own cap group of 10, the Legion's timer); a beaten undead you can't raise stays as it was.
         private const string LegionId = "necromancer_legion";
         private const float LegionRadius = 30f, LegionSeconds = 30f, LegionHealth = 0.5f;
-        private const int LegionCap = 10;   // 0.1.131: the fallback of [13 - Balance] "Legion server limit" (synced, performance)
+        private const int LegionCap = 10;   // the fallback of [13 - Balance] "Legion server limit" (synced, performance)
         private static int LegionLimit => Mathf.Max(1, BalanceConfig.Value(BalanceConfig.LegionServerMax, LegionCap));
 
         private static bool Legion(ClassTreeNode node, Character caster, CastTarget target)

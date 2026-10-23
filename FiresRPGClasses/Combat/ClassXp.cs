@@ -8,24 +8,23 @@ using UnityEngine;
 namespace FiresRPGClasses.Combat
 {
     /// <summary>
-    /// Class XP for players (Fire, 2026-09-30: "start the class xp hooks"; plan Tools\CLASS_XP_PLAN.md). Core has the rules
-    /// (XpSources) and nothing called them, so a new character stayed class level 1. Each client awards its own character: the
+    /// Class XP for players. Core has the rules (XpSources); this class calls them. Each client awards its own character: the
     /// class record lives in that character's .fch. Every award goes through Award and logs one line:
     /// "[ClassXp] +N source (detail) -> L&lt;level&gt; &lt;xp&gt;/&lt;next&gt;".
     /// - kills: Core's KillXp, for the owner's death broadcast (ClassKillNetwork), within 50 m and active in a fight in the
     ///   last 30 s; the first kill of a creature type and of each boss is also a discovery;
     /// - discoveries: biomes, location names, items, recipes and pieces, the first time vanilla learns them (ClassXpHooks);
     /// - vanilla skill level-ups;
-    /// - gathering (Fire's popup: a small capped share): each felled tree, split log, broken rock piece or picked item pays
+    /// - gathering (a small capped share): each felled tree, split log, broken rock piece or picked item pays
     ///   0.5 % of a level under Core's hourly repeatable-work cap;
-    /// - everyday actions (Fire 10-02, ClassXpActivity): exploring, crafting, cooking, building, processing, fishing, sailing,
+    /// - everyday actions (ClassXpActivity): exploring, crafting, cooking, building, processing, fishing, sailing,
     ///   each a small share under its own hourly cap.
     /// </summary>
     public static class ClassXp
     {
         private const string Tag = "[ClassXp] ";
 
-        // Fire 10-01: per-award evidence goes out at Core's Debug level ([Logging] Log Level = Debug shows it); level-ups and
+        // Per-award evidence goes out at Core's Debug level ([Logging] Log Level = Debug shows it); level-ups and
         // warnings stay on the plugin log.
         private static readonly FiresLog DebugLog = new FiresLog("FiresRPGClasses", () => false);
         private const float GatherShareOfLevel = 0.005f;
@@ -102,10 +101,6 @@ namespace FiresRPGClasses.Combat
             return Grant(player, data, amount, rates, source, detail);
         }
 
-        /// <summary>
-        /// class_xp (ClassAdminCommands, Fire 10-01 "a way to give myself XP so I can test all of the classes"): the same grant
-        /// play ends in - levels, talent and attribute points, the level-up message and LevelledUp - for exactly this amount.
-        /// </summary>
         /// <summary>A FiresLoreBooks reward ("GiveClassXP n", read to the last page): the normal grant, source "lorebook".</summary>
         internal static long GrantFromLore(long amount, string bookId)
         {
@@ -125,7 +120,7 @@ namespace FiresRPGClasses.Combat
 
         /// <summary>
         /// class_level: the class level set outright, XP into it reset. Lowered below what is spent, the talent trees (and the
-        /// attributes, when those are over too) are refunded, as Fire asked. Returns the line the console prints.
+        /// attributes, when those are over too) are refunded. Returns the line the console prints.
         /// </summary>
         internal static string SetLevelForTest(int level)
         {

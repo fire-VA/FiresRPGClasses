@@ -34,7 +34,7 @@ namespace FiresRPGClasses.UI
         private const float BackBarScale = 0.72f;
         private const float RowGap = 10f;
         private const float SlotHeight = 64f;
-        // Fire 10-08: the key hints sit in a strip UNDER the active (front) row, clear of every slot.
+        // The key hints sit in a strip UNDER the active (front) row, clear of every slot.
         private const float HintSpace = 18f;
         private float _nextHintRefresh;
 
@@ -42,7 +42,7 @@ namespace FiresRPGClasses.UI
         private static ConfigEntry<Vector2> _legacyPosition;
         private static ConfigEntry<bool> _migrated;
 
-        /// <summary>The shipped place: Fire's own (10-08), from the bottom-right corner.</summary>
+        /// <summary>The shipped default place, from the bottom-right corner.</summary>
         private static readonly Vector2 DefaultOffset = new Vector2(-286.5f, 164.5f);
 
         /// <summary>The old centre-anchored default; an old BarsPosition equal to it was never dragged.</summary>
@@ -68,8 +68,8 @@ namespace FiresRPGClasses.UI
         }
 
         private static ConfigEntry<bool> _swapCue;
-        private static ConfigEntry<bool> _dockUnderGroupHud;   // 0.1.162: default-dock the bars under Core's "hud.grouphud" (Core 0.2.528+)
-        // 0.1.148 (Fire 10-15: always on, no setting): the "Hide skills the weapon cannot use" key is gone; BarsView always hides them
+        private static ConfigEntry<bool> _dockUnderGroupHud;   // default-dock the bars under Core's "hud.grouphud" (Core 0.2.528+)
+        // BarsView always hides skills the weapon cannot use (no setting)
         private static bool _swapHooked;
         private Image _flash;
         private static float _cueStart = -10f;
@@ -89,7 +89,7 @@ namespace FiresRPGClasses.UI
             if (t < 0f || t >= 1f)
             {
                 if (_flash.color.a != 0f) _flash.color = new Color(1f, 0.82f, 0.4f, 0f);
-                // 0.1.162: back to the scale from before the pulse, not to 1: under Core's dock engine the scale is Core's (corner grip)
+                // Back to the scale from before the pulse, not to 1: under Core's dock engine the scale is Core's (corner grip)
                 if (_pulsing) { _container.localScale = _cueBase; _pulsing = false; }
                 return;
             }
@@ -102,7 +102,7 @@ namespace FiresRPGClasses.UI
         private bool _pulsing;
         private Vector3 _cueBase = Vector3.one;
 
-        // 0.1.162 (the lead 10-15, Core 0.2.522 FiresShell.RegisterHudElement, Tools\CORE_HUD_LAYOUT_PLAN.md): with the Fires UI override
+        // (Core 0.2.522 FiresShell.RegisterHudElement, Tools\CORE_HUD_LAYOUT_PLAN.md) With the Fires UI override
         // ON the bars join Core's HUD dock engine: in layout mode (Esc menu or the hub toggle) they show an outline + "Class bars", can be
         // dragged, scaled with the corner grip and docked to the other HUD elements (the Group HUD area among them); Core saves it per
         // character + resolution. Core then owns the position, so the bars' own drag handle steps aside (BarsOffset stays the first place).
@@ -110,11 +110,12 @@ namespace FiresRPGClasses.UI
         // until someone drags it in layout mode, unless "Dock bars under the Group HUD" (default OFF) asks for the default dock.
         internal const string DockId = "rpgclasses.bars";
         private RectTransform _dockedFor, _dockTriedFor;
+        private static bool s_liveEdit;   // Core took LiveEdit + DragHandle at the last register
 
         private void TryDock()
         {
             if (_container == null || _dockedFor == _container || _dockTriedFor == _container) return;
-            _dockTriedFor = _container;   // 0.1.167: one attempt (and one log line) per container; an override flip to ON tries again
+            _dockTriedFor = _container;   // one attempt (and one log line) per container; an override flip to ON tries again
             string why;
             try { why = DockWithCore(_container, OnBarsResized, BarsMinSize()); }
             catch (System.Exception e) { why = "failed: " + e.GetBaseException().Message; }
@@ -123,15 +124,16 @@ namespace FiresRPGClasses.UI
                 _dockedFor = _container;
                 var own = _container.GetComponent<ClassesBarDragHandler>();
                 if (own != null) own.enabled = false;   // a disabled handler gets no drag events: Core's layout mode drags it
-                // 0.1.173: a size the player gave the bars before (Core 0.2.574+ resize) is re-applied and the slots re-flowed into it
+                // A size the player gave the bars before (Core 0.2.574+ resize) is re-applied and the slots re-flowed into it
                 if (ClassesHudSizes.TryGet(DockId, out Vector2 saved)) KitResize(saved, true);
+                if (s_liveEdit) FiresRPGClassesPlugin.Log?.LogDebug($"[HUD] {DockId} live edit on (handle {_container.name})");
             }
             FiresRPGClassesPlugin.Log?.LogInfo(why == null
                 ? $"[ClassesHud] bars registered with Core's HUD dock engine as '{DockId}' (layout mode: drag / scale / dock; own drag off; default dock {(_dockUnderGroupHud != null && _dockUnderGroupHud.Value ? "under hud.grouphud" : "none")})"
                 : $"[ClassesHud] bars not docked: {why} (own drag stays)");
         }
 
-        // Core never releases another mod's dock element ([generator] 10-15): on FiresShell.OverrideChanged(false) the bars leave the
+        // Core never releases another mod's dock element: on FiresShell.OverrideChanged(false) the bars leave the
         // dock engine (UnregisterHudElement) and go back to their own place + scale + drag; on (true) they register again. The event
         // only flags the change; Update applies it on the main thread.
         private static int s_overrideFlip = -1;   // -1 none, 0 went OFF, 1 went ON
@@ -176,8 +178,8 @@ namespace FiresRPGClasses.UI
         private static string DockWithCore(RectTransform rect, System.Action<Vector2> sizeChanged, Vector2 minSize)
         {
             System.Type shell = System.Type.GetType("FiresCore.UI.Shell.FiresShell, FiresUnifiedCore", false);
-            // 0.1.166: HudElementOptions is FiresCore.UI.Shell (the FILE is UI\Dock); 0.1.162-0.1.165 asked for FiresCore.UI.Dock, got null and
-            // never docked ("Core has no RegisterHudElement"). The type now comes from RegisterHudElement's own 3rd parameter.
+            // HudElementOptions lives in FiresCore.UI.Shell although its FILE is UI\Dock; guessing the namespace finds nothing,
+            // so the type comes from RegisterHudElement's own 3rd parameter.
             var reg = shell?.GetMethods(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static)
                 .FirstOrDefault(m => m.Name == "RegisterHudElement" && m.GetParameters().Length == 3 && m.GetParameters()[1].ParameterType == typeof(RectTransform));
             System.Type optT = reg?.GetParameters()[2].ParameterType;
@@ -187,7 +189,7 @@ namespace FiresRPGClasses.UI
             optT.GetField("Owner")?.SetValue(opts, "FiresRPGClasses");
             optT.GetField("Label")?.SetValue(opts, "Class bars");
             optT.GetField("Resizable")?.SetValue(opts, true);
-            // 0.1.162 key (default OFF): start docked under Core's Group HUD ([generator]: "hud.grouphud", Core 0.2.528; a target that
+            // Key (default OFF): start docked under Core's Group HUD ("hud.grouphud", Core 0.2.528; a target that
             // registers later is still joined when it arrives)
             if (_dockUnderGroupHud != null && _dockUnderGroupHud.Value)
             {
@@ -195,7 +197,11 @@ namespace FiresRPGClasses.UI
                 var edgeF = optT.GetField("DefaultEdge");
                 if (edgeF != null) edgeF.SetValue(opts, System.Enum.Parse(edgeF.FieldType, "Bottom"));
             }
-            ClassesHudDock.SetSizeOptions(optT, opts, sizeChanged, minSize);   // 0.1.173: real resize (Core 0.2.574+), the slots re-flow
+            ClassesHudDock.SetSizeOptions(optT, opts, sizeChanged, minSize);   // real resize (Core 0.2.574+), the slots re-flow
+            // (Core 0.2.583) Live drag / resize with no editor. Handle = the container itself: its existing alpha-0.001 "grab"
+            // Image, the same surface the pre-dock ClassesBarDragHandler dragged from (no visual change). The slots' weapon drops
+            // (ClassesBarWeaponDrop, IDropHandler on the slot) still reach the slot, which is the deepest raycast hit.
+            s_liveEdit = ClassesHudDock.SetLiveEdit(optT, opts, rect);
             reg.Invoke(null, new object[] { DockId, rect, opts });
             return null;
         }
@@ -204,24 +210,24 @@ namespace FiresRPGClasses.UI
         {
             if (_position != null) return;
             _swapCue = config.Bind(Section, "Bar swap cue", false,
-                "Swapping front / back bar flashes the bars gold and gives them a short pulse, so the swap is easy to see. Off: no cue.");
+                "Flash the bars gold with a short pulse when you swap front and back bars.");
             _dockUnderGroupHud = config.Bind(Section, "Dock bars under the Group HUD", false,
-                "With the Fires UI override on (Core 0.2.528+), the class bars start docked below the Group HUD in the minimap column instead of "
-                + "their own place. A layout you dragged yourself (Esc menu layout mode) still wins. Off: the bars start at BarsOffset.");
-            // Fire (10-08, hand test 4): ship the place he dragged them to as the default, "on the right side just above the
-            // tooltips for the hammer". Anchored to the screen's bottom-right corner, so it lands there at any resolution and
-            // aspect. The default is his own drag (BarsPosition 1003.5 / 164.5 from the centre on a 2580-unit-wide HUD canvas,
+                "With the Fires UI override on, the class bars start docked below the Group HUD unless you moved them yourself.");
+            // The default place is on the right side, just above the hammer's tooltips. Anchored to the screen's bottom-right
+            // corner, so it lands there at any resolution and aspect. It was measured as a drag (BarsPosition 1003.5 / 164.5 from the centre on a 2580-unit-wide HUD canvas,
             // i.e. 3440x1440 at GUI scale 1) converted to the corner.
             _position = config.Bind(Section, "BarsOffset", DefaultOffset,
-                "Where the class bars sit: the centre of their bottom edge, measured from the screen's bottom-right corner in HUD "
-                + "units. Drag them in game to set this.");
+                new ConfigDescription("Where the class bars sit on screen; drag them in game to set this.", null,
+                    new System.ComponentModel.BrowsableAttribute(false)));
             _legacyPosition = config.Bind(Section, "BarsPosition", LegacyDefault,
-                "Old setting (measured from the bottom centre). Read once to carry a dragged position over to BarsOffset. Leave it alone.");
+                new ConfigDescription("Old bar position, read once to carry it over; leave it alone.", null,
+                    new System.ComponentModel.BrowsableAttribute(false)));
             _migrated = config.Bind(Section, "BarsOffsetMigrated", false,
-                "Set by the mod once an old BarsPosition was carried over to BarsOffset. Leave it alone.");
+                new ConfigDescription("Set by the mod once the old bar position was carried over; leave it alone.", null,
+                    new System.ComponentModel.BrowsableAttribute(false)));
             _backBarAlpha = config.Bind(Section, "BackBarAlpha", 0.55f,
-                new ConfigDescription("How solid the inactive back bar is. Its cooldowns run either way.",
-                    new AcceptableValueRange<float>(0.1f, 1f)));
+                new ConfigDescription("How solid the inactive back bar looks.",
+                    new AcceptableValueRange<float>(0.1f, 1f), new FiresCore.Sync.ConfigurationManagerAttributes { IsAdvanced = true }));
         }
 
         /// <summary>
@@ -246,10 +252,17 @@ namespace FiresRPGClasses.UI
 
         private void Update()
         {
-            ClassesHudSizes.Tick();   // 0.1.173: saves a settled resize (nothing while idle)
+            ClassesHudSizes.Tick();   // saves a settled resize (nothing while idle)
             ClassPlayerData data = ClassPlayerStore.Local;
-            bool chat = ChatOpen();
-            if (chat != _chatShown) { _chatShown = chat; FiresRPGClassesPlugin.Log?.LogInfo($"[ClassesHud] chat open: bars {(chat ? "hidden" : "shown")} (source {(s_chatEvent ? "Core ChatOpenChanged" : "Chat.HasFocus poll")})"); }
+            // Typing in the chat hides the bars only when the chat window's drawn rect actually intersects the bars' drawn
+            // rect; with the chat elsewhere (e.g. chat bottom-left, bars bottom-right) they stay.
+            bool typing = ChatOpen();
+            bool chat = typing && ChatOverlapsBars();
+            if (chat != _chatShown || typing != _typingShown)
+            {
+                _chatShown = chat; _typingShown = typing;
+                FiresRPGClassesPlugin.Log?.LogInfo($"[ClassesHud] chat typing {typing}, overlaps the bars {(typing ? chat.ToString() : "n/a")}: bars {(chat ? "hidden" : "shown")} (source {(s_chatEvent ? "Core ChatOpenChanged" : "Chat.HasFocus poll")})");
+            }
             if (data == null || Player.m_localPlayer == null || chat || OverlayUp()) { SetVisible(false); return; }
             if (!EnsureBuiltAny()) return;   // UI overhaul #14: the kit rows under the override (ClassesHudKit.cs)
             SyncDock();
@@ -271,8 +284,8 @@ namespace FiresRPGClasses.UI
                 for (int i = 0; i < _front.Length; i++)
                 {
                     if (_front[i]?.Binding == null) continue;
-                    // 0.1.130 (Fire's profiler: ClassesHud 183 MB / 8.6 min): SlotLabel concatenates and KeyCode.ToString()s
-                    // every call; compare the binding's own values first and only rebuild the label when one changed.
+                    // SlotLabel allocates (it concatenates and KeyCode.ToString()s
+                    // every call); compare the binding's own values first and only rebuild the label when one changed.
                     int signature = HintSignature(i + 1);
                     if (_front[i].HintSignature == signature && _front[i].HintText != null) continue;
                     _front[i].HintSignature = signature;
@@ -304,8 +317,8 @@ namespace FiresRPGClasses.UI
         /// container is the only honest answer, and clearing the flag here is what rebuilds the bars on
         /// the next world load.
         /// </summary>
-        // 0.1.130: the per-minute self-check. Every string the HUD path builds (cooldown seconds, key hints, race-check reasons)
-        // bumps this; a round's Debug log then shows "rebuilt N strings in 60 s" instead of thousands per minute.
+        // The per-minute self-check. Every string the HUD path builds (cooldown seconds, key hints, race-check reasons)
+        // bumps this; the Debug log then shows "rebuilt N strings in 60 s" instead of thousands per minute.
         private static int _rebuilds;
         private static float _nextRebuildReport;
 
@@ -329,8 +342,8 @@ namespace FiresRPGClasses.UI
         }
 
         /// <summary>
-        /// The bars have their own sorting canvas above the HUD, so they drew over the loading and quit/save screens (Fire,
-        /// 2026-09-28). Hidden while the HUD is hidden by the player, a menu is open, the loading screen shows, or the game
+        /// The bars have their own sorting canvas above the HUD, so they drew over the loading and quit/save screens.
+        /// Hidden while the HUD is hidden by the player, a menu is open, the loading screen shows, or the game
         /// is shutting down.
         /// </summary>
         private static bool OverlayUp()
@@ -340,16 +353,36 @@ namespace FiresRPGClasses.UI
             CanvasGroup black = Hud.instance.m_loadingScreen;
             if (black != null && black.gameObject.activeInHierarchy && black.alpha > 0.01f) return true;
             if (Menu.IsVisible()) return true;
-            // 0.1.172 ([lead] 10-15 shot: with the large map (M) open the bars drew on top of it at the right edge, through their own
-            // sorting canvas): hidden while the large map is open, as vanilla's hotbar is
+            // Their own sorting canvas would draw them over the large map (M): hidden while the large map is open, as
+            // vanilla's hotbar is
             if (Minimap.IsOpen()) return true;
             return Game.instance != null && Game.instance.IsShuttingDown();
         }
 
-        // 0.1.158 (Fire's shot: the bars drew over the chat text and tabs): hidden while the chat is open. Core's add-only
+        // So the bars never draw over the chat text and tabs, they hide while the chat is open. Core's add-only
         // FiresShell.ChatOpenChanged(bool) drives it when present; before that Core, Chat.instance.HasFocus() is polled (one call
         // a frame). Only the typing state counts: the chat window fading in on someone else's message does not hide the bars.
         private bool _chatShown;
+        private bool _typingShown;
+
+        /// <summary>The chat window's screen rect overlaps the bars' screen rect (read from their RectTransforms, so it works
+        /// whether the bars are hidden or shown). No chat window or no bars = no overlap.</summary>
+        internal bool ChatOverlapsBars()
+        {
+            RectTransform chat = Chat.instance != null ? Chat.instance.m_chatWindow : null;
+            if (chat == null || _container == null) return false;
+            return ScreenRect(chat).Overlaps(ScreenRect(_container));
+        }
+
+        private static readonly Vector3[] s_corners = new Vector3[4];
+        private static Rect ScreenRect(RectTransform rt)
+        {
+            rt.GetWorldCorners(s_corners);
+            Canvas c = rt.GetComponentInParent<Canvas>();
+            Camera cam = c != null && c.renderMode != RenderMode.ScreenSpaceOverlay ? c.worldCamera : null;
+            Vector2 a = RectTransformUtility.WorldToScreenPoint(cam, s_corners[0]), b = RectTransformUtility.WorldToScreenPoint(cam, s_corners[2]);
+            return Rect.MinMaxRect(Mathf.Min(a.x, b.x), Mathf.Min(a.y, b.y), Mathf.Max(a.x, b.x), Mathf.Max(a.y, b.y));
+        }
         private static bool s_chatLooked, s_chatEvent, s_chatOpenByEvent;
         private static bool ChatOpen()
         {
@@ -395,7 +428,6 @@ namespace FiresRPGClasses.UI
                 float total = TotalCooldown(data, bar, slot);
                 float remaining = CooldownTracker.Fraction(nodeId, total);
                 bool cooling = remaining > 0f;
-                // Fire (2026-10-01): "make the front bar/back bar weapons display in the front and back bars on the screen".
                 // Slot 1 is the bar's weapon (BarLayout.WeaponSlot), not a skill node, so ClassIcons had no art for it and
                 // the slot stayed empty; it shows the weapon in that bar's VAInventory slot (or the recorded prefab
                 // without bar slots), the same item the Classes window and the inventory pane show.
@@ -407,7 +439,7 @@ namespace FiresRPGClasses.UI
                 if (art != null)
                 {
                     view.Icon.sprite = art;
-                    // R31 shots (the lead): the weapon icon was very faint. Availability() reads a skill node, and slot 1 has none,
+                    // The weapon icon must not be faint: Availability() reads a skill node, and slot 1 has none,
                     // so it answered Empty and TintFor's default (alpha 0.45) applied, x0.55 more on the inactive row. The weapon
                     // slot is full white; dimmed only during a temporary swap (the active bar's hands hold something else).
                     view.Icon.color = slot == BarLayout.WeaponSlot
@@ -423,7 +455,7 @@ namespace FiresRPGClasses.UI
                 }
 
                 view.Amount.gameObject.SetActive(cooling);
-                // 0.1.119 (perf audit: a new "Ns" string and a TMP mesh rebuild per cooling slot per frame): only when the second changes.
+                // Only when the second changes: otherwise a new "Ns" string and a TMP mesh rebuild per cooling slot per frame.
                 if (cooling)
                 {
                     int secs = Mathf.CeilToInt(CooldownTracker.Remaining(nodeId));
@@ -525,7 +557,7 @@ namespace FiresRPGClasses.UI
 
             _built = true;
 
-            // 0.1.143 [classes-ui] (Fire 10-14: a bar swap needs a visual cue): a gold flash over the bars plus a short scale
+            // A visual cue for a bar swap: a gold flash over the bars plus a short scale
             // pulse on BarController.BarSwapped. Behind [5 - HUD] Bar swap cue (default off).
             RectTransform flash = NewRect(_container, "SwapFlash");
             flash.anchorMin = Vector2.zero; flash.anchorMax = Vector2.one; flash.offsetMin = new Vector2(-6f, -6f); flash.offsetMax = new Vector2(6f, 6f);
@@ -537,7 +569,9 @@ namespace FiresRPGClasses.UI
             // Dump once, unprompted. Four diagnoses of the slot colouring have been wrong, and every one
             // was reasoning about values that only exist at runtime. This puts them in the log the first
             // time the bars exist, so the next report carries the answer instead of another guess.
+#if FIRES_TESTS
             ClassesUiDump.DumpOnce("bars built");
+#endif
             return true;
         }
 
@@ -559,7 +593,7 @@ namespace FiresRPGClasses.UI
                 go.SetActive(true);
                 go.name = name + "_Slot" + (i + 1);
                 // Place each slot by its CENTRE: vanilla's element pivot is not centred, so placing the pivot on the
-                // grid shifted the whole row sideways (Fire, 2026-09-28 quit-screen shot).
+                // grid shifted the whole row sideways.
                 RectTransform element = go.transform as RectTransform;
                 float pivotShift = element != null ? (0.5f - element.pivot.x) * element.rect.width : 0f;
                 go.transform.localPosition = new Vector3(origin + i * space - pivotShift, 0f, 0f);
@@ -569,11 +603,11 @@ namespace FiresRPGClasses.UI
                 RectTransform hint = slots[i].Binding.rectTransform;
                 if (frontRow)
                 {
-                    // 0.1.162 (Fire 10-15 via the lead: the hint sat INSIDE the square's top edge, over the icon and the count):
+                    // The hint must sit below the square, not inside its top edge over the icon and the count:
                     // anchoring to the element ROOT's bottom edge assumed the root is the square, but vanilla's HotKeyElement root
                     // is not sized like it, so "bottom" landed at the square's top and the top-pivot label hung down into it. Now
                     // it is measured from the visible square ("bkg") itself: centred under it, 2 px below its bottom edge, the
-                    // same place as Core 0.2.528's KitHotbarSlot key chip ([generator]).
+                    // same place as Core 0.2.528's KitHotbarSlot key chip.
                     RectTransform square = go.transform.Find("bkg") as RectTransform;
                     if (square == null) square = element;
                     var corners = new Vector3[4];

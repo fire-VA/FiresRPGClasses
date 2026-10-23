@@ -9,7 +9,7 @@ using UnityEngine;
 namespace FiresRPGClasses.UI
 {
     /// <summary>
-    /// The eight class crests (Fire, 2026-09-29: game-icons.net, the node icons' family). Embedded as
+    /// The eight class crests (game-icons.net, the node icons' family). Embedded as
     /// Icons\Crests\crest_&lt;archetype&gt;.png, white on transparent and tinted by the caller like the node icons.
     /// Until a crest is embedded, the archetype's starter node icon stands in, so no crest slot is ever empty.
     /// </summary>

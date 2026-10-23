@@ -9,7 +9,7 @@ using UnityEngine;
 namespace FiresRPGClasses.Combat
 {
     /// <summary>
-    /// The Vampire class kit (Tools\VAMPIRE_CLASS_DESIGN.md §3-§5, §10-§12, LOCKED 10-13). The class needs the vampire race
+    /// The Vampire class kit (design doc VAMPIRE_CLASS_DESIGN.md §3-§5, §10-§12). The class needs the vampire race
     /// (<see cref="VampireRace"/>, read by WeaponArchetypes: without it the class is greyed out like a missing weapon, points kept).
     /// - Bat Form (skill, 3 ranks): Core possession on Druid Wildshape's path. A vanilla Bat is spawned at the player, made harmless while
     ///   the server is asked (players' faction, AI off), and possessed a second later (the server must have its ZDO, Wildshape's
@@ -103,7 +103,7 @@ namespace FiresRPGClasses.Combat
         }
 
         /// <summary>
-        /// Cooldown from the skill (§11), counted from the form's end; rank 2+ cuts it 20%. 0.1.131 (Fire 10-14): then the generic
+        /// Cooldown from the skill (§11), counted from the form's end; rank 2+ cuts it 20%. Then the generic
         /// class cooldown reduction (CooldownTracker.Scaled, the same path every class skill's cooldown takes) applies on top.
         /// </summary>
         public static float BatCooldown(float level, int rank)
@@ -158,10 +158,10 @@ namespace FiresRPGClasses.Combat
                 ConsumeTarget = true,               // the bat goes at the end
                 ReturnToAnchor = false,
                 MaxDuration = _batSeconds,
-                CarryHiddenBody = true,             // Core 0.2.447 (Fire §13): the body vanishes, is carried inside the bat, the world streams around it - no leash
+                CarryHiddenBody = true,             // the body vanishes, is carried inside the bat, the world streams around it - no leash
                 BodyVanishFx = BatFx,               // the puff where the body vanishes and where it reappears
                 CarryEndAtCreature = true,          // a normal end sets you down under the bat; the bat dying sends you back to the body, unharmed
-                BodyRiseBeforeVanish = 2f,          // Core 0.2.453 (Fire, R-1013BU): float up like the Necromancer first, THEN the puff
+                BodyRiseBeforeVanish = 2f,          // float up like the Necromancer first, THEN the puff
                 BodyRiseSeconds = 0.8f,
                 FormHealth = player.GetMaxHealth() * VampireConfig.Value(VampireConfig.BatHealthShare, 0.30f),
                 DamageScale = 0f,                   // no attacking (§10)
@@ -458,7 +458,7 @@ namespace FiresRPGClasses.Combat
             float dealt = hit.GetTotalDamage();
             float heal = dealt * steal;
             if (victim.IsBoss()) heal *= VampireConfig.Value(VampireConfig.DrainBossShare, 0.5f);
-            // 0.1.131 (Fire 10-14): the 5% of max health is the knee of SoftCap's curve, not a hard stop - heal past it diminishes.
+            // The 5% of max health is the knee of SoftCap's curve, not a hard stop - heal past it diminishes.
             float knee = player.GetMaxHealth() * VampireConfig.Value(VampireConfig.DrainCap, 0.05f);
             float rawHeal = heal;
             heal = SoftCap.Soft(heal, knee);
@@ -512,7 +512,7 @@ namespace FiresRPGClasses.Combat
             if (penalty != _sunPenalty)
             {
                 _sunPenalty = penalty;
-                // 0.1.132: vanilla SEMan directly, so no "<source> granted you ..." message; no timer (m_ttl 0 in SunlightEffect).
+                // Vanilla SEMan directly, so no "<source> granted you ..." message; no timer (m_ttl 0 in SunlightEffect).
                 if (penalty) player.GetSEMan().AddStatusEffect(VampireEffects.SunlightHash, true);
                 else player.GetSEMan().RemoveStatusEffect(VampireEffects.SunlightHash);
                 FiresRPGClassesPlugin.Log?.LogDebug($"[Vampire] Sunburnt {(penalty ? "on" : "off")}");

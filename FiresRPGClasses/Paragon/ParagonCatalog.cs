@@ -63,7 +63,7 @@ namespace FiresRPGClasses.Paragon
     }
 
     /// <summary>
-    /// 0.1.132: the Paragon constellations from paragon-trees.yaml (plan §8/§9). Ships like classes-trees.yaml: a bundled copy seeds
+    /// The Paragon constellations from paragon-trees.yaml (plan §8/§9). Ships like classes-trees.yaml: a bundled copy seeds
     /// the config folder; a newer bundled revision backs the old file up and replaces it; the file on disk is the data of record and
     /// reloads on edit. If the file can't be read, the bundled copy loads.
     /// </summary>
@@ -209,7 +209,7 @@ namespace FiresRPGClasses.Paragon
                 if (!File.Exists(path)) { File.WriteAllText(path, bundled); Debug.Log($"[Paragon] Wrote the bundled {FileName} to {path}."); return; }
                 int onDisk = ClassTreeLoader.RevisionOf(File.ReadAllText(path)), shipped = ClassTreeLoader.RevisionOf(bundled);
                 if (onDisk >= shipped) return;
-                // 0.1.161 (Fire 10-15: no backup data on the rig): no .r<old>.bak copy is kept any more
+                // No .bak copy of the old file is kept.
                 File.WriteAllText(path, bundled);
                 Debug.LogWarning($"[Paragon] {FileName} on disk was revision {onDisk}, older than this version's {shipped}: replaced (no backup copy kept).");
             }

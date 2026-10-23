@@ -7,7 +7,7 @@ using UnityEngine;
 namespace FiresRPGClasses.Combat
 {
     /// <summary>
-    /// 0.1.94 (Fire #11 batch 3a): design-only passives on the existing vanilla hooks. Like DruidNecroPassives: each id is
+    /// Design-only passives on the existing vanilla hooks. Like DruidNecroPassives: each id is
     /// read once a second (learned, equipped, Active in the passive grid) at the player's rank; the hooks only look the value up.
     /// All local player only. Perf: one Dictionary lookup per hook call, no allocation.
     /// - Thick Hide (Tank): +armor%, less stagger taken.        - Immovable (Tank): no stagger / knockback while blocking; block stamina -%.
@@ -22,6 +22,7 @@ namespace FiresRPGClasses.Combat
     public static class PassiveKit2
     {
         private const string ThickHide = "tank_thick_hide";
+        internal const string ThickHideId = ThickHide, ZealId = "paladin_zeal";   // ClassStatsApi row names
         private const string Immovable = "tank_immovable";
         private const string Zeal = "paladin_zeal";
         private const string Unbreakable = "paladin_unbreakable";

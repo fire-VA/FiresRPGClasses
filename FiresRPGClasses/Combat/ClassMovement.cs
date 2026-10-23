@@ -11,8 +11,8 @@ using UnityEngine;
 namespace FiresRPGClasses.Combat
 {
     /// <summary>
-    /// 0.1.141 ([wishbone], Fire 10-14, movement table approved via the lead): class and race SECOND-JUMP styles and race DODGES,
-    /// unlocked by play. Plugs into Core's movement contract (FiresCore.Movement.MovementGates / MovementStyles, [generator]'s Core):
+    /// Class and race SECOND-JUMP styles and race DODGES, unlocked by play. Plugs into Core's movement contract
+    /// (FiresCore.Movement.MovementGates / MovementStyles):
     /// Core owns the double jump itself (its key, Jump-skill gate, stamina, stand-down for Pix.Movement, refusals); this adds
     /// - gates: the double jump also unlocks at CLASS level N ("[14 - Movement] Second jump at class level", 10), for the active class;
     /// - styles for "second_jump_style" (priority: race 200 > class 100): Rogue / Monk flip (back, or front while moving forward),
@@ -20,7 +20,7 @@ namespace FiresRPGClasses.Combat
     ///   Necromancer soft float; Vampire bat-hop glide; Werewolf pounce leap. Tank / Paladin keep Core's plain second jump.
     /// - race dodges at "Race dodge at level" (20), ahead of the class evasion: Vampire Mist-step (5 m dash in a red mist, eitr),
     ///   Werewolf Pounce (a forward lunge, stamina). Off = the class evasion / vanilla roll, unchanged.
-    /// All behind "[14 - Movement] Class movement styles" (default false; Fire: new = config OFF). RPGClasses registers with Core only
+    /// All behind "[14 - Movement] Class movement styles" (default false: new behaviour ships off). RPGClasses registers with Core only
     /// when it's on, so Core's Auto keys stay off without it. Every use logs a point-of-use line. Clips: Core's ClipSlots when present
     /// (the flip / vault ids below; the Quaternius clips get a bundle in a later build), else a vanilla jump; FX via AbilityRPCManager.
     /// </summary>
@@ -34,15 +34,18 @@ namespace FiresRPGClasses.Combat
 
         public static bool On => _enabled != null && _enabled.Value;
 
+        private static ConfigDescription Adv(string text) =>
+            new ConfigDescription(text, null, new FiresCore.Sync.ConfigurationManagerAttributes { IsAdvanced = true });
+
         public static void Bind(ConfigFile cfg)
         {
             _enabled = cfg.Bind(Section, "Class movement styles", false,
-                "Class and race styles for the second jump (rogue flips, mage blink, vampire bat-hop, werewolf pounce...) and race dodges (vampire mist-step, werewolf pounce), unlocked by class level. Needs Fires Unified Core's [Movement] double jump. False = none.");
-            _jumpAtLevel = cfg.Bind(Section, "Second jump at class level", 10, "Class level that unlocks the double jump and its class style.");
-            _dodgeAtLevel = cfg.Bind(Section, "Race dodge at level", 20, "Character level that unlocks the race dodge (vampire mist-step, werewolf pounce).");
-            _blinkEitr = cfg.Bind(Section, "Mage blink jump eitr", 8f, "Eitr the mage's blink second jump costs.");
-            _mistEitr = cfg.Bind(Section, "Mist-step eitr", 12f, "Eitr the vampire's mist-step dodge costs.");
-            _pounceStamina = cfg.Bind(Section, "Pounce stamina", 18f, "Stamina the werewolf's pounce dodge costs.");
+                "Class and race styles for the double jump and dodge (needs Fires Unified Core's double jump).");
+            _jumpAtLevel = cfg.Bind(Section, "Second jump at class level", 10, Adv("Class level that unlocks the double jump and its class style."));
+            _dodgeAtLevel = cfg.Bind(Section, "Race dodge at level", 20, Adv("Character level that unlocks the race dodge."));
+            _blinkEitr = cfg.Bind(Section, "Mage blink jump eitr", 8f, Adv("Eitr the mage's blink jump costs."));
+            _mistEitr = cfg.Bind(Section, "Mist-step eitr", 12f, Adv("Eitr the vampire's mist-step dodge costs."));
+            _pounceStamina = cfg.Bind(Section, "Pounce stamina", 18f, Adv("Stamina the werewolf's pounce dodge costs."));
             _enabled.SettingChanged += (_, __) => Register();
         }
 
@@ -175,8 +178,8 @@ namespace FiresRPGClasses.Combat
         }
 
         // the float / glide: a capped fall speed while the window runs (owner-side, before vanilla's physics step)
-        // 0.1.145 ([lead] R-PROOF2): was "FixedUpdate", which Character doesn't have; the undefined target threw out of PatchAll and
-        // skipped the rest of Awake (0.1.141-0.1.144). CustomFixedUpdate is vanilla's physics step (Core's CharacterSnowCover patches it too).
+        // Not "FixedUpdate": Character doesn't have one, and an undefined target throws out of PatchAll and skips the rest of
+        // Awake. CustomFixedUpdate is vanilla's physics step (Core's CharacterSnowCover patches it too).
         [HarmonyPatch(typeof(Character), nameof(Character.CustomFixedUpdate))]
         private static class SlowFall
         {

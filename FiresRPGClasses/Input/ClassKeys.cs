@@ -21,7 +21,7 @@ namespace FiresRPGClasses.Input
     /// </summary>
     public static class ClassKeys
     {
-        // 0.1.112 (Fire 10-13: sensible grouping): numbered sections, the keys in their own sections. Old values move over once at load
+        // Numbered sections, the keys in their own sections. Old values move over once at load
         // (FiresRPGClassesPlugin.TidyConfig).
         public const string BarsSection = "1 - Bars";
         public const string BarKeysSection = "2 - Bar keys";
@@ -54,17 +54,15 @@ namespace FiresRPGClasses.Input
             if (IsBound) return;
 
             SkillsNeedDrawnWeapon = config.Bind(BarsSection, "Skills need a drawn weapon", true,
-                "On: slots 1-8 are skills only while a weapon is drawn, and the item hotbar takes them while sheathed.");
-            // Fire, 2026-09-30: Shift+Alt, "since youre likely to be sprinting around swapping bars", and plain Alt+1-4 stays
+                "Keys 1-8 cast skills only while a weapon is drawn; sheathed, they use the item hotbar.");
+            // Shift+Alt, since players are likely sprinting while swapping bars, and plain Alt+1-4 stays
             // VAInventory's tool hotbar. A new key name, so the old "Skill modifier = Alt" in existing configs does not win.
             Modifier = config.Bind(BarsSection, "Skill keys modifier", SkillModifier.ShiftAlt,
-                "Held with every slot key still on its default. While it is held the number row never reaches Valheim's "
-                + "hotbar. Shift+Alt by default: you are usually sprinting (Shift) when you swap bars, and plain Alt+1-4 is "
-                + "VAInventory's tool hotbar. Slot 1 draws the active bar's weapon, and swaps bars once it is in hand.");
+                "The modifier held with the skill slot keys while they are on their default keys.");
             SlotOneSwapsBars = config.Bind(BarsSection, "Slot 1 swaps bars", true,
-                "On: slot 1's key swaps bars as well as the dedicated swap key.");
+                "Slot 1's key also swaps bars, as well as the dedicated swap key.");
             ItemHotbarModifier = config.Bind(ItemHotbarSection, "Item hotbar modifier", SkillModifier.Alt,
-                "The modifier added to the item hotbar keys (1-8) while they are left at their default keys, so they stay apart from the skill keys.");
+                "The modifier held with the item hotbar keys while they are on their default keys.");
 
             for (int slot = 0; slot < SlotCount; slot++)
             {
@@ -77,7 +75,7 @@ namespace FiresRPGClasses.Input
 
                 ItemHotbarKeys[slot] = new KeyBinding(config, ItemHotbarKeysSection, "Item" + (slot + 1),
                     DefaultSlotKeys[slot], BindingContext.Gameplay, defaultAlt: true);
-                // 0.1.81 ([generator]'s keybind check): the item keys stand in for vanilla's HotbarN too (read only while the slot keys
+                // the item keys stand in for vanilla's HotbarN too (read only while the slot keys
                 // own 1-8, when UseHotbarItem is suppressed and these route through UseThroughHandoff), so say so to Core's checker.
                 ItemHotbarKeys[slot].Replaces(vanillaButton, BindingContext.Gameplay);
             }
@@ -95,7 +93,7 @@ namespace FiresRPGClasses.Input
 
         /// <summary>
         /// Presses slot N's BOUND chord (its key plus whatever modifiers the player set) through Core's FiresKeys, the way a
-        /// player's keyboard would, for a bot driven by Core's brain ([visual]'s FDT fight, the skills drill). Takes the seam for
+        /// player's keyboard would, for a bot driven by Core's brain (automated fights, the skills drill). Takes the seam for
         /// <paramref name="owner"/>; false when another owner holds it or the slot is unbound. The caller releases the seam
         /// (FiresKeys.Release(owner)) when its fight ends.
         /// </summary>
@@ -112,7 +110,7 @@ namespace FiresRPGClasses.Input
         }
 
         /// <summary>
-        /// PressSlot with a point ([visual]'s FDT, Core's brain choosing where): a Placed or Aimed skill on that slot is cast
+        /// PressSlot with a point (Core's brain choosing where): a Placed or Aimed skill on that slot is cast
         /// straight at <paramref name="point"/> (clamped to its range), with no aiming step; any other skill ignores it.
         /// </summary>
         public static bool PressSlotAt(object owner, int slot, Vector3 point)
@@ -197,7 +195,7 @@ namespace FiresRPGClasses.Input
         /// </summary>
         public static bool SuppressVanillaHotbar(int slot)
         {
-            // Fire, 2026-09-30: "a modifier needs to prevent normal 1 from firing". With a modifier, holding it means the key
+            // A modifier must stop the plain number key from firing too. With a modifier, holding it means the key
             // is ours whatever the bar holds; the per-slot test below is only for the no-modifier scheme.
             if (IsBound && Modifier.Value != SkillModifier.None) return ModifierHeld(Modifier.Value);
             return SuppressVanillaHotbar() && SlotHasSomethingToCast(slot);

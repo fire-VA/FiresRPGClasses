@@ -6,14 +6,15 @@ using UnityEngine;
 namespace FiresRPGClasses.Combat
 {
     /// <summary>
-    /// 0.1.91 (Fire #11): the party buffs whose stats Core doesn't have. Core 0.2.395+ only carries the name
+    /// The party buffs whose stats Core doesn't have. Core only carries the name
     /// (ClassTrance10/15/20, ClassShieldWall40/50/60, given by AbilityRPCManager.ApplyGroupBuff to each party member's
-    /// owner); this kit reads them in the existing hooks, on the peer that owns the buffed player. Perf (Fire's rule):
+    /// owner); this kit reads them in the existing hooks, on the peer that owns the buffed player. Kept cheap:
     /// int hashes, no allocation, local player only.
     /// </summary>
     public static class BuffKit
     {
         private const string TranceId = "berserker_battle_trance";
+        internal const string BattleTranceId = TranceId;   // ClassStatsApi row name
         private const string ShieldWallId = "paladin_shield_wall";
 
         private static readonly string[] TranceByRank = { "ClassTrance10", "ClassTrance15", "ClassTrance20" };

@@ -5,9 +5,9 @@ using UnityEngine;
 namespace FiresRPGClasses
 {
     /// <summary>
-    /// 0.1.110 ([release], FiresMonsters' group scaling: boss strength by group size AND player power): each player's class progress
-    /// on their own ZDO, so whoever owns a boss can read every player's, wherever they're owned. CONTRACT with FMO - tell [release]
-    /// before changing a key: "rpg_class_level" (1..max), "rpg_class_points" (talent points spent), "rpg_class_maxlevel".
+    /// For FiresMonsters' group scaling (boss strength by group size AND player power): each player's class progress
+    /// on their own ZDO, so whoever owns a boss can read every player's, wherever they're owned. CONTRACT with FiresMonsters -
+    /// never change a key: "rpg_class_level" (1..max), "rpg_class_points" (talent points spent), "rpg_class_maxlevel".
     /// Absent / 0 = no RPGClasses or no class yet ("expected" for FMO). Written by the player's own client when a value changes
     /// (checked once a second); nothing on the dedicated server.
     /// </summary>

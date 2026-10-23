@@ -3,7 +3,7 @@ using UnityEngine.EventSystems;
 
 namespace FiresRPGClasses.UI
 {
-    /// <summary>0.1.152 [classes-ui]: the mouse wheel over the Paragon map steps the one-figure view (Fire 10-16).</summary>
+    /// <summary>The mouse wheel over the Paragon map steps the one-figure view.</summary>
     internal sealed class ParagonWheel : MonoBehaviour, IScrollHandler
     {
         internal ParagonView View;

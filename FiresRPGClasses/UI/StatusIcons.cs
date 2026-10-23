@@ -8,7 +8,7 @@ using UnityEngine;
 namespace FiresRPGClasses.UI
 {
     /// <summary>
-    /// Class buff / debuff icons (Fire 10-12, the placeholder-visuals audit's icon row): every status effect a class skill applies
+    /// Class buff / debuff icons: every status effect a class skill applies
     /// shows that skill's tree icon instead of Core's colour swatch. Core 0.2.404 asks StatusEffectManager.IconResolver first for
     /// any effect name; this resolver answers with ClassIcons.For(the skill that applies it), null (the swatch) for anything else.
     /// The effect -> skill map is RPGClasses' (it applies the effects by name), built from three places, first match wins:
@@ -81,7 +81,7 @@ namespace FiresRPGClasses.UI
         private static Sprite Resolve(string effectName)
         {
             if (effectName == null) return null;
-            // Fire 10-14: the effect's own family icon first (se_<Family>.png); the applying skill's icon only until it exists.
+            // The effect's own family icon first (se_<Family>.png); the applying skill's icon only until it exists.
             Sprite own = ClassIcons.ForEffect(effectName);
             if (own != null) return own;
             if (!Owner.TryGetValue(effectName, out string node)) return null;

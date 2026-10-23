@@ -6,7 +6,7 @@ using UnityEngine;
 namespace FiresRPGClasses.Combat
 {
     /// <summary>
-    /// 0.1.93 (Fire #11 batch 2b): the ally-bound actives. Core (0.2.399+) only carries the names - ClassOath, ClassLifeline20/30/40,
+    /// The ally-bound actives. Core (0.2.399+) only carries the names - ClassOath, ClassLifeline20/30/40,
     /// ClassSpiritLink15/20/25, each with SourceCharacter = the caster - given by AbilityRPCManager to each ally's owner. This kit acts
     /// there, on the buffed player's own peer. A share of damage moved to another player is sent as a routed Character.Damage
     /// marked with <see cref="SharedMark"/> (HitData.m_backstabBonus, serialized; backstabs never apply to players), so it is
@@ -26,6 +26,9 @@ namespace FiresRPGClasses.Combat
         private const float OathShare = 0.3f;
         private const float LifelineBelow = 0.3f;
         private const float LinkReach = 12f;
+        private const float OathDefaultSeconds = 20f;       // used when the node gives no duration
+        private const float LifelineDefaultSeconds = 15f;
+        private const float SpiritLinkDefaultSeconds = 8f;
 
         private static readonly int OathHash = "ClassOath".GetStableHashCode();
         private static readonly string[] LifelineByRank = { "ClassLifeline20", "ClassLifeline30", "ClassLifeline40" };
@@ -70,7 +73,7 @@ namespace FiresRPGClasses.Combat
         {
             Character ally = Ally(caster, target);
             if (ally == null) { (caster as Player)?.Message(MessageHud.MessageType.Center, node.DisplayName + ": no ally under the crosshair"); return false; }
-            float seconds = node.EffectDuration > 0f ? node.EffectDuration : 20f;
+            float seconds = node.EffectDuration > 0f ? node.EffectDuration : OathDefaultSeconds;
             bool ok = AbilityRPCManager.ApplySingleEffect(caster, ally, "ClassOath", seconds);
             Log($"{OathId}: bound to {ally.GetHoverName()} for {seconds:0} s: {ok}");
             return ok;
@@ -82,7 +85,7 @@ namespace FiresRPGClasses.Combat
             Character ally = target.TargetCharacter != null ? target.TargetCharacter : caster;
             if (ally.IsDead() || !ClassTargeting.IsPartyMember(caster, ally)) return false;
             int rank = Mathf.Clamp(DesignKit.RankOf(node), 1, LifelineByRank.Length);
-            float seconds = node.EffectDuration > 0f ? node.EffectDuration : 15f;
+            float seconds = node.EffectDuration > 0f ? node.EffectDuration : LifelineDefaultSeconds;
             bool ok = AbilityRPCManager.ApplySingleEffect(caster, ally, LifelineByRank[rank - 1], seconds);
             Log($"{LifelineId}: {LifelineByRank[rank - 1]} on {ally.GetHoverName()} for {seconds:0} s: {ok}");
             return ok;
@@ -93,8 +96,8 @@ namespace FiresRPGClasses.Combat
         {
             int rank = Mathf.Clamp(DesignKit.RankOf(node), 1, SpiritByRank.Length);
             float radius = node.Targeting.Radius > 0f ? node.Targeting.Radius : LinkReach;
-            float seconds = node.EffectDuration > 0f ? node.EffectDuration : 8f;
-            foreach (Player p in Player.GetAllPlayers())   // 0.1.108: who the link considers (R-1012Z: "1 party member")
+            float seconds = node.EffectDuration > 0f ? node.EffectDuration : SpiritLinkDefaultSeconds;
+            foreach (Player p in Player.GetAllPlayers())   // who the link considers (logged so a "nobody linked" report can be traced)
                 if (p != null) Log($"{SpiritId}: {p.GetPlayerName()} at {Vector3.Distance(p.transform.position, caster.transform.position):0.0} m, party {ClassTargeting.IsPartyMember(caster, p)}");
             int n = AbilityRPCManager.ApplyGroupBuff(caster, SpiritByRank[rank - 1], radius, seconds);
             PublishLink(caster, radius, seconds);
@@ -126,8 +129,8 @@ namespace FiresRPGClasses.Combat
         internal static void OnLocalHitTaken(Character victim, HitData hit)
         {
             Player me = Player.m_localPlayer;
-            // 0.1.108 (R-1012Z: the tester's share after armor was ~0.03 HP, too small to read): a forwarded share ARRIVING here is counted
-            // (the proof it crossed peers), before armor.
+            // A forwarded share ARRIVING here is counted before armor (the proof it crossed peers; after armor it can be too
+            // small to read).
             if (victim != null && victim == me && hit != null && hit.m_backstabBonus == SharedMark)
             {
                 SharesReceived++;
@@ -152,11 +155,10 @@ namespace FiresRPGClasses.Combat
             int link = Rank(seman, SpiritHash);
             if (link > 0)
             {
-                // 0.1.109 (R-1012AB: the BOT's split found nobody - on its own client the inviter isn't "party" yet, so the hit stayed 100%):
-                // the link's caster always counts as linked (it cast the link on this player), plus the party members in reach.
+                // On the linked player's own client the inviter may not be "party" yet, so the link's caster always counts as linked (it cast the link on this player), plus the party members in reach.
                 Character caster = Source(me, SpiritHash[link - 1]);
-                // 0.1.116 (R-1013Q: the bot 4.7 m away and "party True" at the cast, yet its hit stayed 100% - on the bot's own peer the
-                // caster reference and the party both came up empty): the caster's ZDO now lists who it linked; that list counts first.
+                // On the linked player's own peer the caster reference and the party can both come up empty, so the caster's ZDO
+                // lists who it linked; that list counts first.
                 string listed = LinkListFor(me);
                 Linked.Clear();
                 var why = _linkWhyLogged ? null : new System.Text.StringBuilder();
@@ -172,8 +174,8 @@ namespace FiresRPGClasses.Combat
                 if (!_linkWhyLogged)
                 {
                     _linkWhyLogged = true;
-                    // 0.1.117 (R-1013T: "linked: nobody in reach" on the tester with the bot 3.4 m off, listed and party; the bot's side unseen -
-                    // its profile drops Debug): the first split of each link, every candidate and why, at Info (once per link, not per hit).
+                    // The first split of each link, every candidate and why, at Info (once per link, not per hit) so the remote
+                    // side is visible even when its log drops Debug.
                     FiresRPGClassesPlugin.Log?.LogInfo($"[Classes] {SpiritId}: split check on {me.GetPlayerName()} (id {me.GetPlayerID()}), list {listed ?? "none"}:{why}");
                     Log($"{SpiritId}: on {me.GetPlayerName()}, caster {(caster != null ? caster.GetHoverName() : "unknown")}, ZDO list {listed ?? "none"}; linked: {(Linked.Count > 0 ? string.Join(", ", Linked.ConvertAll(p => p.GetPlayerName()).ToArray()) : "nobody in reach")}");
                 }
@@ -242,13 +244,13 @@ namespace FiresRPGClasses.Combat
             if (Time.time < _regenNext) return;
             _regenNext = Time.time + 1f;
             int link = Rank(seman, SpiritHash);
-            // 0.1.117: the link arriving on this peer (once per link, at Info - the bot's side of R-1013T was blind); the split check re-arms.
+            // The link arriving on this peer (once per link, at Info); the split check re-arms.
             if (link > 0 && !_hadLink) { _linkWhyLogged = false; FiresRPGClassesPlugin.Log?.LogInfo($"[Classes] {SpiritId}: {SpiritByRank[link - 1]} arrived on {me.GetPlayerName()}, from {(Source(me, SpiritHash[link - 1]) is Character s ? s.GetHoverName() : "unknown")}"); }
             _hadLink = link > 0;
             if (link > 0) AbilityHeals.Apply(Source(me, SpiritHash[link - 1]) ?? me, me, me.GetMaxHealth() * SpiritRegen[link - 1]);
         }
 
-        /// <summary>0.1.108, for ClassTest: forwarded shares (Oath / Spirit Link) that arrived on the local player, and their damage before armor.</summary>
+        /// <summary>For ClassTest: forwarded shares (Oath / Spirit Link) that arrived on the local player, and their damage before armor.</summary>
         public static int SharesReceived { get; private set; }
         public static float SharesReceivedDamage { get; private set; }
 

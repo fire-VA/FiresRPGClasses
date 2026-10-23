@@ -10,8 +10,7 @@ using UnityEngine;
 namespace FiresRPGClasses.Combat
 {
     /// <summary>
-    /// What an attribute point does (doc 12 §8; Fire 2026-09-29 22:4x chose the defaults in Tools\CLASS_TEST_PLAN.md §6 Q6).
-    /// Until 0.1.48 attributes were bought and saved but applied nowhere. Each row is a per-point value with a cap, bound in
+    /// What an attribute point does (design doc 12 §8). Each row is a per-point value with a cap, bound in
     /// the "Attributes" config section and synced from the server; the effects apply to the local player only (every client
     /// applies its own), through the hooks in this file and the shared ones in PassiveHooks. Preview() is the pure
     /// before -> after the Character view shows for points not yet confirmed.
@@ -35,7 +34,7 @@ namespace FiresRPGClasses.Combat
             public Stat Stat;
             public AttributeKind Attribute;
             public float PerPoint;
-            public float Cap;      // 0.1.131: the knee of SoftCap's curve (the old hard cap), not a ceiling
+            public float Cap;      // the knee of SoftCap's curve (the old hard cap), not a ceiling
             public float Limit;    // > 0: a true asymptote (SoftCap.Asymptote) - reductions that must never reach immunity / free
             public bool Percent;
             public string Label;
@@ -43,7 +42,7 @@ namespace FiresRPGClasses.Combat
             public float LastLogged = float.NaN;   // the effective value last logged (Debug, once per change)
         }
 
-        // Negative values reduce (stamina costs, elemental damage taken). 0.1.131 (Fire 10-14): Cap is the knee of the soft curve
+        // Negative values reduce (stamina costs, elemental damage taken). Cap is the knee of the soft curve
         // (SoftCap.Soft, rising forever); rows with a Limit approach it asymptotically instead (SoftCap.Asymptote).
         private static readonly Row[] Rows =
         {
@@ -71,31 +70,29 @@ namespace FiresRPGClasses.Combat
             {
                 string unit = row.Percent ? "%" : "";
                 row.Entry = config.Bind(Section, $"{row.Attribute} - {row.Label} per point", row.PerPoint,
-                    new ConfigDescription($"{row.Label} per {row.Attribute} point, in {(row.Percent ? "percent" : "points")}; full value up to "
-                        + $"the knee key below, diminishing returns past it. Default {row.PerPoint}{unit} (Fire, 2026-09-29). [Synced with Server]",
-                        new AcceptableValueRange<float>(-10f, 10f)));
+                    new ConfigDescription($"{row.Label} gained per {row.Attribute} point, in {(row.Percent ? "percent" : "points")}. [Synced with Server]",
+                        new AcceptableValueRange<float>(-10f, 10f), new ConfigurationManagerAttributes { IsAdvanced = true }));
                 string tail = row.Limit > 0f
-                    ? $"past it each point gives less and the total approaches the limit key ({row.Limit}{unit}) but never reaches it"
-                    : "past it each point gives less (logarithmic) but never nothing";
+                    ? "past it, gains shrink toward the limit"
+                    : "past it, gains shrink but never stop";
                 row.KneeEntry = config.Bind(Section, $"{row.Attribute} - {row.Label} knee", row.Cap,
-                    new ConfigDescription($"{row.Label}: full value up to this size ({row.Cap}{unit} by default, the old hard cap); "
-                        + tail + " (Fire 10-14). [Synced with Server]",
+                    new ConfigDescription($"{row.Label}: full value up to this total{unit}; " + tail + ". [Synced with Server]",
                         new AcceptableValueRange<float>(0f, 100000f), new ConfigurationManagerAttributes { IsAdvanced = true }));
                 if (row.Limit > 0f)
                     row.LimitEntry = config.Bind(Section, $"{row.Attribute} - {row.Label} limit", row.Limit,
-                        new ConfigDescription($"{row.Label}: the asymptote past the knee; the reduction never reaches it (default {row.Limit}{unit}). [Synced with Server]",
+                        new ConfigDescription($"{row.Label}: the total{unit} can approach but never reach this. [Synced with Server]",
                             new AcceptableValueRange<float>(1f, 99f), new ConfigurationManagerAttributes { IsAdvanced = true }));
             }
-            BalanceConfig.Bind(config);   // 0.1.131 [13 - Balance]: Fury, Monk combo, summon limits, cooldown reduction
+            BalanceConfig.Bind(config);   // [13 - Balance]: Fury, Monk combo, summon limits, cooldown reduction
             try
             {
                 _sync = new ConfigSync(FiresRPGClassesPlugin.PluginGUID + ".attributes")
                 {
                     DisplayName = FiresRPGClassesPlugin.PluginName + " attributes",
                     CurrentVersion = FiresRPGClassesPlugin.PluginVersion,
-                    // 10-13 config rule: a fixed constant, raised only when a synced key's name/type/meaning changes. 0.1.112 renamed the
-                    // section ("Attributes" -> "7 - Attributes"), so older clients can't sync these keys.
-                    MinimumRequiredVersion = "0.1.131",   // 0.1.131: caps became knees (a meaning change) + the knee/limit keys
+                    // A fixed constant, raised only when a synced key's name/type/meaning changes (last: caps became soft-curve
+                    // knees and the knee/limit keys were added), so older clients can't sync these keys.
+                    MinimumRequiredVersion = "0.1.131",
                     ModRequired = false,
                 };
                 foreach (Row row in Rows)
@@ -109,8 +106,8 @@ namespace FiresRPGClasses.Combat
         }
 
         /// <summary>
-        /// The effect of <paramref name="points"/> in the row's attribute: per point x points through SoftCap (sign kept). 0.1.131
-        /// (Fire 10-14): was Mathf.Clamp(raw, -Cap, Cap); identical below the knee, diminishing above it (asymptotic for reductions).
+        /// The effect of <paramref name="points"/> in the row's attribute: per point x points through SoftCap (sign kept):
+        /// linear below the knee, diminishing above it (asymptotic for reductions).
         /// </summary>
         private static float Value(Row row, int points) => Effective(row, Raw(row, points));
 
@@ -148,6 +145,14 @@ namespace FiresRPGClasses.Combat
             return effective;
         }
 
+        /// <summary>For ClassStatsApi rows: the attribute that drives a stat, and whether the stat reads in percent.</summary>
+        internal static bool RowInfo(Stat stat, out AttributeKind attribute, out bool percent)
+        {
+            Row row = RowFor(stat);
+            attribute = row != null ? row.Attribute : default; percent = row != null && row.Percent;
+            return row != null;
+        }
+
         /// <summary>A multiplier for a percent stat: +10 % -> 1.10, -6 % -> 0.94.</summary>
         public static float Factor(Stat stat) => 1f + Current(stat) / 100f;
 
@@ -169,7 +174,7 @@ namespace FiresRPGClasses.Combat
         }
 
         /// <summary>
-        /// Pure before -> after for the Character view ([classes-ui]): every stat a pending attribute point would change, from
+        /// Pure before -> after for the Character view: every stat a pending attribute point would change, from
         /// <paramref name="progress"/>'s bought points to those plus <paramref name="pending"/>. Nothing is applied.
         /// </summary>
         public static List<StatPreview> Preview(ClassProgressState progress, IReadOnlyDictionary<AttributeKind, int> pending)

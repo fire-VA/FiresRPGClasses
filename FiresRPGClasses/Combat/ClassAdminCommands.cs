@@ -9,13 +9,13 @@ using FiresRPGClasses.UI;
 namespace FiresRPGClasses.Combat
 {
     /// <summary>
-    /// Testing commands (Fire 10-01: "I will need a way to give myself XP so I can test all of the classes"), gated like
+    /// Testing commands (give yourself XP to try every class), gated like
     /// vanilla's cheats: isCheat, so they need devcommands, which a server only allows its admins. They act on the local
     /// character's class record through the paths play uses:
     /// - class_xp &lt;amount&gt;: ClassXp's grant (levels, talent and attribute points, the level-up message);
     /// - class_level &lt;n&gt;: the class level set outright; lowering it below what is spent refunds the trees;
     /// - class_ult_xp &lt;ultimateId|all&gt; &lt;amount&gt;: an ultimate's own XP, levelling it as its casts do;
-    /// - class_set &lt;archetype&gt; [front|back]: the bar's class, the way the Classes window picks it (0.1.82, [lead] for docs rows):
+    /// - class_set &lt;archetype&gt; [front|back]: the bar's class, the way the Classes window picks it:
     ///   the held weapon must allow it, and the answer names the weapons that do when it doesn't.
     /// Each prints the result to the console and logs it at Info.
     /// </summary>
@@ -33,7 +33,7 @@ namespace FiresRPGClasses.Combat
             new Terminal.ConsoleCommand("class_ult_xp", "[ultimateId|all] [amount] - give an ultimate XP, as its casts do (cheat)",
                 args => Run(args, "class_ult_xp", UltimateXpCommand), isCheat: true,
                 optionsFetcher: () => new List<string> { All }.Concat(UltimateCatalog.All.Select(u => u.Id).OrderBy(id => id)).ToList());
-            // 0.1.97 (FiresClassTest: a test row must not wait out a cooldown the last row started): a cheat, like the ones above.
+            // so a test need not wait out a cooldown an earlier one started: a cheat, like the ones above.
             new Terminal.ConsoleCommand("class_cooldown_reset", "[nodeId|all] - make a class skill (or every one) ready now (cheat)",
                 args => Run(args, "class_cooldown_reset", CooldownResetCommand), isCheat: true);
             new Terminal.ConsoleCommand("class_set", "[archetype] [front|back] - choose the bar's class, as the Classes window does (cheat)",

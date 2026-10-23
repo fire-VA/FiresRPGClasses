@@ -8,8 +8,7 @@ using UnityEngine;
 namespace FiresRPGClasses.UI
 {
     /// <summary>
-    /// The Paragon tab's only door to the data: FiresRPGClasses.Paragon.ParagonUi ([wishbone], contract in
-    /// Tools\RPG_PARAGON_TALENT_PLAN.md §9), read by reflection so the tab builds and shows "not available" before that API
+    /// The Paragon tab's only door to the data: FiresRPGClasses.Paragon.ParagonUi, read by reflection so the tab builds and shows "not available" before that API
     /// exists. Every view field is read by name; a missing field reads as its default and is logged once.
     /// </summary>
     internal static class ParagonSource

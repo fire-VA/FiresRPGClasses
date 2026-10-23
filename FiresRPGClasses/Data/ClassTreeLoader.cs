@@ -96,9 +96,9 @@ namespace FiresRPGClasses.Data
 
         /// <summary>
         /// Writes the bundled copy on first run so a fresh install has trees and an admin has a file to edit. A file on disk
-        /// is the admin's and stays, unless the trees this version ships are a newer revision (0.1.72: the Druid and
-        /// Necromancer trees never reached a file seeded before them). Then the bundled trees replace it
-        /// (0.1.161: no .bak copy is kept), said once at Warning.
+        /// is the admin's and stays, unless the trees this version ships are a newer revision (so trees added later
+        /// still reach a file seeded before them). Then the bundled trees replace it
+        /// (no .bak copy is kept), said once at Warning.
         /// </summary>
         private static void SeedOrUpgradeFile()
         {
@@ -116,7 +116,7 @@ namespace FiresRPGClasses.Data
                 int onDisk = RevisionOf(File.ReadAllText(path));
                 int shipped = RevisionOf(bundled);
                 if (onDisk >= shipped) return;
-                // 0.1.161 (Fire 10-15: no backup data on the rig): no .r<old>.bak copy is kept any more
+                // No .r<old>.bak copy is kept
                 File.WriteAllText(path, bundled);
                 Debug.LogWarning($"[ClassTrees] {FileName} on disk was revision {onDisk}, older than this version's {shipped}: "
                     + "replaced with the bundled trees (no backup copy kept).");

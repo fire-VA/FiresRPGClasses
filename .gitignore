@@ -51,3 +51,12 @@ vapieces
 # OS noise
 Thumbs.db
 desktop.ini
+# Rig-only test commands: compiled only when present (the csproj defines FIRES_TESTS), never published
+FiresRPGClasses/Paragon/RpgParagonTest.cs
+FiresRPGClasses/UI/ClassesUiDump.cs
+
+# Asset bundles (extensionless) and per-host upload folders
+firesmovementclips
+firesrpgclassesui
+hexium/
+*.pre_cleanup_*.md

@@ -8,7 +8,7 @@ using UnityEngine;
 namespace FiresRPGClasses.Combat
 {
     /// <summary>
-    /// Gap batch 1 (Tools\CLASS_KIT_DESIGN_GAPS.md): the placed skills. Fire's answers: real lingering zones where you aimed
+    /// Gap batch 1 (Tools\CLASS_KIT_DESIGN_GAPS.md): the placed skills. Design rules: real lingering zones where you aimed
     /// (Core's ClassZones; anyone entering or staying is affected), objects are a coloured ground ring + vanilla FX, and an
     /// unstated number follows the default rule. A zone's effect is re-applied every tick for a little over a tick, so it lasts
     /// while you stay inside and falls off soon after you leave. Numbers are the node's yaml values at the caster's rank.
@@ -27,7 +27,7 @@ namespace FiresRPGClasses.Combat
         private const float LingerSeconds = 1.5f;
 
         private const float WrathLightning = 80f;
-        private const float WrathHoly = 40f;   // 0.1.139: holy (blunt + half again as spirit), was spirit
+        private const float WrathHoly = 40f;   // holy (blunt + half again as spirit)
         private const int WrathTargets = 5;
 
         private static readonly string[] WardByRank =
@@ -65,7 +65,7 @@ namespace FiresRPGClasses.Combat
             ClassSkillKit.Register(GraveChillId, GraveChill);
         }
 
-        // ---- the placed ultimates (Fire: the tree rank picks the value, the ultimate level scales it 50% -> 100%) ----
+        // ---- the placed ultimates (the tree rank picks the value, the ultimate level scales it 50% -> 100%) ----
 
         private const string BeaconId = "paladin_beacon_of_light";
         private const string FirestormId = "mage_firestorm";
@@ -87,8 +87,8 @@ namespace FiresRPGClasses.Combat
 
         private static readonly System.Collections.Generic.List<PendingVolley> Volleys = new System.Collections.Generic.List<PendingVolley>();
 
-        /// <summary>Fire (popup 2026-09-28 21:3x): 50% of the tree rank's value at ultimate level 1, 100% at level 100.</summary>
-        /// <summary>0.1.139 (Fire 10-14, EARLY_MAGIC_GEAR_DESIGN §9.5 extended to the class kit): "holy" damage = the amount as blunt
+        /// <summary>50% of the tree rank's value at ultimate level 1, 100% at level 100.</summary>
+        /// <summary>(EARLY_MAGIC_GEAR_DESIGN §9.5 extended to the class kit): "holy" damage = the amount as blunt
         /// plus half again as spirit. Spirit alone does nothing to most creatures (vanilla: only undead and ghosts take it), so a
         /// holy hit lands on everything and undead take 1.5x.</summary>
         internal static void AddHoly(HitData hit, float amount)
@@ -129,7 +129,7 @@ namespace FiresRPGClasses.Combat
             float share = node.Value("heal", DesignKit.RankOf(node)) * UltimateScale(node);
             bool ok = Zone(node, caster, target, 8f, 10f, ZoneKind.Helpful, "vfx_HealthUpgrade", 2f,
                 ally => AbilityHeals.Apply(caster, ally, ally.GetMaxHealth() * share));
-            // 0.1.139 (Fire 10-14): the "Searing Beacon" morph also burns enemies inside for 10 holy damage a second (10 blunt + 5
+            // The "Searing Beacon" morph also burns enemies inside for 10 holy damage a second (10 blunt + 5
             // spirit), over the same circle and time. Only while that morph is slotted and unlocked (ultimate level 25).
             if (ok && SlottedMorph(BeaconId) == SearingBeaconMorph)
             {
@@ -257,7 +257,7 @@ namespace FiresRPGClasses.Combat
             {
                 SmokeLeaving smoke = SmokeWatch[i];
                 bool over = smoke.Caster == null || now >= smoke.Until;
-                // 0.1.119 (perf audit: Inside.ToList() allocated a list every frame while a cloud was up): a reused buffer.
+                // A reused buffer: Inside.ToList() would allocate a list every frame while a cloud is up.
                 SmokeBuffer.Clear(); SmokeBuffer.AddRange(smoke.Inside);
                 foreach (Character ally in SmokeBuffer)
                 {
@@ -327,13 +327,13 @@ namespace FiresRPGClasses.Combat
                 AbilityRPCManager.SpawnFX(enemy.transform.position, "fx_Lightning");
                 HitData hit = HitFrom(caster, enemy);
                 hit.m_damage.m_lightning = WrathLightning;
-                AddHoly(hit, WrathHoly);   // 0.1.139: 40 holy = 40 blunt + 20 spirit (was 40 spirit: nothing on non-undead)
+                AddHoly(hit, WrathHoly);   // 40 holy = 40 blunt + 20 spirit (spirit alone does nothing to non-undead)
                 enemy.Damage(hit);
             }
             return true;
         }
 
-        // ---- Druid / Necromancer (0.1.80, Fire 10-08: build the "Not yet implemented" talents, group 3) -----------------------
+        // ---- Druid / Necromancer talents ---------------------------------------------------------------------------------------
         // Core has 20 / 30 / 60% slows; a rank's slow takes the strongest preset not above it (45% -> 30%, 25% -> 20%).
         private const string RootsId = "druid_entangling_roots";
         private const string ThornfieldId = "druid_thornfield";

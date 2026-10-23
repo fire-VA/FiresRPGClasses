@@ -76,7 +76,7 @@ namespace FiresRPGClasses.Integration
                         FiresRPGClassesPlugin.Log.LogDebug($"[LoreRewards] GiveClassXP {xp}: granted {ClassXp.GrantFromLore(xp, "lorebook")}");
                     break;
                 case "GrantAttributePoints":
-                    // Fire 10-09: lore books may grant attribute points. Core 0.2.384's bonus field counts into the spendable
+                    // Lore books may grant attribute points. Core's bonus field counts into the spendable
                     // total (capped at ClassProgressState.MaxBonusAttributePoints); the record is saved like after a spend.
                     if (args.Length > 0 && int.TryParse(args[0], out int pts))
                     {

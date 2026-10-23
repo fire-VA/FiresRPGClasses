@@ -7,7 +7,7 @@ using UnityEngine;
 namespace FiresRPGClasses.Combat
 {
     /// <summary>
-    /// 0.1.93 (Fire #11 batch 2b): the two movement actives. Both move ONLY the local player (their own peer owns the body),
+    /// The two movement actives. Both move ONLY the local player (their own peer owns the body),
     /// one step per frame from ClassCombatDriver; hits on enemies go through Character.Damage (routed to each victim's owner)
     /// and Core's knockdown preset.
     /// - Breakwall (Tank): charge up to 10 m along the aim; every enemy within 1.5 m of the path is hit once for {blunt} blunt
@@ -104,8 +104,8 @@ namespace FiresRPGClasses.Combat
                 return;
             }
             Vector3 from = me.transform.position;
-            // 0.1.98 (R-1012I: "charged 0.0 m"): the player's own FixedUpdate writes the body's velocity from its move input, so a
-            // velocity set here never held. The charge now moves the body a step a frame, held to the ground under it.
+            // the player's own FixedUpdate writes the body's velocity from its move input, so a velocity set here would never
+            // hold. The charge moves the body a step a frame, held to the ground under it.
             Vector3 next = me.transform.position + _chargeDir * ChargeSpeed * Time.deltaTime;
             if (ZoneSystem.instance != null && ZoneSystem.instance.GetSolidHeight(next, out float ground)) next.y = Mathf.Max(ground, next.y - 0.5f);
             me.transform.position = next;
@@ -114,10 +114,8 @@ namespace FiresRPGClasses.Combat
             foreach (Character c in Character.GetAllCharacters())
             {
                 if (c == null || c.IsDead() || ChargeHit.Contains(c) || !ClassTargeting.IsEnemyTarget(me, c)) continue;
-                // 0.1.115 (R-1013P: a Greydwarf 5.6 m ahead, 0.8 m off the line, "charge over, 0 hit"): the whole step this frame is swept
-                // (a long frame or the body shoving the target aside skipped it when only the end point was checked), on the flat.
-                // 0.1.118 (R-1013W: "closest miss Greydwarf at 1.9 m off the path" - centre to centre; its body overlapped the charge): the
-                // target's own radius counts, so a charge "through enemies" hits whatever its path touches.
+                // the whole step this frame is swept on the flat (checking only the end point misses targets on a long frame or
+                // when the body shoves the target aside). The target's own radius counts, so a charge "through enemies" hits whatever its path touches.
                 float off = FlatDistanceToSegment(c.transform.position, from, next) - c.GetRadius();
                 if (off > ChargeHitReach) { if (off < _closestMiss) { _closestMiss = off; _closestMissName = c.GetHoverName(); } continue; }
                 ChargeHit.Add(c);
@@ -165,7 +163,7 @@ namespace FiresRPGClasses.Combat
             if (_chargeUntil >= Time.time && victim == Player.m_localPlayer && hit != null) hit.m_damage.Modify(ChargeTaken);
         }
 
-        /// <summary>0.1.107, for ClassTest (R-1012P: health read-backs on the subjects drifted): the last charge's hits, the last
+        /// <summary>For ClassTest (health read-backs are unreliable): the last charge's hits, the last
         /// Thousand Steps' strikes - the skills' own counts.</summary>
         public static int LastChargeHits { get; private set; }
         private static float _closestMiss = float.MaxValue;

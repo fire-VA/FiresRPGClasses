@@ -79,7 +79,7 @@
       <Private>False</Private>
     </Reference>
     <Reference Include="FiresUnifiedCore">
-      <HintPath>..\..\FiresUnifiedCore\FiresUnifiedCore\bin\Release\FiresUnifiedCore.dll</HintPath>
+      <HintPath>..\..\_stage_generator\core606\FiresUnifiedCore_0.2.606_scratch.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Newtonsoft.Json">
@@ -148,6 +148,18 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Ascend.cs" />
+    <Compile Include="ClassStatsApi.cs" />
+    <Compile Include="Paragon\Effects\ParagonEffectSets.cs" />
+    <Compile Include="Paragon\Effects\CraftBatch1.cs" />
+    <Compile Include="Paragon\Effects\CraftBatch2.cs" />
+    <Compile Include="Paragon\Effects\CraftBatch3.cs" />
+    <Compile Include="Paragon\Effects\CraftSlottable1.cs" />
+    <Compile Include="Paragon\Effects\CraftSlottable2.cs" />
+    <Compile Include="Paragon\Effects\FitnessSlottable.cs" />
+    <Compile Include="Paragon\Effects\CraftBatch4.cs" />
+    <Compile Include="Paragon\Effects\Warfare.cs" />
+    <Compile Include="Paragon\Effects\WarfareHeals.cs" />
+    <Compile Include="Paragon\Effects\FitnessPassive.cs" />
     <Compile Include="Combat\PerfProbe.cs" />
     <Compile Include="Paragon\ParagonCatalog.cs" />
     <Compile Include="Paragon\ParagonEffects.cs" />
@@ -251,7 +263,6 @@
     <Compile Include="UI\SkillsView.cs" />
     <Compile Include="UI\SkillsButtonPatch.cs" />
     <Compile Include="UI\SkillsDialogSkin.cs" />
-    <Compile Include="UI\ClassesUiDump.cs" />
     <Compile Include="UI\ClassesPanelHandles.cs" />
     <Compile Include="UI\ClassesBarDragHandler.cs" />
     <Compile Include="UI\ClassesBarWeaponDrop.cs" />
@@ -282,7 +293,7 @@
          by the name RootNamespace.Folder.File, so moving or renaming either breaks the seed. -->
     <EmbeddedResource Include="Data\classes-trees.yaml" />
     <EmbeddedResource Include="Data\paragon-trees.yaml" />
-    <!-- 10-14: status-effect family icons from [classes-ui] (se_<Family>.png); Tools\SE_ICON_INVENTORY.md -->
+    <!-- Status-effect family icons (se_<Family>.png), one per effect family. -->
     <EmbeddedResource Include="Icons\Effects\*.png" />
     <EmbeddedResource Include="Icons\Items\*.png" />
     <EmbeddedResource Include="firesrpgclassesui" />
@@ -665,4 +676,12 @@
     <EmbeddedResource Include="Icons\Crests\crest_necromancer.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- Rig-only test commands (rpgclasses_paragon_test, the UI dump): these files stay out of the public repo. When they are present the build includes them and defines FIRES_TESTS. -->
+  <PropertyGroup Condition="Exists('Paragon\RpgParagonTest.cs')">
+    <DefineConstants>$(DefineConstants);FIRES_TESTS</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup Condition="Exists('Paragon\RpgParagonTest.cs')">
+    <Compile Include="Paragon\RpgParagonTest.cs" />
+    <Compile Include="UI\ClassesUiDump.cs" />
+  </ItemGroup>
 </Project>

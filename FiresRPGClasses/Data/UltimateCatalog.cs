@@ -120,7 +120,7 @@ namespace FiresRPGClasses.Data
                 Definitions[definition.Id] = definition;
             foreach (UltimateDefinition definition in HybridDefinitions())
                 Definitions[definition.Id] = definition;
-            // 0.1.104 (R-1012L: tank_hold_the_line, paladin_beacon_of_light, ... "UltimateCatalog has no ..."): every ultimate the class
+            // Every ultimate the class
             // trees place and the hand-written list above doesn't cover, from its yaml "ultimates:" entry (cost, cooldown, unlock, morphs).
             int fromTree = 0;
             foreach (ClassTreeNode node in ClassTrees.AllNodes)
@@ -231,7 +231,7 @@ namespace FiresRPGClasses.Data
                 new UltimateCost(UltimateResource.Health, 25f, true), 240f,
                 "Avatar of Mercy", "Lifebloom", "Avatar of Sacrifice", "Martyr's Grace");
 
-            // 0.1.83 (round 22: "could not slot it (ultimate)"): the Druid and Necromancer ultimates, from the yaml's ultimates list
+            // The Druid and Necromancer ultimates, from the yaml's ultimates list
             // (costs, cooldowns, unlock levels, morph names). Their handlers are DruidNecroKit's / PossessionKit's.
             yield return Unlocks(Capstone("druid_primal_avatar", "Primal Avatar", ArchetypeClass.Druid,
                 new UltimateCost(UltimateResource.Eitr, 60f), 180f,
