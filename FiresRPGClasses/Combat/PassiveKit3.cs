@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using FiresCore.Npc.Archetypes;
 using FiresCore.Npc.Archetypes.StatusEffects;
 using FiresRPGClasses.Data;
+using FiresRPGClasses.State;
 using UnityEngine;
 
 namespace FiresRPGClasses.Combat
@@ -48,93 +49,125 @@ namespace FiresRPGClasses.Combat
         private const float IgniteSeconds = 3f;
         private const float OverflowSeconds = 10f;
 
-        private static readonly Dictionary<string, float> A = new Dictionary<string, float>();
-        private static readonly Dictionary<string, float> B = new Dictionary<string, float>();
-        private static readonly HashSet<Character> Poisoned = new HashSet<Character>();
-        private static readonly HashSet<Character> Marked = new HashSet<Character>();
+        // 0.1.214 ([lead] / [ghost] step 3b, the Studio god clone's passives): this kit's state per BODY - the local player one instance
+        // read from its record exactly as before, a registered class body (ClassBodies) its own from ITS record and gear. Every hook reads
+        // the state of the body it is about (the attacker, the victim, the healer).
+        private sealed class State
+        {
+            public readonly Dictionary<string, float> A = new Dictionary<string, float>();
+            public readonly Dictionary<string, float> B = new Dictionary<string, float>();
+            public readonly HashSet<Character> Poisoned = new HashSet<Character>();
+            public readonly HashSet<Character> Marked = new HashSet<Character>();
+            public float NextTick, NextIgnite;
+            public bool UnseenSpent;
+            public float StealthUntil = -1f;
+            public bool On(string id) => A.ContainsKey(id);
+            public float V(string id) => A.TryGetValue(id, out float v) ? v : 0f;
+            public float W(string id) => B.TryGetValue(id, out float v) ? v : 0f;
+        }
+        private static readonly State S_local = new State();
+        private static readonly Dictionary<Character, State> S_bodies = new Dictionary<Character, State>();
         private static readonly List<Character> Gone = new List<Character>();
-        private static float _nextTick, _nextIgnite;
-        private static bool _unseenSpent;
-        private static float _stealthUntil = -1f;
+
+        private static State Of(Character c)
+        {
+            if (c == null) return null;
+            if (c == Player.m_localPlayer) return S_local;
+            if (!ClassBodies.IsRegistered(c)) return null;
+            if (!S_bodies.TryGetValue(c, out State s)) S_bodies[c] = s = new State();
+            return s;
+        }
 
         public static void RegisterAll()
         {
             foreach (string id in Ids) ClassSkillKit.RegisterPassive(id);
         }
 
-        private static bool IsLocal(Character c) => c != null && c == Player.m_localPlayer;
-        private static bool On(string id) => A.ContainsKey(id);
-        private static float V(string id) => A.TryGetValue(id, out float v) ? v : 0f;
-        private static float W(string id) => B.TryGetValue(id, out float v) ? v : 0f;
-        public static bool IsOn(string id, out float value) => A.TryGetValue(id, out value);
+        public static bool IsOn(string id, out float value) => S_local.A.TryGetValue(id, out value);
         public static IReadOnlyList<string> Handled => Ids;
         private static void Log(string s) => FiresRPGClassesPlugin.Log?.LogDebug("[Classes] " + s);
 
-        private static void Read(string id, string key1, string key2)
+        private static void Read(State st, ClassPlayerData record, Humanoid body, string id, string key1, string key2)
         {
             ClassTreeNode node = ClassTrees.Node(id);
-            if (node == null || PassiveLoadout.Status(node) != PassiveStatus.Active) return;
-            int rank = DesignKit.RankOf(node);
-            A[id] = key1 == null ? 1f : node.Value(key1, rank);
-            if (key2 != null) B[id] = node.Value(key2, rank);
+            if (node == null) return;
+            bool local = record == null;
+            if ((local ? PassiveLoadout.Status(node) : PassiveLoadout.Status(node, record, body)) != PassiveStatus.Active) return;
+            int rank = local ? DesignKit.RankOf(node) : DesignKit.RankOf(node, record);
+            st.A[id] = key1 == null ? 1f : node.Value(key1, rank);
+            if (key2 != null) st.B[id] = node.Value(key2, rank);
+        }
+
+        private static void TickBody(State st, Character me, ClassPlayerData record)
+        {
+            if (Time.time < st.NextTick) return;
+            st.NextTick = Time.time + ReadInterval;
+            st.A.Clear(); st.B.Clear();
+            Humanoid h = me as Humanoid;
+            Read(st, record, h, PainFuels, "fury", null);
+            Read(st, record, h, Unseen, null, null);
+            Read(st, record, h, PlagueBurst, null, null);
+            Read(st, record, h, Deadeye, "crit", null);
+            Read(st, record, h, Apex, null, null);
+            Read(st, record, h, Frostbite, "slow", "dur");
+            Read(st, record, h, Ignite, "dps", null);
+            Read(st, record, h, Overflow, "cap", null);
+            Read(st, record, h, Virulence, "stacks", null);
+
+            if (!StatusEffectManager.HasEffect(me, StatusEffectManager.EFFECT_STEALTH)) st.UnseenSpent = false;
+            Burst(st, me);
+            JumpMark(st, me);
         }
 
         public static void Tick()
         {
             Player me = Player.m_localPlayer;
-            if (me == null || me.IsDead()) { A.Clear(); B.Clear(); Poisoned.Clear(); Marked.Clear(); return; }
-            if (Time.time < _nextTick) return;
-            _nextTick = Time.time + ReadInterval;
-            A.Clear(); B.Clear();
-            Read(PainFuels, "fury", null);
-            Read(Unseen, null, null);
-            Read(PlagueBurst, null, null);
-            Read(Deadeye, "crit", null);
-            Read(Apex, null, null);
-            Read(Frostbite, "slow", "dur");
-            Read(Ignite, "dps", null);
-            Read(Overflow, "cap", null);
-            Read(Virulence, "stacks", null);
-
-            if (!StatusEffectManager.HasEffect(me, StatusEffectManager.EFFECT_STEALTH)) _unseenSpent = false;
-            Burst(me);
-            JumpMark(me);
+            if (me == null || me.IsDead()) { S_local.A.Clear(); S_local.B.Clear(); S_local.Poisoned.Clear(); S_local.Marked.Clear(); }
+            else TickBody(S_local, me, null);
+            foreach (Character body in ClassBodies.Bodies())
+            {
+                State st = Of(body);
+                if (st == null) continue;
+                if (body.IsDead()) { st.A.Clear(); st.B.Clear(); st.Poisoned.Clear(); st.Marked.Clear(); continue; }
+                TickBody(st, body, ClassBodies.Record(body));
+            }
+            foreach (Character gone in new List<Character>(S_bodies.Keys)) if (gone == null || !ClassBodies.IsRegistered(gone)) S_bodies.Remove(gone);
         }
 
-        private static void Burst(Player me)
+        private static void Burst(State st, Character me)
         {
-            if (Poisoned.Count == 0) return;
-            foreach (Character c in Poisoned) if (c != null && !c.IsDead()) { int s = Stacks(c); if (s > 0) LastStacks[c] = s; }
+            if (st.Poisoned.Count == 0) return;
+            foreach (Character c in st.Poisoned) if (c != null && !c.IsDead()) { int s = Stacks(c); if (s > 0) LastStacks[c] = s; }
             Gone.Clear();
-            foreach (Character c in Poisoned) if (c == null || c.IsDead()) Gone.Add(c);
+            foreach (Character c in st.Poisoned) if (c == null || c.IsDead()) Gone.Add(c);
             foreach (Character dead in Gone)
             {
-                Poisoned.Remove(dead);
+                st.Poisoned.Remove(dead);
                 int half = dead != null && LastStacks.TryGetValue(dead, out int had) ? Mathf.Max(1, had / 2) : 1;
                 if (dead != null) LastStacks.Remove(dead);
-                if (dead == null || !On(PlagueBurst)) continue;
+                if (dead == null || !st.On(PlagueBurst)) continue;
                 Vector3 at = dead.transform.position;
                 int n = 0;
                 foreach (Character c in Character.GetAllCharacters())
                 {
                     if (c == null || c == dead || c.IsDead() || !ClassTargeting.IsEnemyTarget(me, c)) continue;
                     if (Vector3.Distance(c.transform.position, at) > BurstReach) continue;
-                    if (ApplyPoison(me, c, BurstPoisonSeconds)) { Poisoned.Add(c); n++; if (half > 1) SetStacks(c, half); }
+                    if (ApplyPoison(me, c, BurstPoisonSeconds)) { st.Poisoned.Add(c); n++; if (half > 1) SetStacks(c, half); }
                 }
                 AbilityRPCManager.SpawnFX(at, "vfx_blob_attack");
                 Log($"{PlagueBurst}: {dead.GetHoverName()} burst, {n} poisoned");
             }
         }
 
-        private static void JumpMark(Player me)
+        private static void JumpMark(State st, Character me)
         {
-            if (Marked.Count == 0) return;
+            if (st.Marked.Count == 0) return;
             Gone.Clear();
-            foreach (Character c in Marked) if (c == null || c.IsDead()) Gone.Add(c);
+            foreach (Character c in st.Marked) if (c == null || c.IsDead()) Gone.Add(c);
             foreach (Character dead in Gone)
             {
-                Marked.Remove(dead);
-                if (dead == null || !On(Apex)) continue;
+                st.Marked.Remove(dead);
+                if (dead == null || !st.On(Apex)) continue;
                 Character next = null; float best = ApexJump;
                 foreach (Character c in Character.GetAllCharacters())
                 {
@@ -144,7 +177,7 @@ namespace FiresRPGClasses.Combat
                 }
                 if (next != null && AbilityRPCManager.ApplySingleEffect(me, next, StatusEffectManager.EFFECT_HUNTERS_MARK, ApexMarkSeconds))
                 {
-                    Marked.Add(next);
+                    st.Marked.Add(next);
                     Log($"{Apex}: mark jumped from {dead.GetHoverName()} to {next.GetHoverName()} ({best:0.0} m)");
                 }
             }
@@ -168,13 +201,14 @@ namespace FiresRPGClasses.Combat
 
         private static void SetStacks(Character c, int n) { Look(); if (_setStacks != null && OwnedHere(c)) _setStacks.Invoke(null, new object[] { c, n }); }
 
-        /// <summary>The local player's poison on a target: stacked to Virulence's cap where the target is owned here, else Core's routed poison.</summary>
+        /// <summary>A class body's poison on a target: stacked to ITS Virulence cap where the target is owned here, else Core's routed poison.</summary>
         internal static bool ApplyPoison(Character source, Character target, float seconds)
         {
             Look();
-            if (On(Virulence) && _applyStack != null && OwnedHere(target))
+            State st = Of(source);
+            if (st != null && st.On(Virulence) && _applyStack != null && OwnedHere(target))
             {
-                _applyStack.Invoke(null, new object[] { target, source, seconds, PoisonTickDamage, Mathf.RoundToInt(V(Virulence)) });
+                _applyStack.Invoke(null, new object[] { target, source, seconds, PoisonTickDamage, Mathf.RoundToInt(st.V(Virulence)) });
                 return true;
             }
             return AbilityRPCManager.ApplySingleEffect(source, target, StatusEffectManager.EFFECT_POISON, seconds);
@@ -183,43 +217,46 @@ namespace FiresRPGClasses.Combat
         /// <summary>For FiresClassTest: the local player's poison on a target through the same path as the poisoned blade (Virulence's cap).</summary>
         public static bool PoisonForTest(Character target, float seconds) => Player.m_localPlayer != null && ApplyPoison(Player.m_localPlayer, target, seconds);
 
-        /// <summary>CoreSkillKit's poisoned blade hit something: Plague Burst watches it.</summary>
-        internal static void NotePoisoned(Character c) { if (c != null) Poisoned.Add(c); }
+        /// <summary>CoreSkillKit's poisoned blade (the local player's) hit something: Plague Burst watches it.</summary>
+        internal static void NotePoisoned(Character c) { if (c != null) S_local.Poisoned.Add(c); }
 
-        /// <summary>Damage the local player takes: Pain Fuels Me.</summary>
+        /// <summary>Damage a class body takes: Pain Fuels Me (into that body's own fury).</summary>
         internal static void OnLocalHitTaken(Character victim, HitData hit)
         {
-            if (IsLocal(victim) && hit != null && On(PainFuels) && hit.GetTotalDamage() > 0f) PassiveKit.AddFury(Mathf.RoundToInt(V(PainFuels)));
+            State st = Of(victim);
+            if (st != null && hit != null && st.On(PainFuels) && hit.GetTotalDamage() > 0f) PassiveKit.AddFury(victim, Mathf.RoundToInt(st.V(PainFuels)));
         }
 
-        /// <summary>The local player's hit being sent: Unseen, Deadeye, Apex Predator, Frostbite, Ignite.</summary>
+        /// <summary>A class body's hit being sent: Unseen, Deadeye, Apex Predator, Frostbite, Ignite.</summary>
         internal static void OnLocalHitSending(Character victim, HitData hit)
         {
-            Player me = Player.m_localPlayer;
-            if (me == null || victim == null || victim == me || hit == null || hit.m_attacker != me.GetZDOID()) return;
+            if (victim == null || hit == null) return;
+            Character me = hit.GetAttacker();
+            State st = Of(me);
+            if (st == null || victim == me || hit.m_attacker != me.GetZDOID()) return;
 
-            if (On(Unseen) && StatusEffectManager.HasEffect(me, StatusEffectManager.EFFECT_STEALTH))
+            if (st.On(Unseen) && StatusEffectManager.HasEffect(me, StatusEffectManager.EFFECT_STEALTH))
             {
                 hit.m_damage.Modify(2f);
-                if (!_unseenSpent)
+                if (!st.UnseenSpent)
                 {
-                    _unseenSpent = true;
+                    st.UnseenSpent = true;
                     StatusEffect se = me.GetSEMan().GetStatusEffect(StatusEffectManager.EFFECT_STEALTH.GetStableHashCode());
-                    _stealthUntil = se != null ? Time.time + se.GetRemaningTime() : -1f;
+                    st.StealthUntil = se != null ? Time.time + se.GetRemaningTime() : -1f;
                 }
             }
-            if (On(Deadeye) && hit.m_ranged && PassiveKit.LastShotFull && Random.value < V(Deadeye)) hit.m_damage.Modify(2f);
-            if (On(Apex) && StatusEffectManager.HasEffect(victim, StatusEffectManager.EFFECT_HUNTERS_MARK))
+            if (st.On(Deadeye) && hit.m_ranged && me == Player.m_localPlayer && PassiveKit.LastShotFull && Random.value < st.V(Deadeye)) hit.m_damage.Modify(2f);
+            if (st.On(Apex) && StatusEffectManager.HasEffect(victim, StatusEffectManager.EFFECT_HUNTERS_MARK))
             {
                 hit.m_damage.Modify(ApexBonus);
-                Marked.Add(victim);
+                st.Marked.Add(victim);
             }
-            if (On(Frostbite) && hit.m_damage.m_frost > 0f)
-                AbilityRPCManager.ApplySingleEffect(me, victim, StatusEffectManager.EFFECT_CLASS_SLOW20, Mathf.Max(0.5f, W(Frostbite)));
-            if (On(Ignite) && hit.m_damage.m_fire > 0f && hit.m_skill == Skills.SkillType.ElementalMagic && Time.time >= _nextIgnite)
+            if (st.On(Frostbite) && hit.m_damage.m_frost > 0f)
+                AbilityRPCManager.ApplySingleEffect(me, victim, StatusEffectManager.EFFECT_CLASS_SLOW20, Mathf.Max(0.5f, st.W(Frostbite)));
+            if (st.On(Ignite) && hit.m_damage.m_fire > 0f && hit.m_skill == Skills.SkillType.ElementalMagic && Time.time >= st.NextIgnite)
             {
-                _nextIgnite = Time.time + 1f;
-                float dps = V(Ignite);
+                st.NextIgnite = Time.time + 1f;
+                float dps = st.V(Ignite);
                 ClassZones.ZoneAt(me, victim.transform.position, IgniteRadius, IgniteSeconds, ZoneKind.Harmful, c =>
                 {
                     var burn = new HitData { m_point = c.GetCenterPoint() };
@@ -230,25 +267,31 @@ namespace FiresRPGClasses.Combat
             }
         }
 
-        /// <summary>After the Unseen hit: Stealth is put back for the time it had left (the first hit only).</summary>
+        /// <summary>After the Unseen hit: Stealth is put back for the time it had left (the first hit only), each body.</summary>
         public static void LateTick()
         {
-            if (_stealthUntil < 0f) return;
-            Player me = Player.m_localPlayer;
-            float left = _stealthUntil - Time.time;
-            _stealthUntil = -1f;
+            LateTickBody(S_local, Player.m_localPlayer);
+            foreach (var kv in S_bodies) LateTickBody(kv.Value, kv.Key);
+        }
+
+        private static void LateTickBody(State st, Character me)
+        {
+            if (st.StealthUntil < 0f) return;
+            float left = st.StealthUntil - Time.time;
+            st.StealthUntil = -1f;
             if (me == null || left <= 0.2f || StatusEffectManager.HasEffect(me, StatusEffectManager.EFFECT_STEALTH)) return;
             AbilityRPCManager.ApplySelfBuff(me, StatusEffectManager.EFFECT_STEALTH, left);
             Log($"{Unseen}: first hit from Stealth kept it ({left:0.0} s left)");
         }
 
-        /// <summary>A class heal by the local player (AbilityHeals.Apply prefix): Overflow's ward from the overheal.</summary>
+        /// <summary>A class heal by a class body (AbilityHeals.Apply prefix): Overflow's ward from the overheal.</summary>
         internal static void OnLocalHeal(Character healer, Character target, float amount)
         {
-            if (!IsLocal(healer) || target == null || !On(Overflow) || amount <= 0f) return;
+            State st = Of(healer);
+            if (st == null || target == null || !st.On(Overflow) || amount <= 0f) return;
             float over = amount - (target.GetMaxHealth() - target.GetHealth());
             if (over <= target.GetMaxHealth() * 0.01f) return;
-            float cap = V(Overflow);
+            float cap = st.V(Overflow);
             string ward = cap >= 0.12f ? StatusEffectManager.EFFECT_CLASS_WARD15 : StatusEffectManager.EFFECT_CLASS_WARD10;
             AbilityRPCManager.ApplySingleEffect(healer, target, ward, OverflowSeconds);
             Log($"{Overflow}: overheal {over:0} on {target.GetHoverName()} -> {ward} for {OverflowSeconds:0} s");

@@ -176,7 +176,7 @@ namespace FiresRPGClasses.Combat
                     _linkWhyLogged = true;
                     // The first split of each link, every candidate and why, at Info (once per link, not per hit) so the remote
                     // side is visible even when its log drops Debug.
-                    FiresRPGClassesPlugin.Log?.LogInfo($"[Classes] {SpiritId}: split check on {me.GetPlayerName()} (id {me.GetPlayerID()}), list {listed ?? "none"}:{why}");
+                    FiresRPGClassesPlugin.Log?.LogDebug($"[Classes] {SpiritId}: split check on {me.GetPlayerName()} (id {me.GetPlayerID()}), list {listed ?? "none"}:{why}");
                     Log($"{SpiritId}: on {me.GetPlayerName()}, caster {(caster != null ? caster.GetHoverName() : "unknown")}, ZDO list {listed ?? "none"}; linked: {(Linked.Count > 0 ? string.Join(", ", Linked.ConvertAll(p => p.GetPlayerName()).ToArray()) : "nobody in reach")}");
                 }
                 int others = Linked.Count;
@@ -245,7 +245,7 @@ namespace FiresRPGClasses.Combat
             _regenNext = Time.time + 1f;
             int link = Rank(seman, SpiritHash);
             // The link arriving on this peer (once per link, at Info); the split check re-arms.
-            if (link > 0 && !_hadLink) { _linkWhyLogged = false; FiresRPGClassesPlugin.Log?.LogInfo($"[Classes] {SpiritId}: {SpiritByRank[link - 1]} arrived on {me.GetPlayerName()}, from {(Source(me, SpiritHash[link - 1]) is Character s ? s.GetHoverName() : "unknown")}"); }
+            if (link > 0 && !_hadLink) { _linkWhyLogged = false; FiresRPGClassesPlugin.Log?.LogDebug($"[Classes] {SpiritId}: {SpiritByRank[link - 1]} arrived on {me.GetPlayerName()}, from {(Source(me, SpiritHash[link - 1]) is Character s ? s.GetHoverName() : "unknown")}"); }
             _hadLink = link > 0;
             if (link > 0) AbilityHeals.Apply(Source(me, SpiritHash[link - 1]) ?? me, me, me.GetMaxHealth() * SpiritRegen[link - 1]);
         }

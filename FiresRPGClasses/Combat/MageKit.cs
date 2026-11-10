@@ -142,7 +142,7 @@ namespace FiresRPGClasses.Combat
         private static HitData HitFrom(Character caster, Character enemy)
         {
             Vector3 away = enemy.transform.position - caster.transform.position;
-            away.y = 0f;
+            away = Ring.Flat(away, enemy.transform.position);   // off the halo ring: away.y = 0
             var hit = new HitData
             {
                 m_point = enemy.GetCenterPoint(),

@@ -131,7 +131,7 @@ namespace FiresRPGClasses.Combat
             _batRank = DesignKit.RankOf(node);
             _batLevel = VampireSkill.Level(player);
             _batSeconds = BatDuration(_batLevel);
-            Vector3 at = player.transform.position + Vector3.up * BatSpawnHeight;
+            Vector3 at = player.transform.position + Ring.Up(player.transform.position) * BatSpawnHeight;
             GameObject go = Object.Instantiate(source, at, player.transform.rotation);
             Character bat = go.GetComponent<Character>();
             if (bat == null) { ZNetScene.instance.Destroy(go); return Refuse(player, node, "the Bat has no body"); }
@@ -256,13 +256,25 @@ namespace FiresRPGClasses.Combat
         {
             Vector3 to = at;
             int mask = LayerMask.GetMask("Default", "static_solid", "terrain", "piece", "vehicle");
-            if (Physics.Raycast(at + Vector3.up * 0.5f, Vector3.down, out RaycastHit hit, 200f, mask, QueryTriggerInteraction.Ignore))
-                to = hit.point + Vector3.up * 0.05f;
-            else if (ZoneSystem.instance != null && ZoneSystem.instance.GetSolidHeight(at, out float ground) && ground < at.y)
-                to = new Vector3(at.x, ground + 0.05f, at.z);
+            if (!Ring.InField(at))
+            {
+                if (Physics.Raycast(at + Vector3.up * 0.5f, Vector3.down, out RaycastHit hit, 200f, mask, QueryTriggerInteraction.Ignore))
+                    to = hit.point + Vector3.up * 0.05f;
+                else if (ZoneSystem.instance != null && ZoneSystem.instance.GetSolidHeight(at, out float ground) && ground < at.y)
+                    to = new Vector3(at.x, ground + 0.05f, at.z);
+            }
+            else
+            {
+                // halo ring: drop along the local down; no world-Y heightmap fallback (it would teleport off the ring)
+                Vector3 ru = Ring.Up(at);
+                if (Physics.Raycast(at + ru * 0.5f, -ru, out RaycastHit hit, 200f, mask, QueryTriggerInteraction.Ignore))
+                    to = hit.point + ru * 0.05f;
+            }
             player.transform.position = to;
             if (player.m_body != null) { player.m_body.position = to; player.m_body.linearVelocity = Vector3.zero; }
+            // Left exactly as before, even on the halo ring: the ring fall-damage altitude belongs to its owner (undecided).
             player.m_maxAirAltitude = to.y;   // no fall damage from the parked spot
+
             return $"returned at {to:F1} (bat at {at:F1})";
         }
 

@@ -128,7 +128,7 @@ namespace FiresRPGClasses.UI
                 if (ClassesHudSizes.TryGet(DockId, out Vector2 saved)) KitResize(saved, true);
                 if (s_liveEdit) FiresRPGClassesPlugin.Log?.LogDebug($"[HUD] {DockId} live edit on (handle {_container.name})");
             }
-            FiresRPGClassesPlugin.Log?.LogInfo(why == null
+            FiresRPGClassesPlugin.Log?.LogDebug(why == null
                 ? $"[ClassesHud] bars registered with Core's HUD dock engine as '{DockId}' (layout mode: drag / scale / dock; own drag off; default dock {(_dockUnderGroupHud != null && _dockUnderGroupHud.Value ? "under hud.grouphud" : "none")})"
                 : $"[ClassesHud] bars not docked: {why} (own drag stays)");
         }
@@ -160,12 +160,12 @@ namespace FiresRPGClasses.UI
             _dockedFor = null;
             if (_container != null)
             {
-                _container.anchoredPosition = _position.Value;
+                _container.anchoredPosition = StartPosition(_container.parent as RectTransform, _container.sizeDelta.x);   // 0.1.205
                 _container.localScale = Vector3.one;
                 var own = _container.GetComponent<ClassesBarDragHandler>();
                 if (own != null) own.enabled = true;
             }
-            FiresRPGClassesPlugin.Log?.LogInfo($"[ClassesHud] override OFF: bars left Core's dock engine; own place {_position.Value} + scale 1 + own drag back");
+            FiresRPGClassesPlugin.Log?.LogDebug($"[ClassesHud] override OFF: bars left Core's dock engine; own place {_position.Value} + scale 1 + own drag back");
         }
 
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
@@ -230,6 +230,12 @@ namespace FiresRPGClasses.UI
                     new AcceptableValueRange<float>(0.1f, 1f), new FiresCore.Sync.ConfigurationManagerAttributes { IsAdvanced = true }));
         }
 
+        private static Vector2 StartPosition(RectTransform hudRoot, float barWidth)
+        {
+            // 0.1.206 (Fire 10-30: "the class hotbars were never meant to move ... put back where it was"): 0.1.205's bottom-left start
+            // undone; the saved / default BarsOffset (bottom right) is used exactly as before 0.1.205
+            return _position.Value;
+        }
         /// <summary>
         /// Once: a bar someone had dragged under the old centre anchor keeps its place on screen. The same point measured from
         /// the right edge is the old x minus half the HUD's width (read live, so it matches this player's resolution).
@@ -261,7 +267,7 @@ namespace FiresRPGClasses.UI
             if (chat != _chatShown || typing != _typingShown)
             {
                 _chatShown = chat; _typingShown = typing;
-                FiresRPGClassesPlugin.Log?.LogInfo($"[ClassesHud] chat typing {typing}, overlaps the bars {(typing ? chat.ToString() : "n/a")}: bars {(chat ? "hidden" : "shown")} (source {(s_chatEvent ? "Core ChatOpenChanged" : "Chat.HasFocus poll")})");
+                FiresRPGClassesPlugin.Log?.LogDebug($"[ClassesHud] chat typing {typing}, overlaps the bars {(typing ? chat.ToString() : "n/a")}: bars {(chat ? "hidden" : "shown")} (source {(s_chatEvent ? "Core ChatOpenChanged" : "Chat.HasFocus poll")})");
             }
             if (data == null || Player.m_localPlayer == null || chat || OverlayUp()) { SetVisible(false); return; }
             if (!EnsureBuiltAny()) return;   // UI overhaul #14: the kit rows under the override (ClassesHudKit.cs)
@@ -399,7 +405,7 @@ namespace FiresRPGClasses.UI
                     }
                 }
                 catch (System.Exception ex) { FiresRPGClassesPlugin.Log?.LogWarning($"[ClassesHud] ChatOpenChanged subscribe failed ({ex.GetType().Name}); polling Chat.HasFocus"); }
-                FiresRPGClassesPlugin.Log?.LogInfo($"[ClassesHud] chat hide source: {(s_chatEvent ? "Core FiresShell.ChatOpenChanged" : "Chat.HasFocus poll (no Core event)")}");
+                FiresRPGClassesPlugin.Log?.LogDebug($"[ClassesHud] chat hide source: {(s_chatEvent ? "Core FiresShell.ChatOpenChanged" : "Chat.HasFocus poll (no Core event)")}");
             }
             if (s_chatEvent) return s_chatOpenByEvent;
             return Chat.instance != null && Chat.instance.HasFocus();
@@ -523,7 +529,7 @@ namespace FiresRPGClasses.UI
             _container.anchorMax = new Vector2(1f, 0f);
             _container.pivot = new Vector2(0.5f, 0f);
             CarryOverOldPosition(hudRoot as RectTransform);
-            _container.anchoredPosition = _position.Value;
+            _container.anchoredPosition = StartPosition(hudRoot as RectTransform, BarLayout.SlotCount * space);   // 0.1.205
             _container.sizeDelta = new Vector2(BarLayout.SlotCount * space, SlotHeight * 2f + RowGap + HintSpace);
 
             // Its own sorting canvas, so pointer events reach the drag handle rather than the HUD behind.
@@ -620,7 +626,7 @@ namespace FiresRPGClasses.UI
                     slots[i].Binding.verticalAlignment = VerticalAlignmentOptions.Top;
                     slots[i].Binding.horizontalAlignment = HorizontalAlignmentOptions.Center;
                     if (i == 0)
-                        FiresRPGClassesPlugin.Log?.LogInfo($"[ClassesHud] key hints under the squares: square '{square.name}' bottom y {bl.y:0.#} "
+                        FiresRPGClassesPlugin.Log?.LogDebug($"[ClassesHud] key hints under the squares: square '{square.name}' bottom y {bl.y:0.#} "
                             + $"(root rect h {(element != null ? element.rect.height : 0f):0.#}), hint top at {bl.y - 2f:0.#}, width {br.x - bl.x:0.#}");
                 }
                 else slots[i].Binding.gameObject.SetActive(false);

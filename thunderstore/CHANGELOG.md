@@ -1,3 +1,31 @@
+## 0.1.220
+
+### Changed
+- Progression, ground rings, locational damage and melee aim settings now live in this mod's config. Your old values are copied once from Core.
+- Building pieces load a little faster.
+- Quieter log.
+### Fixed
+- Helps the game close faster (no long freeze on quit).
+
+## 0.1.216
+- Progression, ground rings, locational damage, melee aim and red crosshair settings now live in this mod's config; your saved values are copied over. Needs FiresUnifiedCore 0.2.1086 or newer.
+
+## 0.1.215
+- Class skill bars start in the bottom right again and stack neatly with the inventory tool, ammo and food bars. (UI)
+- New admin console commands to learn class talents and put skills or a weapon on class bar slots, handy for setting up a character quickly. (commands)
+- Admins using Fires God Complex can edit a character's class, level and XP with no limits, and a God Complex clone can fight as its class with its own stats, passives and cooldowns. (admin)
+- Melee aim, the red crosshair and the run slide settings now live in this mod's own config instead of Core's (your old values are kept). (config)
+
+## 0.1.204
+- New Vampire ability icons in both icon sets.
+- Companions can use the class double-jump styles.
+- Slow fall costs nothing while you are not floating ("Slow fall early-out", on).
+- Classes work on curved ring worlds (movement, area effects, exploring XP); normal worlds are unchanged.
+- Safer loading and saving; quieter logs.
+
+## 0.1.198
+- Bug fixes and improvements.
+
 ## 0.1.192
 - Works with Valheim 1.0.20: the extra wood and ore drops from Paragon talents work on rocks again.
 - Every Paragon talent is now active. Earlier, some showed in the tree but did nothing.

@@ -23,10 +23,13 @@ namespace FiresRPGClasses.Paragon
             CraftBatch1.Once(Sturdy, $"{p.m_name} max health {w.m_health:0}");
         }
 
-        [HarmonyPatch(typeof(WearNTear), "Awake")]
-        private static class Loaded
+        /// <summary>0.1.220 ([wishbone], [generator]'s piece-create audit row 9, TOWN50): a piece loading. Called from the ONE RPGClasses
+        /// WearNTear.Awake postfix (BoneWallLook.DressOnWake); the passive's value (0 for nearly everyone) is tested BEFORE the
+        /// GetComponent&lt;Piece&gt;, so a player without Sturdy Builder pays one dictionary lookup per piece. Same behaviour.</summary>
+        internal static void OnWake(WearNTear w)
         {
-            private static void Postfix(WearNTear __instance) => Raise(__instance, __instance.GetComponent<Piece>());
+            if (ParagonEffects.TX(Sturdy) <= 0f || w == null) return;
+            Raise(w, w.GetComponent<Piece>());
         }
 
         [HarmonyPatch(typeof(Piece), nameof(Piece.SetCreator))]

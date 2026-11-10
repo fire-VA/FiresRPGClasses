@@ -18,7 +18,7 @@ namespace FiresRPGClasses.Combat
             catch (System.Exception e)
             {
                 _missing = true;
-                FiresRPGClassesPlugin.Log.LogInfo($"placed aim not handed to Core: this Core has no SetNextPlacement ({e.GetType().Name})");
+                FiresRPGClassesPlugin.Log.LogDebug($"placed aim not handed to Core: this Core has no SetNextPlacement ({e.GetType().Name})");
             }
         }
 

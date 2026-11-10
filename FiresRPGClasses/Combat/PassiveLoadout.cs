@@ -61,6 +61,25 @@ namespace FiresRPGClasses.Combat
             "paladin_heal_block",
         };
 
+        /// <summary>0.1.214 (step 3b, a registered class body - the Studio god clone): a passive's status for THAT body, from its own record
+        /// and its own gear. The local player's <see cref="Status(ClassTreeNode)"/> above is unchanged.</summary>
+        public static PassiveStatus Status(ClassTreeNode node, ClassPlayerData data, Humanoid body)
+        {
+            if (data == null || node == null || body == null) return PassiveStatus.NotLearned;
+            if (!IsLearned(data, node)) return PassiveStatus.NotLearned;
+            if (!data.Progress.PassiveLoadout.Contains(node.Id))
+                return data.Progress.PassiveLoadout.Count >= data.Progress.PassiveSlots ? PassiveStatus.NoSlotsLeft : PassiveStatus.NotEquipped;
+            return ConditionsMet(node, body) ? PassiveStatus.Active : PassiveStatus.ConditionsUnmet;
+        }
+
+        public static bool ConditionsMet(ClassTreeNode node, Humanoid body)
+        {
+            if (body == null || node == null) return false;
+            if (!NeedAShield.Contains(node.Id)) return true;
+            var left = body.GetLeftItem();
+            return left != null && left.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Shield;
+        }
+
         public static bool ConditionsMet(ClassTreeNode node)
         {
             Player player = Player.m_localPlayer;

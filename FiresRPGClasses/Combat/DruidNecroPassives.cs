@@ -98,7 +98,7 @@ namespace FiresRPGClasses.Combat
                 {
                     if (c == null || c.IsDead() || c.GetFaction() != Character.Faction.Undead || c.IsTamed()) continue;
                     if (Vector3.Distance(c.transform.position, player.transform.position) > range) continue;
-                    Chat.instance.SetNpcText(c.gameObject, Vector3.up * (c.GetHeight() + 0.4f), range + 5f, 2.5f, "", "<color=#9fe7ff>(undead)</color>", false);
+                    Chat.instance.SetNpcText(c.gameObject, Ring.Up(c.transform.position) * (c.GetHeight() + 0.4f), range + 5f, 2.5f, "", "<color=#9fe7ff>(undead)</color>", false);
                 }
             }
 
@@ -224,7 +224,7 @@ namespace FiresRPGClasses.Combat
             bool forage = item.IndexOf("berr", System.StringComparison.OrdinalIgnoreCase) >= 0
                 || item.IndexOf("Mushroom", System.StringComparison.OrdinalIgnoreCase) >= 0;
             if (!forage || Random.value >= V(Forager)) return;
-            Object.Instantiate(pickable.m_itemPrefab, pickable.transform.position + Vector3.up * 0.4f, Quaternion.identity);
+            Object.Instantiate(pickable.m_itemPrefab, pickable.transform.position + Ring.Up(pickable.transform.position) * 0.4f, Quaternion.identity);
             FiresRPGClassesPlugin.Log?.LogDebug($"[Passive] {Forager}: one more {item}");
         }
 
@@ -236,7 +236,7 @@ namespace FiresRPGClasses.Combat
             if (!On(BoneHarvest) || undead == null || !undead.IsDead() || Random.value >= V(BoneHarvest)) return;
             GameObject bone = ZNetScene.instance != null ? ZNetScene.instance.GetPrefab("BoneFragments") : null;
             if (bone == null) return;
-            Object.Instantiate(bone, undead.transform.position + Vector3.up * 0.5f, Quaternion.identity);
+            Object.Instantiate(bone, undead.transform.position + Ring.Up(undead.transform.position) * 0.5f, Quaternion.identity);
             FiresRPGClassesPlugin.Log?.LogDebug($"[Passive] {BoneHarvest}: {undead.m_name} dropped one more bone fragment");
         }
 

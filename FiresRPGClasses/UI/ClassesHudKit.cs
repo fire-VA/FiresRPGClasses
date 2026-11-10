@@ -31,7 +31,7 @@ namespace FiresRPGClasses.UI
                 if (s_kitAvailable == null)
                 {
                     s_kitAvailable = System.Type.GetType("FiresCore.UI.Shell.Kit.KitHotbarRow, FiresUnifiedCore", false) != null;
-                    FiresRPGClassesPlugin.Log?.LogInfo($"[ClassesHud] Core hotbar kit {(s_kitAvailable.Value ? "found (0.2.528+)" : "absent (Core < 0.2.528): the class bars keep the cloned hotbar look")}");
+                    FiresRPGClassesPlugin.Log?.LogDebug($"[ClassesHud] Core hotbar kit {(s_kitAvailable.Value ? "found (0.2.528+)" : "absent (Core < 0.2.528): the class bars keep the cloned hotbar look")}");
                 }
                 return s_kitAvailable.Value;
             }
@@ -45,7 +45,7 @@ namespace FiresRPGClasses.UI
             bool kit = KitOn();
             if (ContainerAlive() && _builtKit != kit)
             {
-                FiresRPGClassesPlugin.Log?.LogInfo($"[ClassesHud] override {(kit ? "ON" : "OFF")}: rebuilding the bars as {(kit ? "kit HotbarRows" : "cloned hotbar elements")}");
+                FiresRPGClassesPlugin.Log?.LogDebug($"[ClassesHud] override {(kit ? "ON" : "OFF")}: rebuilding the bars as {(kit ? "kit HotbarRows" : "cloned hotbar elements")}");
                 Destroy(_container.gameObject);
                 _container = null; _built = false;
                 _kit = null;
@@ -131,7 +131,7 @@ namespace FiresRPGClasses.UI
                 _h._container.anchorMax = new Vector2(1f, 0f);
                 _h._container.pivot = new Vector2(0.5f, 0f);
                 CarryOverOldPosition(hudRoot as RectTransform);
-                _h._container.anchoredPosition = _position.Value;
+                _h._container.anchoredPosition = StartPosition(hudRoot as RectTransform, BarLayout.SlotCount * space);   // 0.1.205
                 _h._container.sizeDelta = new Vector2(BarLayout.SlotCount * space, SlotHeight * 2f + RowGap + HintSpace);
                 Canvas canvas = _h._container.gameObject.AddComponent<Canvas>();
                 canvas.overrideSorting = true;
@@ -175,7 +175,7 @@ namespace FiresRPGClasses.UI
                 _h._flash.color = new Color(1f, 0.82f, 0.4f, 0f);
                 _h._flash.raycastTarget = false;
                 if (!_swapHooked) { _swapHooked = true; BarController.BarSwapped += OnBarSwapped; }
-                FiresRPGClassesPlugin.Log?.LogInfo($"[ClassesHud] kit bars built: front HotbarRow {_front.Width:0} wide at {HintSpace:0}, back HotbarRow (Behind) at {BackBottom:0.#} (front top {HintSpace + _front.Root.rect.height * _front.Root.localScale.y:0.#} + gap {RowGap:0}), back alpha {BackAlpha(_backBarAlpha.Value):0.##} (BackBarAlpha {_backBarAlpha.Value:0.##}), container at {_h._container.anchoredPosition}");
+                FiresRPGClassesPlugin.Log?.LogDebug($"[ClassesHud] kit bars built: front HotbarRow {_front.Width:0} wide at {HintSpace:0}, back HotbarRow (Behind) at {BackBottom:0.#} (front top {HintSpace + _front.Root.rect.height * _front.Root.localScale.y:0.#} + gap {RowGap:0}), back alpha {BackAlpha(_backBarAlpha.Value):0.##} (BackBarAlpha {_backBarAlpha.Value:0.##}), container at {_h._container.anchoredPosition}");
                 return true;
             }
 

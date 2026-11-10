@@ -302,7 +302,7 @@ namespace FiresRPGClasses.Combat
             // A handler that refused (Wildshape on a creature not beaten down yet) costs a short retry wait, not the cooldown.
             CooldownTracker.Start(node.Id, ClassCastExecutor.LastHandlerRefused ? Mathf.Min(node.Cooldown, RefusedRetrySeconds) : CooldownTracker.Scaled(node.Id, node.Cooldown)); // generic CDR hook
             // One line per cast: the skills drill pairs it with the hit or effect that proves it.
-            FiresRPGClassesPlugin.Log.LogInfo($"cast {node.Id} on {(target.TargetCharacter != null ? target.TargetCharacter.m_name : "point " + target.Point.ToString("F1"))} ({node.Targeting.Mode})");
+            FiresRPGClassesPlugin.Log.LogDebug($"cast {node.Id} on {(target.TargetCharacter != null ? target.TargetCharacter.m_name : "point " + target.Point.ToString("F1"))} ({node.Targeting.Mode})");
         }
 
         private static void CastUltimate(ClassPlayerData data, BarLayout bar)

@@ -24,10 +24,10 @@ namespace FiresRPGClasses.Combat
     /// when it's on, so Core's Auto keys stay off without it. Every use logs a point-of-use line. Clips: Core's ClipSlots when present
     /// (the flip / vault ids below; the Quaternius clips get a bundle in a later build), else a vanilla jump; FX via AbilityRPCManager.
     /// </summary>
-    public static class ClassMovement
+    public static partial class ClassMovement   // 0.1.202: partial (+ ClassMovement.Npc.cs: companions use the class second-jump styles)
     {
         public const string Section = "14 - Movement";
-        private static ConfigEntry<bool> _enabled;
+        private static ConfigEntry<bool> _enabled, _earlyOut;
         private static ConfigEntry<int> _jumpAtLevel, _dodgeAtLevel;
         private static ConfigEntry<float> _blinkEitr, _mistEitr, _pounceStamina;
         private static bool _registered;
@@ -46,6 +46,7 @@ namespace FiresRPGClasses.Combat
             _blinkEitr = cfg.Bind(Section, "Mage blink jump eitr", 8f, Adv("Eitr the mage's blink jump costs."));
             _mistEitr = cfg.Bind(Section, "Mist-step eitr", 12f, Adv("Eitr the vampire's mist-step dodge costs."));
             _pounceStamina = cfg.Bind(Section, "Pounce stamina", 18f, Adv("Stamina the werewolf's pounce dodge costs."));
+            _earlyOut = cfg.Bind(Section, "Slow fall early-out", true, Adv("Perf: the slow fall check returns at once for every character while no float window is open (it runs for every loaded character each physics step). Off = the old per-call checks."));
             _enabled.SettingChanged += (_, __) => Register();
         }
 
@@ -90,7 +91,9 @@ namespace FiresRPGClasses.Combat
         private static Rigidbody Body(Player p) => BodyField?.GetValue(p) as Rigidbody;
         private static float Size(Player p) => Mathf.Clamp(p.transform.localScale.y, 0.25f, 4f);
 
-        private static Vector3 Flat(Vector3 v) { v.y = 0f; return v.sqrMagnitude > 0.0001f ? v.normalized : Vector3.zero; }
+        // every caller is the local player (On/Is gates); off the halo ring Ring.Flat is exactly v.y = 0
+        private static Vector3 RingPos() => Player.m_localPlayer != null ? Player.m_localPlayer.transform.position : Vector3.zero;
+        private static Vector3 Flat(Vector3 v) { v = Ring.Flat(v, RingPos()); return v.sqrMagnitude > 0.0001f ? v.normalized : Vector3.zero; }
 
         private static bool Impulse(Player p, float up, float forward, string id, string clip)
         {
@@ -98,12 +101,24 @@ namespace FiresRPGClasses.Combat
             if (rb == null) return false;
             Vector3 fwd = Flat(p.GetMoveDir()); if (fwd == Vector3.zero) fwd = Flat(p.transform.forward);
             Vector3 v = rb.linearVelocity;
-            v.y = Mathf.Max(v.y, 0f) + p.m_jumpForce * up * Size(p);
+            float vUp;
+            if (!Ring.InField(p.transform.position))
+            {
+                v.y = Mathf.Max(v.y, 0f) + p.m_jumpForce * up * Size(p);
+                vUp = v.y;
+            }
+            else
+            {
+                Vector3 ru = Ring.Up(p.transform.position);
+                float along = Vector3.Dot(v, ru);
+                vUp = Mathf.Max(along, 0f) + p.m_jumpForce * up * Size(p);
+                v = v - ru * along + ru * vUp;
+            }
             v += fwd * forward * Size(p);
             rb.linearVelocity = v;
             bool clipOk = ClipSlots.Play(p, clip);
             if (!clipOk) p.m_zanim?.SetTrigger("jump");
-            FiresRPGClassesPlugin.Log?.LogDebug($"[Movement] second jump {id} by {p.GetPlayerName()}: up {v.y:0.0}, forward {forward * Size(p):0.0}, anim {(clipOk ? clip : "vanilla jump")}");
+            FiresRPGClassesPlugin.Log?.LogDebug($"[Movement] second jump {id} by {p.GetPlayerName()}: up {vUp:0.0}, forward {forward * Size(p):0.0}, anim {(clipOk ? clip : "vanilla jump")}");
             return true;
         }
 
@@ -133,7 +148,7 @@ namespace FiresRPGClasses.Combat
         private static bool BatHop(Player p)
         {
             _floatUntil = Time.time + 1.8f;
-            AbilityRPCManager.SpawnFX(p.transform.position + Vector3.up, "vfx_ghost_hit", 0.8f);
+            AbilityRPCManager.SpawnFX(p.transform.position + Ring.Up(p.transform.position), "vfx_ghost_hit", 0.8f);
             return Impulse(p, 0.7f, 2.5f, "rpg.vampire.bathop (glide 1.8 s)", "rpgclasses.bathop");
         }
 
@@ -143,17 +158,23 @@ namespace FiresRPGClasses.Combat
             float cost = _blinkEitr.Value;
             if (!p.HaveEitr(cost)) { FiresRPGClassesPlugin.Log?.LogDebug($"[Movement] second jump rpg.mage.blink by {p.GetPlayerName()}: refused (eitr {p.GetEitr():0} < {cost:0}); Core's plain jump instead"); return false; }
             Vector3 fwd = Flat(p.GetMoveDir()); if (fwd == Vector3.zero) fwd = Flat(p.transform.forward);
-            Vector3 dir = (fwd * 2.5f + Vector3.up * 1.6f).normalized;
-            float want = 3f * Size(p);
             Vector3 from = p.transform.position;
+            Vector3 dir = (fwd * 2.5f + Ring.Up(from) * 1.6f).normalized;
+            float want = 3f * Size(p);
             if (!SafeBlink(p, from, dir, want, out Vector3 to, out string why))
             { FiresRPGClassesPlugin.Log?.LogDebug($"[Movement] second jump rpg.mage.blink by {p.GetPlayerName()}: refused ({why}); Core's plain jump instead"); return false; }
             p.UseEitr(cost);
-            AbilityRPCManager.SpawnFX(from + Vector3.up, "vfx_ghost_death", 1f);
+            AbilityRPCManager.SpawnFX(from + Ring.Up(from), "vfx_ghost_death", 1f);
             p.transform.position = to;
             var rb = Body(p);
-            if (rb != null) { rb.position = to; var v = rb.linearVelocity; v.y = Mathf.Max(v.y, 0f); rb.linearVelocity = v; }
-            AbilityRPCManager.SpawnFX(to + Vector3.up, "vfx_ghost_death", 1f);
+            if (rb != null)
+            {
+                rb.position = to; var v = rb.linearVelocity;
+                if (!Ring.InField(to)) v.y = Mathf.Max(v.y, 0f);
+                else { Vector3 ru = Ring.Up(to); float along = Vector3.Dot(v, ru); if (along < 0f) v -= ru * along; }
+                rb.linearVelocity = v;
+            }
+            AbilityRPCManager.SpawnFX(to + Ring.Up(to), "vfx_ghost_death", 1f);
             ClipSlots.Play(p, "rpgclasses.mage.blink");
             FiresRPGClassesPlugin.Log?.LogDebug($"[Movement] second jump rpg.mage.blink by {p.GetPlayerName()}: {from:F1} -> {to:F1} ({Vector3.Distance(from, to):0.0} m), {cost:0} eitr, smoke at both ends");
             return true;
@@ -167,12 +188,13 @@ namespace FiresRPGClasses.Combat
             to = from;
             var col = p.GetComponent<CapsuleCollider>();
             float r = col != null ? col.radius * Size(p) : 0.4f, h = col != null ? col.height * Size(p) : 1.8f;
-            Vector3 a = from + Vector3.up * r, b = from + Vector3.up * (h - r);
+            Vector3 up = Ring.Up(from);   // Vector3.up off the halo ring
+            Vector3 a = from + up * r, b = from + up * (h - r);
             float go = want;
             if (Physics.CapsuleCast(a, b, r * 0.9f, dir, out RaycastHit hit, want, BlockMask)) go = Mathf.Max(0f, hit.distance - 0.2f);
             if (go < 1f) { why = $"blocked after {go:0.0} m"; return false; }
             to = from + dir * go;
-            if (Physics.CheckCapsule(to + Vector3.up * r, to + Vector3.up * (h - r), r * 0.9f, BlockMask)) { why = "the end point is inside something"; return false; }
+            if (Physics.CheckCapsule(to + up * r, to + up * (h - r), r * 0.9f, BlockMask)) { why = "the end point is inside something"; return false; }
             why = null;
             return true;
         }
@@ -188,13 +210,42 @@ namespace FiresRPGClasses.Combat
                 if (original != null) FiresRPGClassesPlugin.Log?.LogDebug($"[Movement] SlowFall attached to {original.DeclaringType?.Name}.{original.Name}");
             }
 
+            // 0.1.204: runs for every loaded character every physics step (~3.7 M calls a dense round), so when no float window is
+            // open anywhere (the usual case) it returns before any Unity call. Counts skipped vs worked calls for the 30 s Debug line.
+            private static long s_skipped, s_worked;
+            private static float s_nextReport;
+
             private static void Postfix(Character __instance)
             {
-                if (Time.time >= _floatUntil || __instance != Player.m_localPlayer) return;
+                if (_earlyOut != null && _earlyOut.Value && _floatUntil == 0f && s_npcFloat.Count == 0)
+                {
+                    if ((++s_skipped & 4095) == 0) Report();
+                    return;
+                }
+                s_worked++;
+                if ((s_worked & 255) == 0) Report();
+                if (!ReferenceEquals(__instance, Player.m_localPlayer)) { NpcSlowFall(__instance); return; }   // 0.1.202: a companion's own float window (none = nothing)
+                if (Time.time >= _floatUntil) { _floatUntil = 0f; return; }
                 var rb = Body((Player)__instance);
                 if (rb == null || __instance.IsOnGround()) { _floatUntil = 0f; return; }
                 var v = rb.linearVelocity;
-                if (v.y < -2f) { v.y = -2f; rb.linearVelocity = v; }
+                Vector3 pos = __instance.transform.position;
+                if (!Ring.InField(pos)) { if (v.y < -2f) { v.y = -2f; rb.linearVelocity = v; } }
+                else
+                {
+                    Vector3 ru = Ring.Up(pos);
+                    float along = Vector3.Dot(v, ru);
+                    if (along < -2f) { v += ru * (-2f - along); rb.linearVelocity = v; }
+                }
+            }
+            private static void Report()
+            {
+                float now = Time.realtimeSinceStartup;
+                if (now < s_nextReport) return;
+                if (s_nextReport > 0f)
+                    FiresRPGClassesPlugin.Log?.LogDebug($"[Movement] slow fall early-out: {s_skipped} call(s) skipped (no float window open), {s_worked} worked in the last 30 s");
+                s_nextReport = now + 30f;
+                s_skipped = 0; s_worked = 0;
             }
         }
 
@@ -216,10 +267,10 @@ namespace FiresRPGClasses.Combat
             Vector3 from = p.transform.position;
             if (!SafeBlink(p, from, dir, 5f * Size(p), out Vector3 to, out string why)) { FiresRPGClassesPlugin.Log?.LogDebug($"[Movement] dodge rpg.vampire.miststep by {p.GetPlayerName()}: refused ({why}); the class dodge instead"); return false; }
             p.UseEitr(cost);
-            AbilityRPCManager.SpawnFX(from + Vector3.up, "vfx_ghost_death", 1.2f);
+            AbilityRPCManager.SpawnFX(from + Ring.Up(from), "vfx_ghost_death", 1.2f);
             p.transform.position = to;
             var rb = Body(p); if (rb != null) rb.position = to;
-            AbilityRPCManager.SpawnFX(to + Vector3.up, "vfx_ghost_death", 1.2f);
+            AbilityRPCManager.SpawnFX(to + Ring.Up(to), "vfx_ghost_death", 1.2f);
             ClipSlots.Play(p, "rpgclasses.vampire.miststep");
             FiresRPGClassesPlugin.Log?.LogDebug($"[Movement] dodge rpg.vampire.miststep by {p.GetPlayerName()}: {from:F1} -> {to:F1} ({Vector3.Distance(from, to):0.0} m), {cost:0} eitr, mist at both ends");
             return true;
@@ -232,7 +283,8 @@ namespace FiresRPGClasses.Combat
             var rb = Body(p);
             if (rb == null) return false;
             p.UseStamina(cost);
-            rb.linearVelocity = dir * 11f * Size(p) + Vector3.up * 3f;
+            rb.linearVelocity = dir * 11f * Size(p) + Ring.Up(p.transform.position) * 3f;
+
             bool clip = ClipSlots.Play(p, "rpgclasses.werewolf.pounce");
             if (!clip) p.m_zanim?.SetTrigger("jump");
             FiresRPGClassesPlugin.Log?.LogDebug($"[Movement] dodge rpg.werewolf.pounce by {p.GetPlayerName()}: lunge {11f * Size(p):0.0} m/s {dir:F2}, {cost:0} stamina, anim {(clip ? "clip slot" : "vanilla jump")}");

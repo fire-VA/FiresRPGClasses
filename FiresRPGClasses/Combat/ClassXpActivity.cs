@@ -63,7 +63,7 @@ namespace FiresRPGClasses.Combat
             private static void Postfix(Minimap __instance, Vector3 p)
             {
                 _counting = false;
-                if (_newCells > 0) Explored(_newCells, __instance.m_pixelSize, p);
+                if (_newCells > 0) Explored(_newCells, __instance.m_pixelSize, p, __instance.m_textureSize);
             }
         }
 
@@ -73,11 +73,11 @@ namespace FiresRPGClasses.Combat
             private static void Postfix(bool __result) { if (_counting && __result) _newCells++; }
         }
 
-        private static void Explored(int cells, float pixelSize, Vector3 at)
+        private static void Explored(int cells, float pixelSize, Vector3 at, int textureSize)
         {
             Player player = Local;
             if (player == null || player.IsDead() || player.InIntro() || player.InDebugFlyMode()) return;
-            _unpaidArea += cells * pixelSize * pixelSize;
+            _unpaidArea += cells * pixelSize * pixelSize / Ring.MapStretch(at, pixelSize, textureSize);   // halo ring: 1 off the ring
             while (_unpaidArea >= ExploreAreaPerAward)
             {
                 _unpaidArea -= ExploreAreaPerAward;

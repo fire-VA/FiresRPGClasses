@@ -57,9 +57,9 @@ namespace FiresRPGClasses.Combat
         [HarmonyPostfix]
         private static void AfterAwake(ObjectDB __instance)
         {
-            VampireEffects.Register(__instance);
-            VampireFood.RegisterItem(__instance);   // Duskbloom Stew + its Cauldron recipe (§12)
-            VampireSkill.Register(true);            // the Bat Form skill's icon, once sprites can be made
+            Guarded.Run("VampireEffects.Register", () => VampireEffects.Register(__instance));   // 0.1.201 (load/save audit M17)
+            Guarded.Run("VampireFood.RegisterItem", () => VampireFood.RegisterItem(__instance));   // Duskbloom Stew + its Cauldron recipe (§12)
+            Guarded.Run("VampireSkill.Register", () => VampireSkill.Register(true));            // the Bat Form skill's icon, once sprites can be made
         }
     }
 

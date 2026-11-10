@@ -158,6 +158,34 @@ namespace FiresRPGClasses.Combat
 
         private static bool IsLocal(Character character) => character != null && character == Player.m_localPlayer;
 
+        // 0.1.214 ([lead] / [ghost], step 3: the god clone's stats): the same rows for any body - the local player through Current(stat)
+        // above (unchanged), a registered class body (ClassBodies) through its own record
+        private static bool IsClassBody(Character character) => IsLocal(character) || ClassBodies.IsRegistered(character);
+
+        /// <summary>This body's current effect for one stat: the local player's = <see cref="Current(Stat)"/>; a registered class body's from its record; else 0.</summary>
+        public static float Current(Stat stat, Character body)
+        {
+            if (IsLocal(body)) return Current(stat);
+            ClassProgressState progress = ClassBodies.Record(body)?.Progress;
+            Row row = RowFor(stat);
+            return row == null || progress == null ? 0f : Effective(row, Raw(row, progress.Attribute(row.Attribute)));
+        }
+
+        public static float Factor(Stat stat, Character body) => 1f + Current(stat, body) / 100f;
+
+        // one Debug line per (re)read record of a class body: every stat it gets, the proof the clone's numbers match the record
+        internal static void LogBody(Character body, ClassPlayerData data)
+        {
+            if (data == null || FiresRPGClassesPlugin.Log == null) return;
+            var parts = new List<string>();
+            foreach (Row row in Rows)
+            {
+                float v = Effective(row, Raw(row, data.Progress.Attribute(row.Attribute)));
+                if (v != 0f) parts.Add($"{row.Label.ToLowerInvariant()} {v:+0.##;-0.##}{(row.Percent ? "%" : "")}");
+            }
+            FiresRPGClassesPlugin.Log.LogDebug($"[ClassStats] {body.m_name}: {(parts.Count > 0 ? string.Join(", ", parts) : "no attribute effects")}");
+        }
+
         public struct StatPreview
         {
             public Stat Stat;
@@ -199,8 +227,9 @@ namespace FiresRPGClasses.Combat
         /// <summary>From ClassDamageHooks: the local player's outgoing hit, before it is sent.</summary>
         internal static void OnLocalHitSending(HitData hit)
         {
-            if (hit == null || !IsLocal(hit.GetAttacker())) return;
-            float physical = Factor(Stat.PhysicalDamage), magic = Factor(Stat.MagicDamage);
+            Character attacker = hit?.GetAttacker();
+            if (hit == null || !IsClassBody(attacker)) return;
+            float physical = Factor(Stat.PhysicalDamage, attacker), magic = Factor(Stat.MagicDamage, attacker);
             hit.m_damage.m_blunt *= physical;
             hit.m_damage.m_slash *= physical;
             hit.m_damage.m_pierce *= physical;
@@ -216,8 +245,8 @@ namespace FiresRPGClasses.Combat
         /// <summary>From ClassDamageTakenHooks: elemental damage the local player takes, on its own peer.</summary>
         internal static void OnLocalHitTaken(Character target, HitData hit)
         {
-            if (hit == null || !IsLocal(target)) return;
-            float taken = Factor(Stat.ElementalTaken);
+            if (hit == null || !IsClassBody(target)) return;
+            float taken = Factor(Stat.ElementalTaken, target);
             hit.m_damage.m_fire *= taken;
             hit.m_damage.m_frost *= taken;
             hit.m_damage.m_lightning *= taken;
@@ -228,9 +257,9 @@ namespace FiresRPGClasses.Combat
         internal static float StaminaCostFactor(Player player) =>
             !IsLocal(player) ? 1f : player.InAttack() || player.IsBlocking() ? Factor(Stat.AttackStamina) : Factor(Stat.MoveStamina);
 
-        internal static float StaminaRegenFactor(Character character) => IsLocal(character) ? Factor(Stat.StaminaRegen) : 1f;
+        internal static float StaminaRegenFactor(Character character) => IsClassBody(character) ? Factor(Stat.StaminaRegen, character) : 1f;
 
-        internal static float EitrRegenFactor(Character character) => IsLocal(character) ? Factor(Stat.EitrRegen) : 1f;
+        internal static float EitrRegenFactor(Character character) => IsClassBody(character) ? Factor(Stat.EitrRegen, character) : 1f;
 
         // ---- the hooks on methods nothing else in RPGClasses patches (the family's one-hook rule) --------------------------
 
@@ -275,7 +304,7 @@ namespace FiresRPGClasses.Combat
             [HarmonyPostfix]
             private static void Scale(SEMan __instance, ref float regenMultiplier)
             {
-                if (IsLocal(__instance.m_character)) regenMultiplier *= Factor(Stat.HealthRegen);
+                if (IsClassBody(__instance.m_character)) regenMultiplier *= Factor(Stat.HealthRegen, __instance.m_character);
             }
         }
 
@@ -285,11 +314,14 @@ namespace FiresRPGClasses.Combat
         private static class AttackClipSpeed
         {
             internal static float ClipSpeed = 1f;
+            // 0.1.214: a registered class body keeps its own clip speed (the local player keeps the field above)
+            internal static readonly Dictionary<Character, float> BodyClipSpeed = new Dictionary<Character, float>();
 
             [HarmonyPrefix]
             private static void Remember(Character ___m_character, float speedScale)
             {
                 if (IsLocal(___m_character)) ClipSpeed = speedScale;
+                else if (ClassBodies.IsRegistered(___m_character)) BodyClipSpeed[___m_character] = speedScale;
             }
         }
 
@@ -299,7 +331,17 @@ namespace FiresRPGClasses.Combat
             [HarmonyPostfix]
             private static void Apply(Character ___m_character, Animator ___m_animator)
             {
-                if (!IsLocal(___m_character) || ___m_animator == null) return;
+                if (___m_animator == null) return;
+                if (!IsLocal(___m_character))
+                {
+                    // a registered class body: its own Agility, its own clip speed (the kits' factors stay local-player for now - step 3b)
+                    if (!ClassBodies.IsRegistered(___m_character)) return;
+                    if (!___m_character.InAttack()) { AttackClipSpeed.BodyClipSpeed[___m_character] = 1f; return; }
+                    if (___m_animator.speed < 0.01f) return;
+                    float bodyFactor = Factor(Stat.AttackSpeed, ___m_character);
+                    if (bodyFactor != 1f) ___m_animator.speed = (AttackClipSpeed.BodyClipSpeed.TryGetValue(___m_character, out float clip) ? clip : 1f) * bodyFactor;
+                    return;
+                }
                 if (!___m_character.InAttack()) { AttackClipSpeed.ClipSpeed = 1f; return; }
                 if (___m_animator.speed < 0.01f) return; // a hit's freeze frame
                 float factor = Factor(Stat.AttackSpeed) * BuffKit.AttackSpeedFactor(___m_character) * ActiveKit.AttackSpeedFactor(___m_character) * PassiveKit2.AttackSpeedFactor(___m_character) * WerewolfKit.AttackSpeedFactor(___m_character) * VampireKit.AttackSpeedFactor(___m_character); // + Battle Trance, Bloodbath, Zeal, claws, Blood Frenzy

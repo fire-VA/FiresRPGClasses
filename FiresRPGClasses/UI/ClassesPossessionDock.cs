@@ -35,7 +35,7 @@ namespace FiresRPGClasses.UI
             // (noticeable lag), so skip all of it and say so once per ON/OFF change. ON again = the registrations below run once, as before.
             if (!ClassesHudDock.OverrideOn())
             {
-                if (flipped || !_offLogged) { _offLogged = true; FiresRPGClassesPlugin.Log?.LogInfo("[Classes] summons chip + possession strip: the Fires UI override is off, not docking (own placement until it is on)"); }
+                if (flipped || !_offLogged) { _offLogged = true; FiresRPGClassesPlugin.Log?.LogDebug("[Classes] summons chip + possession strip: the Fires UI override is off, not docking (own placement until it is on)"); }
                 return;
             }
             _offLogged = false;
@@ -46,8 +46,8 @@ namespace FiresRPGClasses.UI
                     null, null, false, OnSummonsResized, SummonsMinSize);
                 _summonsDocked = why == null;
                 // A refusal is logged once per reason, not every frame it is retried
-                if (why == null) FiresRPGClassesPlugin.Log?.LogInfo($"[Classes] summons chip registered with Core's HUD dock as '{SummonsDockId}' (floating)");
-                else if (why != _summonsWhy) FiresRPGClassesPlugin.Log?.LogInfo($"[Classes] summons chip not docked: {why}");
+                if (why == null) FiresRPGClassesPlugin.Log?.LogDebug($"[Classes] summons chip registered with Core's HUD dock as '{SummonsDockId}' (floating)");
+                else if (why != _summonsWhy) FiresRPGClassesPlugin.Log?.LogDebug($"[Classes] summons chip not docked: {why}");
                 _summonsWhy = why;
                 if (why != null) _summonsDocked = false;
             }
@@ -55,7 +55,7 @@ namespace FiresRPGClasses.UI
             if (!_stripDocked && !stripPlacedUnderHotbar && _strip != null && !_stripWaitLogged && _placedHow != null)
             {
                 _stripWaitLogged = true;
-                FiresRPGClassesPlugin.Log?.LogInfo($"[Classes] possession strip not docked yet: placed {_placedHow}; it registers once it sits under the hotbar");
+                FiresRPGClassesPlugin.Log?.LogDebug($"[Classes] possession strip not docked yet: placed {_placedHow}; it registers once it sits under the hotbar");
             }
             if (!_stripDocked && stripPlacedUnderHotbar && _strip != null)
             {
@@ -64,7 +64,7 @@ namespace FiresRPGClasses.UI
                 _stripDocked = why == null;
                 // A size the player gave the strip before is re-applied (the attack slots re-flow into it when a form shows)
                 if (_stripDocked && ClassesHudSizes.TryGet(StripDockId, out Vector2 saved)) { ClassesHudSizes.ResizeKeepTopLeft(_strip, saved); RelayoutStripKit(saved); }
-                FiresRPGClassesPlugin.Log?.LogInfo(why == null
+                FiresRPGClassesPlugin.Log?.LogDebug(why == null
                     ? $"[Classes] possession strip registered with Core's HUD dock as '{StripDockId}' (default dock under hud.hotbar.vanilla; PlaceStrip off)"
                     : $"[Classes] possession strip not docked: {why} (PlaceStrip stays)");
             }
@@ -102,7 +102,7 @@ namespace FiresRPGClasses.UI
                 ClassesHudDock.Unregister(SummonsDockId); _summonsDocked = false; _sigSummons = int.MinValue;
                 if (_summons != null) { _summons.anchoredPosition = new Vector2(16f, -40f); _summons.localScale = Vector3.one; }
             }
-            FiresRPGClassesPlugin.Log?.LogInfo("[Classes] override OFF: possession strip + summons chip left Core's HUD dock; their own placement is back");
+            FiresRPGClassesPlugin.Log?.LogDebug("[Classes] override OFF: possession strip + summons chip left Core's HUD dock; their own placement is back");
         }
     }
 }

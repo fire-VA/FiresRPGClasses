@@ -78,6 +78,10 @@ namespace FiresRPGClasses.Combat
             }
         }
 
+        /// <summary>0.1.214: the rank in a given record (a registered class body's).</summary>
+        internal static int RankOf(ClassTreeNode node, ClassPlayerData data) =>
+            node == null || data == null ? 0 : Mathf.Max(1, data.Progress.TalentRank(node.Archetype, node.Id));
+
         internal static int RankOf(ClassTreeNode node)
         {
             ClassPlayerData data = ClassPlayerStore.Local;
@@ -144,7 +148,7 @@ namespace FiresRPGClasses.Combat
                 if (Vector3.Distance(enemy.transform.position, center) > radius) continue;
                 if (!ClassTargeting.IsEnemyTarget(caster, enemy)) continue;
                 Vector3 away = enemy.transform.position - center;
-                away.y = 0f;
+                away = Ring.Flat(away, enemy.transform.position);   // off the halo ring: away.y = 0
                 var hit = new HitData
                 {
                     m_point = enemy.GetCenterPoint(),

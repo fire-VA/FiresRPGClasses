@@ -172,7 +172,7 @@ namespace FiresRPGClasses.Combat
     internal static class VampireFoodNetPatch
     {
         [HarmonyPostfix]
-        private static void AfterAwake(ZNetScene __instance) => VampireFood.RegisterNet(__instance);
+        private static void AfterAwake(ZNetScene __instance) => Guarded.Run("VampireFood.RegisterNet", () => VampireFood.RegisterNet(__instance));   // 0.1.201 (M17)
     }
 
     // Player.HaveRequirements(Recipe, bool discover, int qualityLevel, int amount): the one Recipe overload (the other takes a Piece).

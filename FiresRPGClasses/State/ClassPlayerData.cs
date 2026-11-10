@@ -28,6 +28,11 @@ namespace FiresRPGClasses.State
         public BarLayout Back = new BarLayout();
         public BarSide ActiveBar = BarSide.Front;
 
+        /// <summary>0.1.211 (Fire 10-30: "There are no limits ... We are a god"): set by any Studio God edit (GodApi). While set, the load-time
+        /// reconcile leaves the record alone (an overspent god record is the point, not an error). GodApi.SetGod(false) hands the record
+        /// back to the rules: the next load reconciles it. Optional field: older builds ignore it, a missing one reads false.</summary>
+        public bool God;
+
         public readonly List<SavedBar> SavedBars = new List<SavedBar>();
 
         /// <summary>BarMemory: each bar's layout per weapon type, key "Front|BloodMagic.2H".</summary>

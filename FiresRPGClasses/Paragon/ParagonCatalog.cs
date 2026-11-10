@@ -187,7 +187,7 @@ namespace FiresRPGClasses.Paragon
                 LoadedFrom = from;
                 var counts = new System.Text.StringBuilder();
                 foreach (var t in _trees) counts.Append(counts.Length > 0 ? ", " : "").Append(t.Id).Append(' ').Append(_byTree[t.Id].Count);
-                Debug.Log($"[Paragon] Loaded revision {Revision} from {from}: {_stars.Count} star(s) ({counts})");
+                if (FiresCore.Logging.FiresLogLevel.DebugOn) Debug.Log($"[Paragon] Loaded revision {Revision} from {from}: {_stars.Count} star(s) ({counts})");
                 try { Loaded?.Invoke(); }
                 catch (Exception e) { Debug.LogError($"[Paragon] a Loaded subscriber threw ({e.GetType().Name}: {e.Message})"); }
                 return true;

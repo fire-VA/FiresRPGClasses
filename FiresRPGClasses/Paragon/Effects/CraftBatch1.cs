@@ -223,7 +223,7 @@ namespace FiresRPGClasses.Paragon
                 bool crop = __instance.m_respawnTimeMinutes <= 0f && !__instance.name.StartsWith("Pickable_", StringComparison.Ordinal);
                 string f = crop ? GreenThumb : Forager;
                 if (!Roll(f)) return;
-                Vector3 p = __instance.transform.position + Vector3.up * 0.5f;
+                Vector3 p = __instance.transform.position + FiresRPGClasses.Combat.Ring.Up(__instance.transform.position) * 0.5f;
                 ItemDrop.OnCreateNew(UnityEngine.Object.Instantiate(__instance.m_itemPrefab, p, Quaternion.identity));
                 Once(f, __instance.m_itemPrefab.name);
             }

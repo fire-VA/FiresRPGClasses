@@ -27,6 +27,8 @@ namespace FiresRPGClasses.Paragon
         {
             if (me == null || !me.IsOnGround() || me.IsSwimming() || me.IsRiding()) return false;
             Vector3 p = me.transform.position;
+            // Halo ring: no world heightmap there, so skip the paint check - path speed simply doesn't apply on the ring.
+            if (FiresRPGClasses.Combat.Ring.InField(p)) return false;
             Heightmap h = Heightmap.FindHeightmap(p);
             if (h == null) return false;
             Color c = h.GetPaintMask(p);

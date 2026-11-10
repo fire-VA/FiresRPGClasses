@@ -90,14 +90,16 @@ namespace FiresRPGClasses.Combat
             if (prefab == null || !target.Resolved) return false;
             float seconds = node.Value("time", DesignKit.RankOf(node), 8f);
             Vector3 toCaster = caster.transform.position - target.Point;
-            toCaster.y = 0f;
-            Quaternion facing = Quaternion.LookRotation(toCaster.sqrMagnitude > 0.01f ? toCaster.normalized : -caster.transform.forward);
+            toCaster = Ring.Flat(toCaster, target.Point);   // off the halo ring: toCaster.y = 0
+            Vector3 wallUp = Ring.Up(target.Point);         // Vector3.up off the ring (LookRotation's default)
+            Quaternion facing = Quaternion.LookRotation(toCaster.sqrMagnitude > 0.01f ? toCaster.normalized : -caster.transform.forward, wallUp);
             Vector3 side = facing * Vector3.right;
             var made = new List<GameObject>();
             for (int i = -1; i <= 1; i++)
             {
                 Vector3 at = target.Point + side * (i * WallSegment);
-                if (ZoneSystem.instance != null && ZoneSystem.instance.GetGroundHeight(at, out float ground)) at.y = ground;
+                if (!Ring.InField(at)) { if (ZoneSystem.instance != null && ZoneSystem.instance.GetGroundHeight(at, out float ground)) at.y = ground; }
+                else if (Ring.DropToSurface(at, out Vector3 surface)) at = surface;
                 var go = Object.Instantiate(prefab, at, facing);
                 foreach (var wear in go.GetComponentsInChildren<WearNTear>()) wear.m_noRoofWear = true;
                 BoneWallLook.MarkAndDress(go);   // bones, not stone - same collider and health
@@ -124,7 +126,8 @@ namespace FiresRPGClasses.Combat
         {
             AbilityRPCManager.ApplySingleEffect(caster, enemy, Withered, WitherSeconds);
             Vector3 away = enemy.transform.position - caster.transform.position;
-            away.y = 0f;
+            away = Ring.Flat(away, enemy.transform.position);   // off the halo ring: away.y = 0
+
             var hit = new HitData { m_point = enemy.GetCenterPoint(), m_dir = away.sqrMagnitude > 0.01f ? away.normalized : caster.transform.forward };
             hit.SetAttacker(caster);
             hit.m_damage.m_poison = dps * WitherSeconds;

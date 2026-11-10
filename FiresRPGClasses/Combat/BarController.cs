@@ -37,6 +37,9 @@ namespace FiresRPGClasses.Combat
 
         public static event Action<BarSide> BarsChanged;
 
+        /// <summary>0.1.211: GodApi's direct bar writes tell the HUD the same way the bar paths do.</summary>
+        internal static void NotifyBarsChanged(BarSide side) => BarsChanged?.Invoke(side);
+
         /// <summary>After a front / back swap (from, to), local player. Drives the HUD's swap cue.</summary>
         public static event Action<BarSide, BarSide> BarSwapped;
 

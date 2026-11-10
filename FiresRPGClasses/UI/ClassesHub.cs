@@ -138,7 +138,7 @@ namespace FiresRPGClasses.UI
         public override void OnHide()
         {
             // The editor hosted over the hub goes with it (nothing it made outlives the hub)
-            if (ClassesPanel.AppearanceEditor.IsOpen()) { FiresRPGClassesPlugin.Log?.LogInfo("[ClassesHub] hub hides: closing the Fires Character Creator first"); ClassesPanel.AppearanceEditor.Close(); }
+            if (ClassesPanel.AppearanceEditor.IsOpen()) { FiresRPGClassesPlugin.Log?.LogDebug("[ClassesHub] hub hides: closing the Fires Character Creator first"); ClassesPanel.AppearanceEditor.Close(); }
             ReturnPages();
         }
 
@@ -149,7 +149,7 @@ namespace FiresRPGClasses.UI
         public override bool OnEscape()
         {
             // Esc closes the hosted Character Creator first and returns to the hub page under it
-            if (ClassesPanel.AppearanceEditor.IsOpen()) { FiresRPGClassesPlugin.Log?.LogInfo("[ClassesHub] Esc: Fires Character Creator closed, hub stays"); ClassesPanel.AppearanceEditor.Close(); return true; }
+            if (ClassesPanel.AppearanceEditor.IsOpen()) { FiresRPGClassesPlugin.Log?.LogDebug("[ClassesHub] Esc: Fires Character Creator closed, hub stays"); ClassesPanel.AppearanceEditor.Close(); return true; }
             return ClassesPanel.Instance != null && ClassesPanel.Instance.CloseOverlayHosted();
         }
 
@@ -162,7 +162,7 @@ namespace FiresRPGClasses.UI
                 // FCC sees FiresShell.IsOpen and is hosted on top; the hub keeps input/hotbars/Esc. The sub-tab row
                 // goes back to the page under the editor, so a second click is a fresh (idempotent) open request.
                 bool already = ClassesPanel.AppearanceEditor.IsOpen();
-                FiresRPGClassesPlugin.Log?.LogInfo($"[ClassesHub] Appearance: open Fires Character Creator over the hub (already open={already})");
+                FiresRPGClassesPlugin.Log?.LogDebug($"[ClassesHub] Appearance: open Fires Character Creator over the hub (already open={already})");
                 ClassesPanel.AppearanceEditor.Open();
                 var panel = ClassesPanel.Instance;
                 if (panel != null) { _selecting = true; try { _ctx?.SelectSubTab(SubId(panel.CurrentTab)); } finally { _selecting = false; } }
@@ -172,7 +172,7 @@ namespace FiresRPGClasses.UI
             // pre-set to "valheim" (FiresRPGClasses' own catalogue). On an older Core the module is absent and the Classes view stays.
             if (id == "achievements" && HubAchievements())
             {
-                FiresRPGClassesPlugin.Log?.LogInfo("[ClassesHub] Achievements: handed off to the hub tab fires.achievements (valheim)");
+                FiresRPGClassesPlugin.Log?.LogDebug("[ClassesHub] Achievements: handed off to the hub tab fires.achievements (valheim)");
                 FiresShell.Open("fires.achievements", "valheim");
                 return;
             }
@@ -185,7 +185,7 @@ namespace FiresRPGClasses.UI
             if (s_hubAchievements == null)
             {
                 s_hubAchievements = Type.GetType("FiresCore.UI.Shell.ShellAchievementsModule, FiresUnifiedCore", false) != null;
-                FiresRPGClassesPlugin.Log?.LogInfo($"[ClassesHub] hub Achievements tab {(s_hubAchievements.Value ? "found (Core 0.2.521+): the sub-tab hands off" : "absent (Core < 0.2.521): the Classes view stays")}");
+                FiresRPGClassesPlugin.Log?.LogDebug($"[ClassesHub] hub Achievements tab {(s_hubAchievements.Value ? "found (Core 0.2.521+): the sub-tab hands off" : "absent (Core < 0.2.521): the Classes view stays")}");
             }
             return s_hubAchievements.Value;
         }

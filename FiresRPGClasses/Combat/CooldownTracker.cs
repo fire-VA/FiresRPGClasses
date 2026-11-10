@@ -59,6 +59,29 @@ namespace FiresRPGClasses.Combat
             return Mathf.Max(0f, readyAt - Time.time);
         }
 
+        // 0.1.213 ([lead] / [ghost], the Studio god clone fights as its class): one clock per OTHER body (a non-player caster's ZDOID),
+        // add-only; the local player keeps the node-id key above, unchanged
+        private static readonly Dictionary<string, float> BodyReadyAt = new Dictionary<string, float>();
+        private static string BodyKey(ZDOID body, string nodeId) => body.UserID + ":" + body.ID + "|" + nodeId;
+
+        public static void StartFor(ZDOID body, string nodeId, float seconds)
+        {
+            if (string.IsNullOrEmpty(nodeId) || seconds <= 0f) return;
+            BodyReadyAt[BodyKey(body, nodeId)] = Time.time + seconds;
+        }
+
+        public static bool IsReadyFor(ZDOID body, string nodeId) =>
+            !string.IsNullOrEmpty(nodeId) && (!BodyReadyAt.TryGetValue(BodyKey(body, nodeId), out float at) || Time.time >= at);
+
+        public static float RemainingFor(ZDOID body, string nodeId) =>
+            !string.IsNullOrEmpty(nodeId) && BodyReadyAt.TryGetValue(BodyKey(body, nodeId), out float at) ? Mathf.Max(0f, at - Time.time) : 0f;
+
+        public static void ClearFor(ZDOID body)
+        {
+            string prefix = body.UserID + ":" + body.ID + "|";
+            foreach (var k in new List<string>(BodyReadyAt.Keys)) if (k.StartsWith(prefix, StringComparison.Ordinal)) BodyReadyAt.Remove(k);
+        }
+
         /// <summary>0 when ready, 1 when the cooldown just started - the HUD sweep.</summary>
         public static float Fraction(string nodeId, float total)
         {

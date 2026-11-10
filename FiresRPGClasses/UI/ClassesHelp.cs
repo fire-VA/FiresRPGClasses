@@ -20,7 +20,7 @@ namespace FiresRPGClasses.UI
         private const string TopicPrefix = "Classes: ";
 
         /// <summary>The cheat commands (Combat\ClassAdminCommands), listed only while devcommands are on.</summary>
-        private static readonly string[] AdminCommands = { "class_xp", "class_level", "class_ult_xp", "class_set", "class_cooldown_reset" };
+        private static readonly string[] AdminCommands = { "class_xp", "class_level", "class_ult_xp", "class_set", "class_cooldown_reset", "class_slot", "class_learn" };
 
         private static readonly AccessTools.FieldRef<Dictionary<string, Terminal.ConsoleCommand>> Commands =
             AccessTools.StaticFieldRefAccess<Dictionary<string, Terminal.ConsoleCommand>>(AccessTools.Field(typeof(Terminal), "commands"));

@@ -239,15 +239,15 @@ namespace FiresRPGClasses.Combat
         [HarmonyPostfix]
         private static void After(ObjectDB __instance)
         {
-            RaceItems.RegisterItems(__instance);
-            RaceEffects.Register(__instance);
+            Guarded.Run("RaceItems.RegisterItems", () => RaceItems.RegisterItems(__instance));   // 0.1.201 (load/save audit M17)
+            Guarded.Run("RaceEffects.Register", () => RaceEffects.Register(__instance));
         }
     }
 
     [HarmonyPatch(typeof(ZNetScene), "Awake")]
     internal static class RaceItemsNetPatch
     {
-        [HarmonyPostfix] private static void After(ZNetScene __instance) => RaceItems.RegisterNet(__instance);
+        [HarmonyPostfix] private static void After(ZNetScene __instance) => Guarded.Run("RaceItems.RegisterNet", () => RaceItems.RegisterNet(__instance));
     }
 
     [HarmonyPatch(typeof(Player), nameof(Player.ConsumeItem))]

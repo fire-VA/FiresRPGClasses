@@ -124,7 +124,7 @@ namespace FiresRPGClasses.UI
             }
             _lastSelected = int.MinValue;
             PaintSelection(d);
-            FiresRPGClassesPlugin.Log?.LogInfo($"[Skills] vanilla page skinned: {rows} rows (override on, gamepad index {d.m_selectionIndex}, {hidden} vanilla frame image(s) hidden)");
+            FiresRPGClassesPlugin.Log?.LogDebug($"[Skills] vanilla page skinned: {rows} rows (override on, gamepad index {d.m_selectionIndex}, {hidden} vanilla frame image(s) hidden)");
         }
 
         private static IEnumerable<GameObject> Elements(SkillsDialog d)

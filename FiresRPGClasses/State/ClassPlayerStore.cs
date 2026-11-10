@@ -212,6 +212,7 @@ namespace FiresRPGClasses.State
         public static int ReconcileWithSettings(ClassPlayerData data)
         {
             if (data == null) return 0;
+            if (data.God) { FiresRPGClassesPlugin.Log.LogDebug("[ClassStore] reconcile skipped: the record is a Studio God edit (GodApi.SetGod(false) hands it back to the rules)"); return 0; }
             ProgressionRates rates = ProgressionSettings.IsInitialized
                 ? ProgressionSettings.CurrentRates
                 : ProgressionSettings.DefaultRates;

@@ -144,7 +144,7 @@ namespace FiresRPGClasses.UI
             if (refunded.Count == 0) return 0;
 
             foreach (ClassTreeNode node in refunded)
-                FiresRPGClassesPlugin.Log.LogInfo("[Classes] Master talent " + node.DisplayName + " (" + node.Archetype
+                FiresRPGClassesPlugin.Log.LogDebug("[Classes] Master talent " + node.DisplayName + " (" + node.Archetype
                     + ") refunded: it now needs " + ClassTrees.MasterPointsRequiredInPath + " points in " + PathName(node) + ".");
             string names = string.Join(", ", refunded.Select(n => n.DisplayName).ToArray());
             string paths = string.Join(", ", refunded.Select(PathName).Distinct().ToArray());

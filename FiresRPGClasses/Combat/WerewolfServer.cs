@@ -120,8 +120,28 @@ namespace FiresRPGClasses.Combat
 
         // ── client ──────────────────────────────────────────────────────────────────────────────────────────────────
 
-        private static void RPC_Answer(long sender, int reasonValue, bool granted, float seconds, string why) =>
-            Answered?.Invoke((Reason)Mathf.Clamp(reasonValue, 0, 2), granted, seconds, why);
+        private static void RPC_Answer(long sender, int reasonValue, bool granted, float seconds, string why)
+        {
+            // 0.1.193 security: only the server answers (the routed sender id can be spoofed by any peer).
+            if (!FromServer(sender)) { FiresRPGClassesPlugin.Log?.LogWarning($"[Werewolf] refused a Wolf Form answer from peer {sender}: not the server"); return; }
+            Reason reason = (Reason)Mathf.Clamp(reasonValue, 0, 2);
+            float cap = reason == Reason.Rage ? WerewolfConfig.Value(WerewolfConfig.RageSeconds, 15f)
+                      : reason == Reason.Moon ? MoonSecondsCap : SkillSecondsCap;
+            if (float.IsNaN(seconds) || float.IsInfinity(seconds)) seconds = 1f;
+            float clamped = Mathf.Clamp(seconds, 1f, cap);
+            if (granted && clamped != seconds) FiresRPGClassesPlugin.Log?.LogWarning($"[Werewolf] server answer {seconds} s clamped to {clamped:0} s");
+            Answered?.Invoke(reason, granted, clamped, why);
+        }
+
+        /// <summary>0.1.193: true when <paramref name="sender"/> is the server (this machine on a listen host / single player).</summary>
+        internal static bool FromServer(long sender)
+        {
+            ZNet net = ZNet.instance;
+            if (net == null) return false;
+            if (net.IsServer()) return sender == ZDOMan.GetSessionID();
+            ZNetPeer server = net.GetServerPeer();
+            return server != null && server.m_uid == sender;
+        }
 
         /// <summary>Asks the server (on a listen host or single player: this machine) to start Wolf Form.</summary>
         internal static bool Ask(Reason reason, float seconds)

@@ -53,14 +53,14 @@ namespace FiresRPGClasses.Combat
             if (!(caster is Player player) || player != Player.m_localPlayer) return false;
             float range = node.Targeting.Range > 0f ? node.Targeting.Range : 10f;
             Vector3 dir = target.Resolved ? target.Point - player.transform.position : player.transform.forward;
-            dir.y = 0f;
+            dir = Ring.Flat(dir, player.transform.position);   // off the halo ring: dir.y = 0
             _chargeDir = dir.sqrMagnitude > 0.01f ? dir.normalized : player.transform.forward;
             _chargeBlunt = node.Value("blunt", DesignKit.RankOf(node), 60f);
             _chargeUntil = Time.time + range / ChargeSpeed;
             ChargeHit.Clear();
             LastChargeHits = 0;
             _closestMiss = float.MaxValue; _closestMissName = null;
-            player.transform.rotation = Quaternion.LookRotation(_chargeDir);
+            player.transform.rotation = Quaternion.LookRotation(_chargeDir, Ring.Up(player.transform.position));
             SkillFx.Play(BreakwallId, player.transform.position, SkillFx.Stomp, 0.1f);
             Log($"{BreakwallId}: charging {range:0} m, {_chargeBlunt:0} blunt");
             return true;
@@ -107,7 +107,16 @@ namespace FiresRPGClasses.Combat
             // the player's own FixedUpdate writes the body's velocity from its move input, so a velocity set here would never
             // hold. The charge moves the body a step a frame, held to the ground under it.
             Vector3 next = me.transform.position + _chargeDir * ChargeSpeed * Time.deltaTime;
-            if (ZoneSystem.instance != null && ZoneSystem.instance.GetSolidHeight(next, out float ground)) next.y = Mathf.Max(ground, next.y - 0.5f);
+            if (!Ring.InField(next))
+            {
+                if (ZoneSystem.instance != null && ZoneSystem.instance.GetSolidHeight(next, out float ground)) next.y = Mathf.Max(ground, next.y - 0.5f);
+            }
+            else if (Ring.DropToSurface(next, out Vector3 surface))
+            {
+                // halo ring: the world-Y heightmap is meaningless; held to the surface under the body along the local up
+                Vector3 ru = Ring.Up(next);
+                next += ru * Mathf.Max(Vector3.Dot(surface - next, ru), -0.5f);
+            }
             me.transform.position = next;
             SkillFx.Play(BreakwallId + "_dust", next, SkillFx.GroundSlam, 0.3f);
             if (me.m_body != null) { me.m_body.position = next; me.m_body.linearVelocity = Vector3.zero; }
@@ -135,11 +144,11 @@ namespace FiresRPGClasses.Combat
             _stepNext = Time.time + StepsGap;
             if (c == null || c.IsDead()) return;
             Vector3 away = me.transform.position - c.transform.position;
-            away.y = 0f;
+            away = Ring.Flat(away, c.transform.position);   // off the halo ring: away.y = 0
             Vector3 spot = c.transform.position + (away.sqrMagnitude > 0.01f ? away.normalized : -c.transform.forward) * 1.2f;
             me.transform.position = spot;
             if (me.m_body != null) { me.m_body.position = spot; me.m_body.linearVelocity = Vector3.zero; }
-            me.transform.rotation = Quaternion.LookRotation(Flat(c.transform.position - spot, me.transform.forward));
+            me.transform.rotation = Quaternion.LookRotation(Flat(c.transform.position - spot, me.transform.forward), Ring.Up(spot));
             ItemDrop.ItemData weapon = me.GetCurrentWeapon();
             var hit = new HitData { m_point = c.GetCenterPoint(), m_dir = Flat(c.transform.position - spot, me.transform.forward) };
             hit.m_damage = weapon != null ? weapon.GetDamage() : new HitData.DamageTypes { m_blunt = 10f };
@@ -153,7 +162,8 @@ namespace FiresRPGClasses.Combat
 
         private static Vector3 Flat(Vector3 v, Vector3 fallback)
         {
-            v.y = 0f;
+            Vector3 me = Player.m_localPlayer != null ? Player.m_localPlayer.transform.position : Vector3.zero;
+            v = Ring.Flat(v, me);   // off the halo ring: v.y = 0
             return v.sqrMagnitude > 0.01f ? v.normalized : fallback;
         }
 
@@ -171,7 +181,9 @@ namespace FiresRPGClasses.Combat
 
         private static float FlatDistanceToSegment(Vector3 p, Vector3 a, Vector3 b)
         {
-            p.y = 0f; a.y = 0f; b.y = 0f;
+            if (!Ring.InField(a)) { p.y = 0f; a.y = 0f; b.y = 0f; }
+            else { Vector3 ru = Ring.Up(a); p = Vector3.ProjectOnPlane(p, ru); a = Vector3.ProjectOnPlane(a, ru); b = Vector3.ProjectOnPlane(b, ru); }
+
             Vector3 ab = b - a;
             float t = ab.sqrMagnitude > 1e-6f ? Mathf.Clamp01(Vector3.Dot(p - a, ab) / ab.sqrMagnitude) : 0f;
             return Vector3.Distance(p, a + ab * t);

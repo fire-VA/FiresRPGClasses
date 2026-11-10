@@ -3,6 +3,19 @@
 RPG classes for Valheim: ten classes, talent trees, two ability bars, ultimates, werewolves and vampires. Pick a
 class for each bar, level up as you play, and spend your points on talents and attributes.
 
+## What's new in 0.1.220
+
+**Class settings now live in this mod.** The settings for class progression (how you earn class levels), the ground
+rings under area skills, locational damage (where a hit lands on the body) and the melee aim's maximum tilt used to
+sit in FiresUnifiedCore's config. They are now in this mod's own config, `com.Fire.FiresRPGClasses.cfg`. The first
+time you load this version, your old values are copied over from Core once, so nothing resets. On a server, the
+progression and locational damage settings still come from the server.
+
+**Faster to load and to quit.** Building pieces load a little faster, and the game no longer freezes for a long time
+when you quit.
+
+**Quieter log.** Routine messages only show with debug logging turned on.
+
 ## What you get
 
 - **Ten classes** - Tank, Paladin, Berserker, Rogue, Monk, Ranger, Mage, Healer, Druid and Necromancer.
@@ -53,7 +66,10 @@ class for each bar, level up as you play, and spend your points on talents and a
 - Settings are in the F1 hub config page or `BepInEx/config/com.Fire.FiresRPGClasses.cfg`. Things you might
   change: the skill key modifier, how aimed skills are cast (hold and release, press then click, or instant), the
   icon style, raven hints, and whether the Skills button opens the Classes window or the normal Skills screen.
-- On a server, attribute values and the werewolf and vampire rules come from the server.
+- Melee aim, the red crosshair over enemies, class progression, ground rings and locational damage are all set in
+  this mod's config.
+- On a server, attribute values, class progression, locational damage and the werewolf and vampire rules come from
+  the server.
 - Admins: the in-game help lists every admin command (they need devcommands).
 
 ## Issues / questions

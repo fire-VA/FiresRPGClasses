@@ -94,10 +94,11 @@ namespace FiresRPGClasses.Combat
                 // An invalid spot still shows the marker - at the edge of the range along the aim, in Core's
                 // "Invalid" ring colour when it has one - so the player sees why LMB does nothing.
                 if (node.Targeting.Mode != TargetingMode.Placed || GameCamera.instance == null) { ReleasePreview(); return; }
-                Vector3 fwd = GameCamera.instance.transform.forward; fwd.y = 0f;
+                Vector3 fwd = Ring.Flat(GameCamera.instance.transform.forward, player.transform.position);   // off the halo ring: fwd.y = 0
                 float range = node.Targeting.Range > 0f ? node.Targeting.Range : AimRayLength;
                 Vector3 edge = player.transform.position + (fwd.sqrMagnitude > 0.01f ? fwd.normalized : player.transform.forward) * range;
-                if (ZoneSystem.instance != null && ZoneSystem.instance.GetGroundHeight(edge, out float ground)) edge.y = ground;
+                if (!Ring.InField(edge)) { if (ZoneSystem.instance != null && ZoneSystem.instance.GetGroundHeight(edge, out float ground)) edge.y = ground; }
+                else if (Ring.DropToSurface(edge, out Vector3 surface)) edge = surface;
                 target = CastTarget.At(edge);
                 if (System.Enum.IsDefined(typeof(GroundRingKind), "Invalid")) kind = (GroundRingKind)System.Enum.Parse(typeof(GroundRingKind), "Invalid");
                 InvalidNow = true;
@@ -155,10 +156,19 @@ namespace FiresRPGClasses.Combat
                 return CastTarget.No("nothing in sight");
 
             Vector3 point = hit.point;
-            point.y = GroundHeightSampler.Sample(point, point.y);
-
             Vector3 origin = player.transform.position;
-            Vector3 flat = new Vector3(point.x - origin.x, 0f, point.z - origin.z);
+            Vector3 flat;
+            if (!Ring.InField(point))
+            {
+                point.y = GroundHeightSampler.Sample(point, point.y);
+                flat = new Vector3(point.x - origin.x, 0f, point.z - origin.z);
+            }
+            else
+            {
+                // halo ring: the hit point is already on the surface (world-Y resample would misplace it); range in the tangent plane
+                flat = Vector3.ProjectOnPlane(point - origin, Ring.Up(origin));
+            }
+
             if (flat.magnitude > range) return CastTarget.No("out of range");
 
             return CastTarget.At(point);

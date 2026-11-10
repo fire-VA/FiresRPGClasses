@@ -57,9 +57,10 @@ namespace FiresRPGClasses.UI
         /// <summary>
         /// Vanilla's ladder, read out of IngameGui prefabs in the rip - all overrideSorting = 1:
         /// Chat 300, HUD 400, InventoryGui and its crafting page 600, Store 700, TextInput 1100,
-        /// Esc menu 1700. 1000 is over the inventory and under TextInput and the Esc menu.
+        /// Esc menu 1700. 2000 (the same as Core's ShellHub canvas) puts this window above the Esc menu
+        /// at 1700; under it, clicks fell through to pause-menu buttons such as Logout.
         /// </summary>
-        private const int SortOrder = 1000;
+        private const int SortOrder = 2000;
         private const float PanelWidthFraction = 0.72f;
         private const float PanelHeightFraction = 0.78f;
         private static readonly Vector2 DefaultPanelSize = new Vector2(1440f, 920f);
@@ -188,7 +189,7 @@ namespace FiresRPGClasses.UI
             if (_root == null || !_root.activeSelf) return;
             _root.SetActive(false);
             _legacyHides++;
-            FiresRPGClassesPlugin.Log?.LogInfo($"[ClassesHub] legacy Classes window hidden ({why}); hides this session {_legacyHides}");
+            FiresRPGClassesPlugin.Log?.LogDebug($"[ClassesHub] legacy Classes window hidden ({why}); hides this session {_legacyHides}");
         }
 
         public bool IsOpen => (_root != null && _root.activeSelf)
@@ -346,7 +347,7 @@ namespace FiresRPGClasses.UI
                     scroll.scrollSensitivity = target;
                     string view = scroll.gameObject.name;
                     if (row > 0f && _loggedScroll.Add(view + "|" + Mathf.RoundToInt(row)))
-                        FiresRPGClassesPlugin.Log.LogInfo($"[ClassesHub] scroll: {view} sensitivity {target:0.#} (rows per notch {target / row:0.#}; row {row:0.#} px, vanilla {vanilla:0.#}, x{mul:0.##})");
+                        FiresRPGClassesPlugin.Log.LogDebug($"[ClassesHub] scroll: {view} sensitivity {target:0.#} (rows per notch {target / row:0.#}; row {row:0.#} px, vanilla {vanilla:0.#}, x{mul:0.##})");
                 }
             }
         }
@@ -387,7 +388,7 @@ namespace FiresRPGClasses.UI
                     var data = new UnityEngine.EventSystems.PointerEventData(UnityEngine.EventSystems.EventSystem.current) { scrollDelta = new Vector2(0f, -1f) };
                     for (int i = 0; i < notches; i++) scroll.OnScroll(data);
                     float rows = (scroll.content.anchoredPosition.y - y0) / row;
-                    FiresRPGClassesPlugin.Log.LogInfo($"[ClassesHub] scroll probe: {view} {notches} notches moved {rows:0.##} rows (row {row:0.#} px, sensitivity {scroll.scrollSensitivity:0.#})");
+                    FiresRPGClassesPlugin.Log.LogDebug($"[ClassesHub] scroll probe: {view} {notches} notches moved {rows:0.##} rows (row {row:0.#} px, sensitivity {scroll.scrollSensitivity:0.#})");
                     scroll.verticalNormalizedPosition = 1f;
                     return rows;
                 }

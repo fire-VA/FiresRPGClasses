@@ -145,35 +145,51 @@ namespace FiresRPGClasses.Combat
         private const string PressurePointsNodeId = "monk_pressure_points";
         private const float PressureChainSeconds = 2f;
         private const float InstantStagger = 100f;
-        private static Character _pressureTarget;
-        private static int _pressureHits;
-        private static float _lastPressureHit = float.NegativeInfinity;
-
-        private static float _counterstrikeUntil = float.NegativeInfinity;
-        private static float _headtakerUntil = float.NegativeInfinity;
-
-        /// <summary>A passive's yaml value at the local player's rank in it.</summary>
-        private static float ValueOf(string nodeId, string key)
+        // 0.1.214 ([lead] / [ghost] step 3b, the Studio god clone's passives): this kit's state per BODY. The local player is one instance
+        // (S_local) read from its record exactly as before; a registered class body (ClassBodies) gets its own from ITS record and gear,
+        // with its own fury / combo / pressure chain / windows / cooldowns. Every hook reads the state of the body it is about.
+        private sealed class State
         {
-            ClassTreeNode node = ClassTrees.Node(nodeId);
-            return node == null ? 0f : node.Value(key, DesignKit.RankOf(node));
+            public readonly HashSet<string> Ours = new HashSet<string>();
+            public readonly HashSet<string> Active = new HashSet<string>();
+            // Each on passive's learned rank, read with the Active set once a second, so no hook looks it up per hit or frame.
+            public readonly Dictionary<string, int> Ranks = new Dictionary<string, int>();
+            public float NextTick;
+            public float LastRage = float.NegativeInfinity;
+            public int InterceptRankShown;
+            public int Fury;
+            public float LastFuryHit = float.NegativeInfinity;
+            public int Combo;
+            public float LastComboHit = float.NegativeInfinity;
+            public float LastCaltrops = float.NegativeInfinity;
+            public bool LastShotFull;
+            public float LastShotTime = float.NegativeInfinity;
+            public Character PressureTarget;
+            public int PressureHits;
+            public float LastPressureHit = float.NegativeInfinity;
+            public float CounterstrikeUntil = float.NegativeInfinity;
+            public float HeadtakerUntil = float.NegativeInfinity;
+            public ClassPlayerData Record;   // null = the local player (its record through ClassPlayerStore.Local, as before)
+            public bool On(string nodeId) => Active.Contains(nodeId);
+            public int RankIn(string nodeId) => Ranks.TryGetValue(nodeId, out int rank) ? rank : 1;
+            public float Of(float[] values, string nodeId) => AtRank(values, RankIn(nodeId));
+            /// <summary>A passive's yaml value at this body's rank in it.</summary>
+            public float ValueOf(string nodeId, string key) { ClassTreeNode node = ClassTrees.Node(nodeId); return node == null ? 0f : node.Value(key, RankIn(nodeId)); }
+        }
+        private static readonly State S_local = new State();
+        private static readonly Dictionary<Character, State> S_bodies = new Dictionary<Character, State>();
+
+        private static State StateOf(Character c)
+        {
+            if (c == null) return null;
+            if (c == Player.m_localPlayer) return S_local;
+            if (!ClassBodies.IsRegistered(c)) return null;
+            if (!S_bodies.TryGetValue(c, out State s)) S_bodies[c] = s = new State();
+            return s;
         }
 
-        private static readonly HashSet<string> Ours = new HashSet<string>();
-        private static readonly HashSet<string> Active = new HashSet<string>();
-        // Each on passive's learned rank, read with the Active set once a second, so no hook looks it up per hit or frame.
-        private static readonly Dictionary<string, int> Ranks = new Dictionary<string, int>();
-        private static float _nextTick;
-        private static float _lastRage = float.NegativeInfinity;
-        private static int _interceptRankShown;
-        private static int _fury;
-        private static float _lastFuryHit = float.NegativeInfinity;
-        private static int _combo;
-        private static float _lastComboHit = float.NegativeInfinity;
-        private static float _lastCaltrops = float.NegativeInfinity;
-        private static bool _lastShotFull;
-        /// <summary>Deadeye reads whether the last shot left at full draw.</summary>
-        internal static bool LastShotFull => _lastShotFull;
+        /// <summary>Deadeye reads whether the local player's last shot left at full draw.</summary>
+        internal static bool LastShotFull => S_local.LastShotFull;
 
         /// <summary>Pain Fuels Me adds Fury from hits taken (the same counter and drain as Fury's hits dealt).</summary>
         /// <summary>Fury's damage bonus at <paramref name="stacks"/> (>= full): knee x stacks / full, through SoftCap.Soft.</summary>
@@ -183,16 +199,20 @@ namespace FiresRPGClasses.Combat
             return SoftCap.Soft(knee * stacks / FuryFull, knee);
         }
 
-        internal static void AddFury(int amount)
+        internal static void AddFury(int amount) => AddFury(S_local, amount);
+
+        /// <summary>Pain Fuels Me on a class body (its own fury).</summary>
+        internal static void AddFury(Character body, int amount) { State st = StateOf(body); if (st != null) AddFury(st, amount); }
+
+        private static void AddFury(State st, int amount)
         {
-            if (Time.time - _lastFuryHit > FuryDrainSeconds) _fury = 0;
-            _fury = Mathf.Min(_fury + amount, FuryMax);
-            _lastFuryHit = Time.time;
+            if (Time.time - st.LastFuryHit > FuryDrainSeconds) st.Fury = 0;
+            st.Fury = Mathf.Min(st.Fury + amount, FuryMax);
+            st.LastFuryHit = Time.time;
         }
 
         /// <summary>For FiresClassTest: Fury now.</summary>
-        public static int FuryNow => Time.time - _lastFuryHit > FuryDrainSeconds ? 0 : _fury;
-        private static float _lastShotTime = float.NegativeInfinity;
+        public static int FuryNow => Time.time - S_local.LastFuryHit > FuryDrainSeconds ? 0 : S_local.Fury;
 
         public static bool Handles(string nodeId) => nodeId != null && (AlwaysOn.ContainsKey(nodeId) || Hooked.Contains(nodeId));
 
@@ -277,84 +297,95 @@ namespace FiresRPGClasses.Combat
 
         private static string Pct(float fraction) => (Mathf.Round(fraction * 1000f) / 10f).ToString("0.#") + "%";
 
-        private static bool On(string nodeId) => Active.Contains(nodeId);
-
-        private static int RankIn(string nodeId) => Ranks.TryGetValue(nodeId, out int rank) ? rank : 1;
-
         /// <summary>A per-rank value at a rank (1-based; past the table, its last entry).</summary>
         private static float AtRank(float[] values, int rank) => values[Mathf.Clamp(rank, 1, values.Length) - 1];
 
-        /// <summary>A per-rank value at the local player's rank in that passive.</summary>
-        private static float Of(float[] values, string nodeId) => AtRank(values, RankIn(nodeId));
-
-        private static bool IsLocal(Character character) => character != null && character == Player.m_localPlayer;
-
-        /// <summary>Called every frame by ClassCombatDriver; does its work once a second.</summary>
+        /// <summary>Called every frame by ClassCombatDriver; does its work once a second - the local player, then each registered class body.</summary>
         public static void Tick()
         {
-            if (Time.time < _nextTick) return;
-            _nextTick = Time.time + TickSeconds;
             Player player = Player.m_localPlayer;
-            if (player == null || player.IsDead()) { Active.Clear(); Ranks.Clear(); return; }
+            if (Time.time >= S_local.NextTick)
+            {
+                S_local.NextTick = Time.time + TickSeconds;
+                if (player == null || player.IsDead()) { S_local.Active.Clear(); S_local.Ranks.Clear(); }
+                else { TickBody(S_local, player); DruidNecroPassives.Tick(); }
+            }
+            foreach (Character body in ClassBodies.Bodies())
+            {
+                State st = StateOf(body);
+                if (st == null || Time.time < st.NextTick) continue;
+                st.NextTick = Time.time + TickSeconds;
+                st.Record = ClassBodies.Record(body);
+                if (body.IsDead() || !(body is Humanoid)) { st.Active.Clear(); st.Ranks.Clear(); continue; }
+                TickBody(st, body);
+            }
+            foreach (Character gone in new List<Character>(S_bodies.Keys)) if (gone == null || !ClassBodies.IsRegistered(gone)) S_bodies.Remove(gone);
+        }
 
-            Active.Clear();
-            Ranks.Clear();
+        private static PassiveStatus StatusFor(State st, ClassTreeNode node, Character body) =>
+            st.Record == null ? PassiveLoadout.Status(node) : PassiveLoadout.Status(node, st.Record, body as Humanoid);
+
+        private static int RankFor(State st, ClassTreeNode node) => st.Record == null ? DesignKit.RankOf(node) : DesignKit.RankOf(node, st.Record);
+
+        private static void TickBody(State st, Character player)
+        {
+            st.Active.Clear();
+            st.Ranks.Clear();
             foreach (string nodeId in Hooked)
             {
                 ClassTreeNode node = ClassTrees.Node(nodeId);
-                if (node == null || PassiveLoadout.Status(node) != PassiveStatus.Active) continue;
-                Active.Add(nodeId);
-                Ranks[nodeId] = DesignKit.RankOf(node);
+                if (node == null || StatusFor(st, node, player) != PassiveStatus.Active) continue;
+                st.Active.Add(nodeId);
+                st.Ranks[nodeId] = RankFor(st, node);
             }
 
             foreach (KeyValuePair<string, string> passive in AlwaysOn)
             {
                 ClassTreeNode node = ClassTrees.Node(passive.Key);
-                bool wanted = node != null && PassiveLoadout.Status(node) == PassiveStatus.Active;
-                if (wanted) Ranks[passive.Key] = DesignKit.RankOf(node);
+                bool wanted = node != null && StatusFor(st, node, player) == PassiveStatus.Active;
+                if (wanted) st.Ranks[passive.Key] = RankFor(st, node);
                 bool has = StatusEffectManager.HasEffect(player, passive.Value);
                 if (wanted && !has)
                 {
                     if (AbilityRPCManager.ApplySelfBuff(player, passive.Value, 0f))
                     {
-                        if (Ours.Add(passive.Value)) FiresRPGClassesPlugin.Log?.LogInfo($"[Passive] {passive.Key} on ({passive.Value})");
+                        if (st.Ours.Add(passive.Value)) FiresRPGClassesPlugin.Log?.LogDebug($"[Passive] {passive.Key} on ({passive.Value}){(st == S_local ? "" : " for " + player.m_name)}");
                     }
                 }
-                else if (!wanted && has && Ours.Remove(passive.Value))
+                else if (!wanted && has && st.Ours.Remove(passive.Value))
                 {
                     AbilityRPCManager.RemoveSelfBuff(player, passive.Value);
-                    FiresRPGClassesPlugin.Log?.LogInfo($"[Passive] {passive.Key} off ({passive.Value})");
+                    FiresRPGClassesPlugin.Log?.LogDebug($"[Passive] {passive.Key} off ({passive.Value}){(st == S_local ? "" : " for " + player.m_name)}");
                 }
             }
 
-            if (On(RageNodeId) && player.GetHealthPercentage() < RageHealthShare && Time.time - _lastRage >= RageCooldownSeconds
+            if (st.On(RageNodeId) && player.GetHealthPercentage() < RageHealthShare && Time.time - st.LastRage >= RageCooldownSeconds
                 && AbilityRPCManager.ApplySelfBuff(player, StatusEffectManager.EFFECT_BERSERK_RAGE, RageSeconds))
             {
-                _lastRage = Time.time;
-                FiresRPGClassesPlugin.Log?.LogInfo($"[Passive] {RageNodeId}: rage for {RageSeconds} s at {player.GetHealthPercentage():P0} health");
+                st.LastRage = Time.time;
+                FiresRPGClassesPlugin.Log?.LogDebug($"[Passive] {RageNodeId}: rage for {RageSeconds} s at {player.GetHealthPercentage():P0} health");
             }
 
-            // Execute's threshold is its rank's: the player's own copy of Core's effect, which reads it on every hit.
-            if (Ours.Contains(StatusEffectManager.EFFECT_EXECUTE)
+            // Execute's threshold is its rank's: the body's own copy of Core's effect, which reads it on every hit.
+            if (st.Ours.Contains(StatusEffectManager.EFFECT_EXECUTE)
                 && player.GetSEMan()?.GetStatusEffect(StatusEffectManager.EFFECT_EXECUTE.GetStableHashCode()) is ExecuteEffect execute)
-                execute.HealthThreshold = Of(ExecuteBelow, ExecuteNodeId);
+                execute.HealthThreshold = st.Of(ExecuteBelow, ExecuteNodeId);
 
-            // Intercept's aura is read by the party members' own peers, so it is on the player's ZDO (written only on change):
+            // Intercept's aura is read by the party members' own peers, so it is on the body's ZDO (written only on change):
             // the bool older peers read, and the rank.
-            int interceptRank = On(InterceptNodeId) ? RankIn(InterceptNodeId) : 0;
-            if (interceptRank != _interceptRankShown)
+            int interceptRank = st.On(InterceptNodeId) ? st.RankIn(InterceptNodeId) : 0;
+            if (interceptRank != st.InterceptRankShown)
             {
                 ZDO zdo = player.m_nview != null ? player.m_nview.GetZDO() : null;
                 if (zdo != null)
                 {
                     zdo.Set(InterceptZdoKey, interceptRank > 0);
                     zdo.Set(InterceptRankZdoKey, interceptRank);
-                    _interceptRankShown = interceptRank;
+                    st.InterceptRankShown = interceptRank;
                 }
             }
 
-            if (_fury > 0 && Time.time - _lastFuryHit > FuryDrainSeconds) _fury = 0;
-            DruidNecroPassives.Tick();
+            if (st.Fury > 0 && Time.time - st.LastFuryHit > FuryDrainSeconds) st.Fury = 0;
         }
 
         /// <summary>Kills credited to the local player (vanilla sends RPC_RegisterKill to every player who hit the victim).</summary>
@@ -362,16 +393,17 @@ namespace FiresRPGClasses.Combat
         {
             Player player = Player.m_localPlayer;
             if (player == null || player.IsDead()) return;
-            if (Ours.Contains(StatusEffectManager.EFFECT_RAMPAGE))
+            State st = S_local;
+            if (st.Ours.Contains(StatusEffectManager.EFFECT_RAMPAGE))
             {
                 StatusEffect effect = player.GetSEMan()?.GetStatusEffect(StatusEffectManager.EFFECT_RAMPAGE.GetStableHashCode());
                 (effect as RampageEffect)?.OnKill();
             }
-            if (On(BloodlustNodeId)) player.Heal(player.GetMaxHealth() * Of(BloodlustHealShare, BloodlustNodeId), true);
-            if (On(HeadtakerNodeId))
+            if (st.On(BloodlustNodeId)) player.Heal(player.GetMaxHealth() * st.Of(BloodlustHealShare, BloodlustNodeId), true);
+            if (st.On(HeadtakerNodeId))
             {
                 player.AddStamina(player.GetMaxStamina());
-                _headtakerUntil = Time.time + HeadtakerSeconds;
+                st.HeadtakerUntil = Time.time + HeadtakerSeconds;
             }
         }
 
@@ -381,77 +413,79 @@ namespace FiresRPGClasses.Combat
         /// </summary>
         internal static void OnLocalHitSending(Character target, HitData hit)
         {
-            if (hit == null || target == null || !IsLocal(hit.GetAttacker()) || target == hit.GetAttacker()) return;
-            Player player = Player.m_localPlayer;
+            if (hit == null || target == null || target == hit.GetAttacker()) return;
+            Character player = hit.GetAttacker();
+            State st = StateOf(player);
+            if (st == null) return;
             float factor = 1f;
 
-            if (On(FuryNodeId))
+            if (st.On(FuryNodeId))
             {
-                if (Time.time - _lastFuryHit > FuryDrainSeconds) _fury = 0;
-                _fury = Mathf.Min(_fury + 1, FuryMax);
-                _lastFuryHit = Time.time;
-                if (_fury >= FuryFull) factor *= 1f + FuryBonus(_fury);
+                if (Time.time - st.LastFuryHit > FuryDrainSeconds) st.Fury = 0;
+                st.Fury = Mathf.Min(st.Fury + 1, FuryMax);
+                st.LastFuryHit = Time.time;
+                if (st.Fury >= FuryFull) factor *= 1f + FuryBonus(st.Fury);
             }
 
             Skills.SkillType skill = hit.m_skill;
-            if (On(MartialArtsNodeId) && (skill == Skills.SkillType.Unarmed || skill == Skills.SkillType.Clubs))
+            if (st.On(MartialArtsNodeId) && (skill == Skills.SkillType.Unarmed || skill == Skills.SkillType.Clubs))
             {
-                _combo = Time.time - _lastComboHit <= ComboWindowSeconds ? Mathf.Min(_combo + 1, ComboMaxHits) : 0;
-                _lastComboHit = Time.time;
-                factor *= MartialArtsDamage + SoftCap.Soft(ComboStep * _combo, BalanceConfig.Value(BalanceConfig.ComboBonusKnee, ComboMax));
+                st.Combo = Time.time - st.LastComboHit <= ComboWindowSeconds ? Mathf.Min(st.Combo + 1, ComboMaxHits) : 0;
+                st.LastComboHit = Time.time;
+                factor *= MartialArtsDamage + SoftCap.Soft(ComboStep * st.Combo, BalanceConfig.Value(BalanceConfig.ComboBonusKnee, ComboMax));
             }
 
             bool ranged = skill == Skills.SkillType.Bows || skill == Skills.SkillType.Crossbows;
-            if (ranged && On(AimNodeId)
-                && (skill == Skills.SkillType.Crossbows || (_lastShotFull && Time.time - _lastShotTime < ShotMemorySeconds)))
-                factor *= 1f + Of(AimBonus, AimNodeId);
-            if (ranged && On(HeadshotNodeId))
+            if (ranged && st.On(AimNodeId)
+                && (skill == Skills.SkillType.Crossbows || (st.LastShotFull && Time.time - st.LastShotTime < ShotMemorySeconds)))
+                factor *= 1f + st.Of(AimBonus, AimNodeId);
+            if (ranged && st.On(HeadshotNodeId))
             {
                 BaseAI ai = target.GetBaseAI();
-                if (ai != null && !ai.IsAlerted()) factor *= 1f + Of(HeadshotBonus, HeadshotNodeId);
+                if (ai != null && !ai.IsAlerted()) factor *= 1f + st.Of(HeadshotBonus, HeadshotNodeId);
             }
 
             bool stealthy = player.IsSneaking() || StatusEffectManager.HasEffect(player, StatusEffectManager.EFFECT_STEALTH);
-            if (On(AssassinateNodeId) && stealthy) factor *= 1f + Of(AssassinateBonus, AssassinateNodeId);
-            else if (On(BackstabNodeId) && Vector3.Dot(hit.m_dir, target.transform.forward) > BehindDot) factor *= 1f + Of(BackstabBonus, BackstabNodeId);
+            if (st.On(AssassinateNodeId) && stealthy) factor *= 1f + st.Of(AssassinateBonus, AssassinateNodeId);
+            else if (st.On(BackstabNodeId) && Vector3.Dot(hit.m_dir, target.transform.forward) > BehindDot) factor *= 1f + st.Of(BackstabBonus, BackstabNodeId);
             // Rampage above rank 1: Core's effect already added its own 10% a stack to this hit, so top it up to the rank's.
-            if (Ours.Contains(StatusEffectManager.EFFECT_RAMPAGE) && RankIn(RampageNodeId) > 1
+            if (st.Ours.Contains(StatusEffectManager.EFFECT_RAMPAGE) && st.RankIn(RampageNodeId) > 1
                 && player.GetSEMan()?.GetStatusEffect(StatusEffectManager.EFFECT_RAMPAGE.GetStableHashCode()) is RampageEffect rampage
                 && rampage.CurrentStacks > 0)
-                factor *= (1f + rampage.CurrentStacks * Of(RampagePerStack, RampageNodeId))
+                factor *= (1f + rampage.CurrentStacks * st.Of(RampagePerStack, RampageNodeId))
                           / (1f + rampage.CurrentStacks * RampageEffect.DAMAGE_PER_STACK);
 
-            if (On(HeadtakerNodeId) && Time.time <= _headtakerUntil) factor *= HeadtakerDamage;
+            if (st.On(HeadtakerNodeId) && Time.time <= st.HeadtakerUntil) factor *= HeadtakerDamage;
 
             // Counterstrike: "after a parry, your next attack within 3 s deals {bonus} more damage", once.
-            if (On(CounterstrikeNodeId) && Time.time <= _counterstrikeUntil)
+            if (st.On(CounterstrikeNodeId) && Time.time <= st.CounterstrikeUntil)
             {
-                factor *= 1f + ValueOf(CounterstrikeNodeId, "bonus");
-                _counterstrikeUntil = float.NegativeInfinity;
+                factor *= 1f + st.ValueOf(CounterstrikeNodeId, "bonus");
+                st.CounterstrikeUntil = float.NegativeInfinity;
             }
 
-            if (On(PressurePointsNodeId))
+            if (st.On(PressurePointsNodeId))
             {
-                if (target != _pressureTarget || Time.time - _lastPressureHit > PressureChainSeconds) _pressureHits = 0;
-                _pressureTarget = target;
-                _lastPressureHit = Time.time;
-                int every = Mathf.Max(1, 6 - DesignKit.RankOf(ClassTrees.Node(PressurePointsNodeId)));
-                if (++_pressureHits >= every)
+                if (target != st.PressureTarget || Time.time - st.LastPressureHit > PressureChainSeconds) st.PressureHits = 0;
+                st.PressureTarget = target;
+                st.LastPressureHit = Time.time;
+                int every = Mathf.Max(1, 6 - st.RankIn(PressurePointsNodeId));
+                if (++st.PressureHits >= every)
                 {
                     hit.m_staggerMultiplier = Mathf.Max(hit.m_staggerMultiplier, InstantStagger);
-                    _pressureHits = 0;
+                    st.PressureHits = 0;
                 }
             }
 
-            CcKit.OnLocalHitSending(target, hit);
+            if (st == S_local) CcKit.OnLocalHitSending(target, hit);   // CcKit is still the local player's (not per-body yet)
 
             if (factor != 1f) hit.m_damage.Modify(factor);
 
             // Blood for Blood: "below 50% health, {steal} of the damage you deal heals you" (the hit as sent, before the
             // target's armour, which only its owner knows).
-            if (On(BloodForBloodNodeId) && player.GetHealthPercentage() < BloodForBloodBelow)
+            if (st.On(BloodForBloodNodeId) && player.GetHealthPercentage() < BloodForBloodBelow)
             {
-                float heal = hit.GetTotalDamage() * ValueOf(BloodForBloodNodeId, "steal");
+                float heal = hit.GetTotalDamage() * st.ValueOf(BloodForBloodNodeId, "steal");
                 if (heal > 0f) player.Heal(heal, true);
             }
         }
@@ -463,18 +497,20 @@ namespace FiresRPGClasses.Combat
         /// </summary>
         internal static void OnLocalRoll(Player player)
         {
-            if (!IsLocal(player) || !On(CaltropsNodeId) || Time.time - _lastCaltrops < CaltropsCooldownSeconds) return;
-            _lastCaltrops = Time.time;
+            State st = StateOf(player);
+            if (st == null || !st.On(CaltropsNodeId) || Time.time - st.LastCaltrops < CaltropsCooldownSeconds) return;
+            st.LastCaltrops = Time.time;
             int hit = AbilityRPCManager.ApplyAoEEffect(player, StatusEffectManager.EFFECT_CALTROPS, CaltropsRange, CaltropsSeconds);
-            FiresRPGClassesPlugin.Log?.LogInfo($"[Passive] {CaltropsNodeId}: caltrops behind the roll, {hit} enemy(ies) within {CaltropsRange} m");
+            FiresRPGClassesPlugin.Log?.LogDebug($"[Passive] {CaltropsNodeId}: caltrops behind the roll, {hit} enemy(ies) within {CaltropsRange} m");
         }
 
         /// <summary>Steady Aim: whether the local player's bow was fully drawn when this arrow left.</summary>
         internal static void OnLocalShot(Humanoid attacker)
         {
-            if (!IsLocal(attacker)) return;
-            _lastShotFull = attacker.GetAttackDrawPercentage() >= FullDraw;
-            _lastShotTime = Time.time;
+            State st = StateOf(attacker);
+            if (st == null) return;
+            st.LastShotFull = attacker.GetAttackDrawPercentage() >= FullDraw;
+            st.LastShotTime = Time.time;
         }
 
         /// <summary>
@@ -483,8 +519,9 @@ namespace FiresRPGClasses.Combat
         /// </summary>
         internal static bool OnLocalBlocking(Humanoid defender, HitData hit)
         {
-            if (!IsLocal(defender) || hit == null) return false;
-            if (On(IronWallNodeId)) { hit.m_damage.Modify(1f - Of(IronWallBlockedCut, IronWallNodeId)); SkillFx.Play(IronWallNodeId, defender.GetCenterPoint(), SkillFx.ShieldHit); }
+            State st = StateOf(defender);
+            if (st == null || hit == null) return false;
+            if (st.On(IronWallNodeId)) { hit.m_damage.Modify(1f - st.Of(IronWallBlockedCut, IronWallNodeId)); SkillFx.Play(IronWallNodeId, defender.GetCenterPoint(), SkillFx.ShieldHit); }
             ItemDrop.ItemData blocker = defender.GetCurrentBlocker();
             return blocker != null && blocker.m_shared.m_timedBlockBonus > 1f
                 && defender.m_blockTimer != -1f && defender.m_blockTimer < ParryWindowSeconds;
@@ -493,28 +530,33 @@ namespace FiresRPGClasses.Combat
         /// <summary>After a block: Parry Mastery restores stamina on a parry; Blessed Defense and Blessed Shield may heal.</summary>
         internal static void OnLocalBlocked(Humanoid defender, bool blocked, bool parry)
         {
-            if (!blocked || !IsLocal(defender)) return;
-            Player player = (Player)defender;
-            if (parry && On(ParryNodeId))
+            State st = StateOf(defender);
+            if (!blocked || st == null) return;
+            Humanoid player = defender;
+            if (parry && st.On(ParryNodeId))
             {
-                int level = ClassPlayerStore.Local?.Progress.Level ?? 0;
-                player.AddStamina((ParryStaminaBase + ParryStaminaPerLevel * level) * Of(ParryScale, ParryNodeId));
+                int level = (st.Record ?? ClassPlayerStore.Local)?.Progress.Level ?? 0;
+                player.AddStamina((ParryStaminaBase + ParryStaminaPerLevel * level) * st.Of(ParryScale, ParryNodeId));
             }
-            if (parry && On(CounterstrikeNodeId)) _counterstrikeUntil = Time.time + CounterstrikeWindowSeconds;
-            if (On(BlessedDefenseNodeId) && Random.value < Of(BlessedDefenseChance, BlessedDefenseNodeId))
+            if (parry && st.On(CounterstrikeNodeId)) st.CounterstrikeUntil = Time.time + CounterstrikeWindowSeconds;
+            if (st.On(BlessedDefenseNodeId) && Random.value < st.Of(BlessedDefenseChance, BlessedDefenseNodeId))
                 player.Heal(player.GetMaxHealth() * BlessedDefenseHealShare, true);
-            else if (On(BlessedShieldNodeId) && Random.value < BlessedShieldChance)
+            else if (st.On(BlessedShieldNodeId) && Random.value < BlessedShieldChance)
                 player.Heal(player.GetMaxHealth() * BlessedShieldHealShare, true);
         }
 
         /// <summary>Shield Block (+20%) and Blessed Shield (+10%) raise the block power of the local player's raised shield.</summary>
         internal static float BlockPowerFactor(ItemDrop.ItemData item)
         {
-            Player player = Player.m_localPlayer;
-            if (player == null || item == null || player.GetCurrentBlocker() != item) return 1f;
+            if (item == null) return 1f;
+            // the body raising this shield: the local player, else a registered class body holding it
+            Humanoid holder = Player.m_localPlayer != null && Player.m_localPlayer.GetCurrentBlocker() == item ? Player.m_localPlayer : null;
+            if (holder == null) foreach (Character b in ClassBodies.Bodies()) if (b is Humanoid h && h.GetCurrentBlocker() == item) { holder = h; break; }
+            State st = StateOf(holder);
+            if (st == null) return 1f;
             float factor = 1f;
-            if (On(ShieldBlockNodeId)) factor *= ShieldBlockPower;
-            if (On(BlessedShieldNodeId)) factor *= BlessedShieldPower;
+            if (st.On(ShieldBlockNodeId)) factor *= ShieldBlockPower;
+            if (st.On(BlessedShieldNodeId)) factor *= BlessedShieldPower;
             return factor;
         }
 
@@ -524,12 +566,13 @@ namespace FiresRPGClasses.Combat
         /// </summary>
         internal static void OnLocalHitTaken(Character victim, HitData hit)
         {
-            if (!IsLocal(victim) || hit == null) return;
+            State st = StateOf(victim);
+            if (st == null || hit == null) return;
 
             // Stone Skin: "{dr} less physical damage taken".
-            if (On(StoneSkinNodeId))
+            if (st.On(StoneSkinNodeId))
             {
-                float keep = 1f - ValueOf(StoneSkinNodeId, "dr");
+                float keep = 1f - st.ValueOf(StoneSkinNodeId, "dr");
                 hit.m_damage.m_blunt *= keep;
                 hit.m_damage.m_slash *= keep;
                 hit.m_damage.m_pierce *= keep;
@@ -537,7 +580,7 @@ namespace FiresRPGClasses.Combat
             }
 
             // The best rank among you and the party members in range, once: the aura does not stack.
-            int mine = On(InterceptNodeId) ? RankIn(InterceptNodeId) : 0;
+            int mine = st.On(InterceptNodeId) ? st.RankIn(InterceptNodeId) : 0;
             int best = 0;
             foreach (Player other in Player.GetAllPlayers())
             {
@@ -554,14 +597,15 @@ namespace FiresRPGClasses.Combat
         /// <summary>Healing Staff (+15%) and Emergency Heal (+50% on a target below 20%): the local player's Core class heals.</summary>
         internal static float HealFactor(Character healer, Character target)
         {
-            if (!IsLocal(healer) || target == null) return 1f;
+            State st = StateOf(healer);
+            if (st == null || target == null) return 1f;
             float factor = 1f;
-            if (On(HealingStaffNodeId)) factor *= HealingStaffHeal;
-            if (On(EmergencyNodeId) && target.GetHealthPercentage() < EmergencyHealthShare) factor *= 1f + Of(EmergencyHealBonus, EmergencyNodeId);
+            if (st.On(HealingStaffNodeId)) factor *= HealingStaffHeal;
+            if (st.On(EmergencyNodeId) && target.GetHealthPercentage() < EmergencyHealthShare) factor *= 1f + st.Of(EmergencyHealBonus, EmergencyNodeId);
             return factor;
         }
 
-        private static bool CastingMagic(Player player)
+        private static bool CastingMagic(Humanoid player)
         {
             if (!player.InAttack()) return false;
             Skills.SkillType skill = player.GetCurrentWeapon()?.m_shared.m_skillType ?? Skills.SkillType.None;
@@ -569,29 +613,25 @@ namespace FiresRPGClasses.Combat
         }
 
         /// <summary>Spellcasting: a magic weapon's attack costs 10% less eitr.</summary>
-        internal static float SpellCostFactor(Player player) =>
-            IsLocal(player) && On(SpellcastingNodeId) && CastingMagic(player) ? SpellcastingCost : 1f;
+        internal static float SpellCostFactor(Player player) { State st = StateOf(player); return st != null && st.On(SpellcastingNodeId) && CastingMagic(player) ? SpellcastingCost : 1f; }
 
         /// <summary>Chain Casting: a spell's eitr (a magic weapon's attack) has a 30% chance to cost nothing.</summary>
-        internal static bool FreeCast(Player player, float eitr) =>
-            eitr > 0f && IsLocal(player) && On(ChainNodeId) && CastingMagic(player) && Random.value < Of(ChainFreeChance, ChainNodeId);
+        internal static bool FreeCast(Player player, float eitr) { State st = StateOf(player); return eitr > 0f && st != null && st.On(ChainNodeId) && CastingMagic(player) && Random.value < st.Of(ChainFreeChance, ChainNodeId); }
 
-        internal static float StaminaCostFactor(Player player) =>
-            IsLocal(player) && On(MonkStaminaNodeId) ? 1f - Of(MonkStaminaCostCut, MonkStaminaNodeId) : 1f;
+        internal static float StaminaCostFactor(Player player) { State st = StateOf(player); return st != null && st.On(MonkStaminaNodeId) ? 1f - st.Of(MonkStaminaCostCut, MonkStaminaNodeId) : 1f; }
 
-        internal static float StaminaRegenFactor(Character character) =>
-            IsLocal(character) && On(MonkStaminaNodeId) ? 1f + Of(MonkStaminaRegenBonus, MonkStaminaNodeId) : 1f;
+        internal static float StaminaRegenFactor(Character character) { State st = StateOf(character); return st != null && st.On(MonkStaminaNodeId) ? 1f + st.Of(MonkStaminaRegenBonus, MonkStaminaNodeId) : 1f; }
 
         // The Mage's and the Healer's are the same table; equipping both does not stack (the higher rank counts).
         internal static float EitrRegenFactor(Character character)
         {
-            if (!IsLocal(character)) return 1f;
-            int rank = Mathf.Max(On(MageEitrNodeId) ? RankIn(MageEitrNodeId) : 0, On(HealerEitrNodeId) ? RankIn(HealerEitrNodeId) : 0);
+            State st = StateOf(character);
+            if (st == null) return 1f;
+            int rank = Mathf.Max(st.On(MageEitrNodeId) ? st.RankIn(MageEitrNodeId) : 0, st.On(HealerEitrNodeId) ? st.RankIn(HealerEitrNodeId) : 0);
             return rank > 0 ? 1f + AtRank(EitrRegenBonus, rank) : 1f;
         }
 
         /// <summary>Kiting Expertise: faster (by rank) while drawing a bow.</summary>
-        internal static float SpeedFactor(Character character) =>
-            IsLocal(character) && On(KitingNodeId) && character.IsDrawingBow() ? 1f + Of(KitingSpeedBonus, KitingNodeId) : 1f;
+        internal static float SpeedFactor(Character character) { State st = StateOf(character); return st != null && st.On(KitingNodeId) && character.IsDrawingBow() ? 1f + st.Of(KitingSpeedBonus, KitingNodeId) : 1f; }
     }
 }

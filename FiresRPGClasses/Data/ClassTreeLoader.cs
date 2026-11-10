@@ -71,7 +71,7 @@ namespace FiresRPGClasses.Data
                     Debug.LogWarning($"[ClassTrees] {FileName}: {warning}");
 
                 LoadedFromYaml = true;
-                Debug.Log($"[ClassTrees] Loaded schema {source.Schema} from {FileName}: "
+                if (FiresCore.Logging.FiresLogLevel.DebugOn) Debug.Log($"[ClassTrees] Loaded schema {source.Schema} from {FileName}: "
                     + $"{CountTrees()} tree(s), {ClassTrees.AllNodes.Count()} node(s), "
                     + $"{ClassTrees.TotalPointCostOfEveryTree()} point(s) to fill every tree"
                     + (source.Warnings.Count > 0 ? $", {source.Warnings.Count} warning(s)." : "."));

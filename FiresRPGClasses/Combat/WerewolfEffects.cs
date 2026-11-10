@@ -58,7 +58,7 @@ namespace FiresRPGClasses.Combat
     internal static class WerewolfEffectsRegisterPatch
     {
         [HarmonyPostfix]
-        private static void AfterAwake(ObjectDB __instance) => WerewolfEffects.Register(__instance);
+        private static void AfterAwake(ObjectDB __instance) => Guarded.Run("WerewolfEffects.Register", () => WerewolfEffects.Register(__instance));   // 0.1.201 (M17)
     }
 
     /// <summary>§3 "While transformed": +20% move speed, +25% stamina regen, +20% jump, 15% less slash, 20% more fire taken.</summary>

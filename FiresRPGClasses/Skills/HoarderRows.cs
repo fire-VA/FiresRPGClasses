@@ -37,7 +37,7 @@ namespace FiresRPGClasses.ExtraSkills
                 var drop = new List<ItemDrop.ItemData>();
                 foreach (ItemDrop.ItemData item in inv.GetAllItems())
                     if (item.m_gridPos.y >= newHeight) drop.Add(item);
-                Vector3 at = player.transform.position + Vector3.up * 0.5f;
+                Vector3 at = player.transform.position + FiresRPGClasses.Combat.Ring.Up(player.transform.position) * 0.5f;
                 foreach (ItemDrop.ItemData item in drop)
                 {
                     inv.RemoveItem(item);

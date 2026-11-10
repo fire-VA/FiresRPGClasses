@@ -16,6 +16,10 @@ namespace FiresRPGClasses.Integration
     {
         private const string RpcReward = "FRC_LoreReward";   // server -> the reader's client: verb, args joined by ' '
         private static ZRoutedRpc s_registeredOn;
+        // 0.1.193 security: upper bounds for one book reward (far above any shipped book).
+        private const long MaxXp = 1000000L;
+        private const int MaxPoints = 10;
+        private const float MaxSkillRaise = 100f;
         private static bool s_hooked;
 
         [HarmonyPatch(typeof(ZNet), "Start")]
@@ -66,6 +70,8 @@ namespace FiresRPGClasses.Integration
         /// <summary>The reader's client applies the reward to the local player.</summary>
         private static void OnReward(long sender, string verb, string joined)
         {
+            // 0.1.193 security: rewards come only from the server (LoreBooks runs book hooks there; Forward sends them).
+            if (!WerewolfServer.FromServer(sender)) { FiresRPGClassesPlugin.Log.LogWarning($"[LoreRewards] refused {verb} from peer {sender}: not the server"); return; }
             Player player = Player.m_localPlayer;
             if (player == null) return;
             string[] args = (joined ?? "").Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
@@ -73,13 +79,17 @@ namespace FiresRPGClasses.Integration
             {
                 case "GiveClassXP":
                     if (args.Length > 0 && long.TryParse(args[0], out long xp))
+                    {
+                        if (xp > MaxXp) { FiresRPGClassesPlugin.Log.LogWarning($"[LoreRewards] GiveClassXP {xp} clamped to {MaxXp}"); xp = MaxXp; }
                         FiresRPGClassesPlugin.Log.LogDebug($"[LoreRewards] GiveClassXP {xp}: granted {ClassXp.GrantFromLore(xp, "lorebook")}");
+                    }
                     break;
                 case "GrantAttributePoints":
                     // Lore books may grant attribute points. Core's bonus field counts into the spendable
                     // total (capped at ClassProgressState.MaxBonusAttributePoints); the record is saved like after a spend.
                     if (args.Length > 0 && int.TryParse(args[0], out int pts))
                     {
+                        if (pts > MaxPoints) { FiresRPGClassesPlugin.Log.LogWarning($"[LoreRewards] GrantAttributePoints {pts} clamped to {MaxPoints}"); pts = MaxPoints; }
                         State.ClassPlayerData data = State.ClassPlayerStore.Local;
                         if (data == null || State.ClassPlayerStore.LocalIsProtected) break;
                         int added = data.Progress.AddBonusAttributePoints(pts);
@@ -91,6 +101,8 @@ namespace FiresRPGClasses.Integration
                     if (args.Length > 1 && Enum.TryParse(args[0], true, out Skills.SkillType skill)
                         && float.TryParse(args[1], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float amount))
                     {
+                        if (float.IsNaN(amount) || amount <= 0f) { FiresRPGClassesPlugin.Log.LogWarning($"[LoreRewards] RaiseSkill {skill} {amount} refused"); break; }
+                        if (amount > MaxSkillRaise) { FiresRPGClassesPlugin.Log.LogWarning($"[LoreRewards] RaiseSkill {skill} {amount} clamped to {MaxSkillRaise}"); amount = MaxSkillRaise; }
                         player.RaiseSkill(skill, amount);
                         FiresRPGClassesPlugin.Log.LogDebug($"[LoreRewards] RaiseSkill {skill} {amount}");
                     }

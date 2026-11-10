@@ -33,7 +33,7 @@ namespace FiresRPGClasses.Paragon
             private static void Postfix(Pickable __instance, bool __state)
             {
                 if (!__state || __instance.m_itemPrefab == null || !CraftBatch1.Roll(Bountiful)) return;
-                Vector3 p = __instance.transform.position + Vector3.up * 0.5f;
+                Vector3 p = __instance.transform.position + FiresRPGClasses.Combat.Ring.Up(__instance.transform.position) * 0.5f;
                 for (int i = 0; i < Mathf.Max(1, __instance.m_amount); i++)
                     ItemDrop.OnCreateNew(UnityEngine.Object.Instantiate(__instance.m_itemPrefab, p, Quaternion.identity));
                 Once(Bountiful, "pick x2 " + __instance.m_itemPrefab.name);

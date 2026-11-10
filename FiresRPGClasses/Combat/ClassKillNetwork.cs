@@ -19,6 +19,11 @@ namespace FiresRPGClasses.Combat
 
         private static ZRoutedRpc _registeredOn;
         private static readonly HashSet<ZDOID> _sent = new HashSet<ZDOID>();
+        // 0.1.193 security: bounds for a received kill, and the kills already counted.
+        private static readonly HashSet<ZDOID> _received = new HashSet<ZDOID>();
+        private const int MaxLevel = 10;
+        private const float MaxHealthScale = 4f;
+        private const float MaxTierMultiplier = 6f;
 
         /// <summary>Clients: from ZNet.Start, as ZRoutedRpc is rebuilt every session.</summary>
         public static void Initialize()
@@ -28,6 +33,7 @@ namespace FiresRPGClasses.Combat
             rpc.Register<ZPackage>(RpcDied, RPC_Died);
             _registeredOn = rpc;
             _sent.Clear();
+            _received.Clear();
         }
 
         /// <summary>A dedicated server: only the death broadcast, under its own Harmony id.</summary>
@@ -37,16 +43,34 @@ namespace FiresRPGClasses.Combat
         private static void RPC_Died(long sender, ZPackage pkg)
         {
             if (pkg == null) return;
-            pkg.ReadZDOID();
+            ZDOID id = pkg.ReadZDOID();
             string prefab = pkg.ReadString();
-            float maxHealth = pkg.ReadSingle();
-            int level = pkg.ReadInt();
-            bool boss = pkg.ReadBool();
-            bool summoned = pkg.ReadBool();
-            Vector3 position = pkg.ReadVector3();
-            // The tier multiplier rides at the end; an older sender stops after the position.
-            float tier = pkg.GetPos() < pkg.Size() ? pkg.ReadSingle() : 1f;
-            ClassXp.OnDeath(prefab, maxHealth, level, boss, summoned, position, tier);
+            // 0.1.193 security: the packet's max health, level, boss/summoned flags, position and tier are ignored;
+            // every stat is read from the creature itself.
+            if (string.IsNullOrEmpty(prefab)) return;
+            ZDO zdo = ZDOMan.instance?.GetZDO(id);
+            GameObject prefabGo = ZNetScene.instance?.GetPrefab(prefab);
+            Character prefabChar = prefabGo != null ? prefabGo.GetComponent<Character>() : null;
+            string refuse = null;
+            if (zdo == null) refuse = "creature not loaded here";
+            else if (zdo.GetOwner() != sender) refuse = $"owner is {zdo.GetOwner()}, not the sender";
+            else if (prefabChar == null || zdo.GetPrefab() != prefab.GetStableHashCode()) refuse = "prefab does not match the creature";
+            else if (prefabChar is Player) refuse = "a player";
+            else if (_received.Contains(id)) refuse = "already counted";
+            if (refuse != null) { FiresRPGClassesPlugin.Log?.LogDebug($"[KillXp] refused kill {prefab} {id} from peer {sender}: {refuse}"); return; }
+            if (_received.Count >= MaxRemembered) _received.Clear();
+            _received.Add(id);
+
+            Character live = ZNetScene.instance.FindInstance(id)?.GetComponent<Character>();
+            int level = Mathf.Clamp(zdo.GetInt(ZDOVars.s_level, 1), 1, MaxLevel);
+            float baseHealth = Mathf.Max(1f, prefabChar.m_health);
+            float maxHealth = zdo.GetFloat(ZDOVars.s_maxHealth, baseHealth * level);
+            // Never more than the prefab could have at its level (x4 headroom for world-level / difficulty scaling).
+            maxHealth = Mathf.Clamp(maxHealth, 1f, baseHealth * level * MaxHealthScale);
+            Tameable tameable = prefabGo.GetComponent<Tameable>();
+            bool summoned = tameable != null && tameable.m_unsummonDistance > 0f;
+            float tier = Mathf.Clamp(TierMultiplier(live, zdo), 0f, MaxTierMultiplier);
+            ClassXp.OnDeath(prefab, maxHealth, level, prefabChar.IsBoss(), summoned, zdo.GetPosition(), tier);
         }
 
         // Fires Monster Overhaul's tiers (kill XP x1 / x1.5 / x3 / x6): its public
@@ -67,7 +91,7 @@ namespace FiresRPGClasses.Combat
             }
             if (_tierXp != null)
             {
-                try { return Mathf.Max(0f, (float)_tierXp.Invoke(null, new object[] { character })); }
+                if (character != null) try { return Mathf.Max(0f, (float)_tierXp.Invoke(null, new object[] { character })); }
                 catch { _tierXp = null; }
             }
             int tier = zdo != null ? zdo.GetInt(ZdoTier, 0) : 0;

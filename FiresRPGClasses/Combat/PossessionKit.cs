@@ -474,7 +474,7 @@ namespace FiresRPGClasses.Combat
             _pendingOpen = false;
             string form = handle.Creature != null ? handle.Creature.m_name : "?";
             if (handle.SourceTag == DruidTag && handle.Creature != null) RememberForm(handle.Player, global::Utils.GetPrefabName(handle.Creature.gameObject));
-            FiresRPGClassesPlugin.Log.LogInfo($"[PossessionKit] {_pendingNodeId}: in {form} ({handle.SourceTag}, {handle.Options.MaxDuration:0} s, form hp {handle.FormHealthMax:0})");
+            FiresRPGClassesPlugin.Log.LogDebug($"[PossessionKit] {_pendingNodeId}: in {form} ({handle.SourceTag}, {handle.Options.MaxDuration:0} s, form hp {handle.FormHealthMax:0})");
         }
 
         private static void OnEnded(PossessHandle handle, PossessEndReason reason)
@@ -488,7 +488,7 @@ namespace FiresRPGClasses.Combat
                 Player p = handle.Player != null ? handle.Player : Player.m_localPlayer;
                 if (p != null && _pendingEitr > 0f) p.AddEitr(_pendingEitr);
                 CooldownTracker.Reset(_pendingNodeId);
-                FiresRPGClassesPlugin.Log.LogInfo($"[PossessionKit] {_pendingNodeId}: refused ({reason}); eitr and cooldown refunded");
+                FiresRPGClassesPlugin.Log.LogDebug($"[PossessionKit] {_pendingNodeId}: refused ({reason}); eitr and cooldown refunded");
                 return;
             }
             _live = null;
@@ -499,7 +499,7 @@ namespace FiresRPGClasses.Combat
                 if (at != null) AbilityRPCManager.SpawnFX(at.transform.position, snapped ? LinkSnapFx : BindReturnFx);
             }
             string form = handle.Creature != null ? handle.Creature.m_name : "?";
-            FiresRPGClassesPlugin.Log.LogInfo($"[PossessionKit] {(handle.SourceTag == DruidTag ? WildshapeId : BindDeadId)}: left {form} ({reason}) after {handle.Elapsed:0.0} s");
+            FiresRPGClassesPlugin.Log.LogDebug($"[PossessionKit] {(handle.SourceTag == DruidTag ? WildshapeId : BindDeadId)}: left {form} ({reason}) after {handle.Elapsed:0.0} s");
         }
 
         private static Character Pick(Player player, CastTarget target, float range)

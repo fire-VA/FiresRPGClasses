@@ -24,7 +24,7 @@ namespace FiresRPGClasses
     {
         public const string PluginGUID = "com.Fire.FiresRPGClasses";
         public const string PluginName = "FiresRPGClasses";
-        public const string PluginVersion = "0.1.192";
+        public const string PluginVersion = "0.1.220";   // 0.1.220 ([wishbone], [classes-ui] / [generator]'s piece-create audit row 9, TOWN50; 0.9 us per piece): ONE WearNTear.Awake postfix (BoneWallLook.DressOnWake) instead of two: Sturdy Builder's load raise (CraftBatch4.Loaded patch removed, now CraftBatch4.OnWake called from it) tests the passive's value before any GetComponent<Piece>, so a player without it pays one dictionary lookup per piece. Same behaviour. No keys.   // 0.1.219 ([wishbone], [ghost] quit-freeze rollout approved by [lead], Fire's 28 s quit freeze): OnDestroy skips _harmony.UnpatchSelf() once Application.quitting has fired (Core FiresMod pattern): unpatching at quit made Harmony rebuild every shared method and re-run every other mod's transpilers while the game exits. A non-quit destroy still unpatches. No keys.   // 0.1.218 ([wishbone], Fire 11-03): recurring lines at BepInEx Debug. On live 0.1.216: 0.1.217's held blink change is not in. Previous:   // 0.1.216 ([wishbone], Fire 11-02 config list): owns [FiresRPGClasses.Progression], [GroundRings], Locational Damage and Melee aim max pitch: Core's classes bound with this mod's config + sync (needs Core 0.2.1086; an older Core keeps its own), values copied once from Core's cfg. 0.1.215: 0.1.215 ([wishbone]; Fire 10-30, plan step 1: "the crosshair can go in the RPG classes"): [Combat] Melee aims with the crosshair + [Camera] Crosshair red over an enemy are bound here (copied once from Core's cfg, Info line) and provided to Core 0.2.1036+ (CoreSettings); RPGClasses registers as the run slide's consumer. Needs Core 0.2.1036 for the hand-over (older Core: logs once, Core keeps its keys). was 0.1.214: 0.1.214 ([wishbone]; [lead] / [ghost] step 3, Fire 10-30: the Studio god clone fights as its class - its stats and passives): ClassBodies.Register / Unregister / PoolBonus for a non-player body with a class record; AttributeEffects reads such a body's own record (damage dealt, elemental taken, health / stamina / eitr regen, attack speed); PassiveKit / PassiveKit2 / PassiveKit3 keep their state per body (the local player one instance, read exactly as before); PassiveLoadout.Status / ConditionsMet and DesignKit.RankOf add record + body overloads. Debug [ClassStats] line per body. was 0.1.213: 0.1.213 ([wishbone]; [lead] / [ghost] 10-30, Fire: the Studio god clone fights as its class): ClassCaster.CastFor(Character, customData, slot or node, target) casts for a non-player body through the SAME ClassCastExecutor.PlayLocal path as the bar, record from a customData dictionary, per-body cooldowns (CooldownTracker.*For by ZDOID; the local player keeps its own clock); Info line per cast. was 0.1.212: 0.1.212 ([wishbone]; [ghost] / [visual] 10-30, the server-side Studio god clone has no local player): GodApi.StateFor(customData) / EditFor(customData, method, args) run the same god edits on a class record read from a customData dictionary (GodProfile.Shadow.m_customData) and write it back; the local bar / Paragon window paths are skipped for such a target. was 0.1.211: 0.1.211 ([wishbone]; Fire 10-30: "There are no limits ... We are a god"): GodApi writes the record directly, both ways, any value (level, xp, Valor, attributes, bonus attribute points, node ranks, Paragon ranks, bar class / slots) with no point / prerequisite / weapon checks; new AddXp(+/-), AddLevels(+/-), SetXp, SetValorXp, SetBonusAttributePoints, SetNodeRank, SetGod; a god-edited record (ClassPlayerData.God) is not reconciled at load until SetGod(false). was 0.1.210: 0.1.210 ([wishbone]; Fire 10-30 via [lead], the Studio God client: "adjust all attribute levels, skill levels, classes ... without actually needing the points"): add-only FiresRPGClasses.Combat.GodApi (string in, JSON out: State, SetLevel, SetValorLevel, SetWeapon, SetArchetype, Learn, Unlearn, SlotSkill, SetAttribute, SetParagonRank, ParagonSlot / Unslot / Respec) over the Classes window paths; God grants exactly the points a buy needs; class_* console commands call it. was 0.1.209: 0.1.209 ([wishbone]; Studio round 5: the Mage skills needed the starter tier learned first): console class_learn <nodeId> (cheat) learns one rank of any class node through the Classes window learn path (TalentRules.TryLearn). was 0.1.208: 0.1.208 ([wishbone]; Studio round 4: class_set refused Mage because the test bar had no weapon): class_slot slot 1 puts a carried weapon on the bar (BarController.TryAssignWeapon, the drag path). was 0.1.207: 0.1.207 ([wishbone]; [lead] 10-30, Studio walk-mode hotbar icons need a real class bar on the test character): console class_slot <front|back> <slot 2-8> <nodeId> (cheat) learns a class skill through the Classes window learn path (TalentRules.TryLearn) and slots it through the bar path (BarController.TrySlotSkill; slot 8 = TrySlotUltimate); Info line with the result. was 0.1.206: 0.1.206 ([wishbone]; Fire 10-30: "the class hotbars were never meant to move ... put back where it was"): 0.1.205 undone, the class bars use their bottom-right BarsOffset as before. was 0.1.205: 0.1.205 ([wishbone]; Fire 10-30 HARD RULE: every hotbar defaults bottom left above the health HUD): with the Fires UI override off the class bars start bottom left (an untouched BarsOffset = the default; a drag is kept); Info line once.
 
         private const string HostObjectName = "FiresRPGClasses_Host";
 
@@ -32,6 +32,7 @@ namespace FiresRPGClasses
         internal static FiresRPGClassesPlugin Instance;   // hosts rpgclasses_paragon_test's coroutine
 
         private Harmony _harmony;
+        private static bool s_quitting;   // 0.1.219: set by Application.quitting; at quit OnDestroy skips UnpatchSelf (Core FiresMod pattern)
         private GameObject _host;
 
         // Keeps old config files readable after the sections were renamed and regrouped. Runs
@@ -67,7 +68,7 @@ namespace FiresRPGClasses
                 }
                 if (removed == 0 && moved == 0) return;
                 Config.Save();
-                Logger.LogInfo($"config: tidied once - {removed} legacy key(s) removed, {moved} value(s) moved to the numbered sections (1 - Bars ... 9 - Targeting)");
+                Logger.LogDebug($"config: tidied once - {removed} legacy key(s) removed, {moved} value(s) moved to the numbered sections (1 - Bars ... 9 - Targeting)");
             }
             catch (System.Exception e) { Logger.LogWarning("config: tidy-up skipped: " + e.Message); }
         }
@@ -92,6 +93,7 @@ namespace FiresRPGClasses
         {
             Log = Logger;
             Instance = this;
+            Application.quitting += () => s_quitting = true;   // 0.1.219 ([wishbone], [ghost] quit-freeze rollout): see OnDestroy
             TidyConfig();   // before any bind
             FiresRPGClassesBanner.PrintBig();
             ExtraSkills.ExtraSkillSystem.Init(Config); // Agility, Endurance, Vigor, Intellect, Hoarder (config + sync on client and server)
@@ -102,6 +104,8 @@ namespace FiresRPGClasses
             // Classes turns on Core's locational hits (Tools\LOCATIONAL_HITS.md). Only a server's (or
             // single player's) call counts, so this mod goes on servers too; servers without Classes stay vanilla. Safe before
             // Core has bound its sync: Core's BindToSync recomputes with every enabler recorded so far.
+            try { CoreSettingsOwned.BindCoreFeatures(Config, new Harmony(PluginGUID + ".core")); }
+            catch (System.Exception e) { Log.LogWarning("[CoreSettings] progression / ground rings / locational damage settings not bound: " + e.Message); }
             FiresCore.Combat.LocationalDamage.Enable(PluginName);
 
             // A dedicated server needs nothing else: the rest of the mod is the local player's (bars, window, casts, passives).
@@ -160,12 +164,13 @@ namespace FiresRPGClasses
             VampireConfig.Bind(Config);    // the Vampire (Tools\VAMPIRE_CLASS_DESIGN.md): [12 - Vampire], synced
             VampireKit.RegisterAll();      // Bat Form, Blood Frenzy, Mesmerise, Crimson Tide, the vampire passives, the Bat Form skill
             RaceConfig.Bind(Config);       // catching / curing vampirism + lycanthropy (Tools\VAMPIRE_CLASS_DESIGN.md §6), [13 - Races], synced
+            CoreSettingsOwned.Bind(Config);   // 0.1.215: Core's melee aim / red crosshair settings live here now; RPGClasses = the run slide's consumer
             // Class / race movement styles; registers with Core's movement contract only when its key is on
             try { BarMemory.Bind(Config); } catch (System.Exception e) { Log.LogWarning("[Bars] memory keys not bound: " + e.Message); }
             try { ClassMovement.Bind(Config); ClassMovement.Register(); } catch (System.Exception e) { Log.LogWarning("[Movement] class movement not set up: " + e.Message); }
             // Core's class-weapon hook; an older Core lacks it and the weapon pick keeps Core's own fallback.
-            try { ClassWeaponHook.Install(); Log.LogInfo("class weapon hook set (Core's weapon pick keeps the class bar's weapon kind)"); }
-            catch (System.Exception e) { Log.LogInfo($"class weapon hook not set: this Core has none ({e.GetType().Name})"); }
+            try { ClassWeaponHook.Install(); Log.LogDebug("class weapon hook set (Core's weapon pick keeps the class bar's weapon kind)"); }
+            catch (System.Exception e) { Log.LogDebug($"class weapon hook not set: this Core has none ({e.GetType().Name})"); }
             UltimateCatalog.Rebuild();
             VanillaAchievements.Register();
 
@@ -202,7 +207,7 @@ namespace FiresRPGClasses
                 try { ClassesHub.Register(); } catch (System.Exception e) { Log.LogWarning("[ClassesHub] " + e.Message); }
                 // The hub Stats tab card. Wrapped HERE too: on an older Core the card class's own type load (its
                 // StatRow field) throws before its try/catch runs, and that must not stop the rest of Awake.
-                try { ClassStatsSection.Register(); } catch (System.Exception e) { Log.LogInfo("[ClassStats] card not registered (" + e.GetBaseException().GetType().Name + "): Core older than 0.2.511?"); }
+                try { ClassStatsSection.Register(); } catch (System.Exception e) { Log.LogDebug("[ClassStats] card not registered (" + e.GetBaseException().GetType().Name + "): Core older than 0.2.511?"); }
                 _host.AddComponent<ClassesHud>();
                 _host.AddComponent<ClassesPossessionHud>();
                 // First of two attempts. VAInventory replays registrations when the inventory next opens, so
@@ -221,7 +226,9 @@ namespace FiresRPGClasses
 
         private void OnDestroy()
         {
-            _harmony?.UnpatchSelf();
+            // 0.1.219: at application quit, unpatching makes Harmony rebuild every shared method (re-running every other mod's
+            // transpilers) while the game exits (Fire's 28 s quit freeze); the process is ending anyway, so skip it then.
+            if (!s_quitting) _harmony?.UnpatchSelf();
             ClassTreeLoader.Shutdown();
             if (_host != null) Destroy(_host);
         }
@@ -234,21 +241,33 @@ namespace FiresRPGClasses
         [HarmonyPostfix]
         private static void RegisterCastRpc()
         {
-            ClassCastNetwork.Initialize();
-            ClassKillNetwork.Initialize();
-            WerewolfServer.Initialize();   // Wolf Form's request (a listen host answers it) and the server's answer
-            WerewolfKit.ResetSession();
-            VampireKit.ResetSession();
+            // 0.1.201 (load/save audit M17): each step guarded on its own, so one throw never skips the rest (Forget above all)
+            // nor, by escaping this postfix, the later mods' ZNet.Start postfixes.
+            Guarded.Run("ClassCastNetwork.Initialize", ClassCastNetwork.Initialize);
+            Guarded.Run("ClassKillNetwork.Initialize", ClassKillNetwork.Initialize);
+            Guarded.Run("WerewolfServer.Initialize", WerewolfServer.Initialize);   // Wolf Form's request (a listen host answers it) and the server's answer
+            Guarded.Run("WerewolfKit.ResetSession", WerewolfKit.ResetSession);
+            Guarded.Run("VampireKit.ResetSession", VampireKit.ResetSession);
 #if FIRES_TESTS
-            ClassesUiDump.Register();
+            Guarded.Run("ClassesUiDump.Register", ClassesUiDump.Register);
 #endif
-            ClassAdminCommands.Register();
+            Guarded.Run("ClassAdminCommands.Register", ClassAdminCommands.Register);
 #if FIRES_TESTS
-            Paragon.RpgParagonTest.Register();   // rpgclasses_paragon_test (cheat, Test worlds only)
+            Guarded.Run("RpgParagonTest.Register", Paragon.RpgParagonTest.Register);   // rpgclasses_paragon_test (cheat, Test worlds only)
 #endif
             FiresRPGClassesPlugin.Log?.LogDebug("[ClassAdmin] class_* console commands registered");
-            CooldownTracker.Clear();
-            ClassPlayerStore.Forget();
+            Guarded.Run("CooldownTracker.Clear", CooldownTracker.Clear);
+            Guarded.Run("ClassPlayerStore.Forget", ClassPlayerStore.Forget);
+        }
+    }
+
+    /// <summary>0.1.201 (load/save audit M17): runs one load/save-path step; a throw is logged (with the step name) and contained.</summary>
+    internal static class Guarded
+    {
+        internal static bool Run(string what, System.Action step)
+        {
+            try { step(); return true; }
+            catch (System.Exception e) { FiresRPGClassesPlugin.Log?.LogError($"[Classes] {what} failed: {e.GetType().Name}: {e.Message}\n{e.StackTrace}"); return false; }
         }
     }
 
@@ -260,17 +279,19 @@ namespace FiresRPGClasses
         private static void LoadRecord(Player __instance)
         {
             if (__instance != Player.m_localPlayer) return;
-            ClassPlayerStore.Forget();
-            ClassPlayerData data = ClassPlayerStore.Local;
-            if (data == null) return;
-            int adjusted = ClassPlayerStore.ReconcileWithSettings(data);
-            if (adjusted > 0)
-                FiresRPGClassesPlugin.Log.LogInfo("Reconciled " + adjusted
+            // 0.1.201 (load/save audit M17): every step guarded; a reconcile that threw part-way never gets saved over the good record.
+            if (!Guarded.Run("ClassPlayerStore.Forget", ClassPlayerStore.Forget)) return;
+            ClassPlayerData data = null;
+            if (!Guarded.Run("ClassPlayerStore.Local", () => data = ClassPlayerStore.Local) || data == null) return;
+            int adjusted = 0, refunded = 0;
+            bool reconciled = Guarded.Run("ReconcileWithSettings", () => adjusted = ClassPlayerStore.ReconcileWithSettings(data));
+            if (reconciled && adjusted > 0)
+                FiresRPGClassesPlugin.Log.LogDebug("Reconciled " + adjusted
                     + " point or passive entries against the current progression settings.");
             // The master points rule: a Master talent bought before the rule existed (or on a path that
             // no longer holds enough points) is refunded here, once, at load.
-            int refunded = UI.TalentRules.RevalidateMasters(data, __instance);
-            if (adjusted > 0 || refunded > 0) ClassPlayerStore.SaveLocal();
+            bool revalidated = reconciled && Guarded.Run("RevalidateMasters", () => refunded = UI.TalentRules.RevalidateMasters(data, __instance));
+            if (reconciled && (adjusted > 0 || (revalidated && refunded > 0))) Guarded.Run("ClassPlayerStore.SaveLocal", () => ClassPlayerStore.SaveLocal());
         }
     }
 }

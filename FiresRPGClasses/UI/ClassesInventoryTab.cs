@@ -58,13 +58,13 @@ namespace FiresRPGClasses.UI
                     // the user: the log held zero [Classes] lines, so there was nothing to notice. Absence of a
                     // complaint is not evidence it worked.
                     if (finalAttempt)
-                        FiresRPGClassesPlugin.Log?.LogInfo($"[Classes] {TabsType} not found, so no inventory tab this "
+                        FiresRPGClassesPlugin.Log?.LogDebug($"[Classes] {TabsType} not found, so no inventory tab this "
                             + "session - VAInventory is not installed or did not load. The standalone window is unaffected.");
                     return;
                 }
 
                 _registered = RegisterAsTab(tabs) || RegisterByArgs(tabs);
-                if (_registered) FiresRPGClassesPlugin.Log?.LogInfo("[Classes] registered the Classes tab in the inventory.");
+                if (_registered) FiresRPGClassesPlugin.Log?.LogDebug("[Classes] registered the Classes tab in the inventory.");
                 if (_registered) TakeOverCharacterTab(tabs);
             }
             catch (Exception ex)
@@ -103,7 +103,7 @@ namespace FiresRPGClasses.UI
             // A LAUNCHER (VAInventory 1.0.35+, where Open wins over Build): the tab opens the full Classes window on the tree,
             // not a view clamped into the 570x650 crafting panel. Older VAInventory keeps the inline view.
             if (Set(tabType, tab, "Open", (Action)OpenFullWindow))
-                FiresRPGClassesPlugin.Log?.LogInfo("[Classes] the inventory tab opens the full Classes window.");
+                FiresRPGClassesPlugin.Log?.LogDebug("[Classes] the inventory tab opens the full Classes window.");
             // Optional extras: a missing one costs ordering or refresh-on-open, not the tab itself.
             Set(tabType, tab, "IsAvailable", (Func<bool>)IsAvailable);
             Set(tabType, tab, "OnVisibility", (Action<bool>)OnVisibility);
@@ -136,7 +136,7 @@ namespace FiresRPGClasses.UI
                 // (it skips the id while HasLauncher is true); IsAvailable = false keeps it out of the row.
                 if (!Set(tabType, tab, "IsAvailable", (Func<bool>)(() => false))) return;
                 register.Invoke(null, new[] { tab });
-                FiresRPGClassesPlugin.Log?.LogInfo("[Classes] the inventory's Character tab is hidden; the Classes tab opens the Classes window.");
+                FiresRPGClassesPlugin.Log?.LogDebug("[Classes] the inventory's Character tab is hidden; the Classes tab opens the Classes window.");
             }
             catch (Exception ex)
             {
@@ -178,7 +178,7 @@ namespace FiresRPGClasses.UI
             {
                 TabId, TabLabel, (Action<RectTransform>)Build, (Func<bool>)IsAvailable
             });
-            FiresRPGClassesPlugin.Log?.LogInfo("[Classes] used the flat Register overload; the boards will not refresh on "
+            FiresRPGClassesPlugin.Log?.LogDebug("[Classes] used the flat Register overload; the boards will not refresh on "
                 + "each open because that form carries no OnVisibility.");
             return true;
         }

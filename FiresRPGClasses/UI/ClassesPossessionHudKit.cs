@@ -79,7 +79,7 @@ namespace FiresRPGClasses.UI
                     }
                     // A player-given strip size (Core resize) re-flows the new form's slots into it; none = today's 1 x n row
                     if (_h._stripDocked && ClassesHudSizes.TryGet(StripDockId, out Vector2 saved)) { ClassesHudSizes.ResizeKeepTopLeft(strip, saved); Relayout(saved); }
-                    FiresRPGClassesPlugin.Log?.LogInfo($"[Classes] possession: kit row for {handle.Creature.name}: {count} attack(s) (LMB {handle.MainIndex}, MMB {handle.SpecialIndex}, current {handle.CurrentIndex})");
+                    FiresRPGClassesPlugin.Log?.LogDebug($"[Classes] possession: kit row for {handle.Creature.name}: {count} attack(s) (LMB {handle.MainIndex}, MMB {handle.SpecialIndex}, current {handle.CurrentIndex})");
                 }
                 if (_row == null) return;
 

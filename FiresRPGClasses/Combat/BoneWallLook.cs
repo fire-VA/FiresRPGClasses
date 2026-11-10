@@ -119,6 +119,9 @@ namespace FiresRPGClasses.Combat
             [HarmonyPostfix]
             private static void After(WearNTear __instance)
             {
+                // 0.1.220 ([wishbone], audit row 9): RPGClasses' ONE WearNTear.Awake postfix - Sturdy Builder's load raise (was its own
+                // CraftBatch4.Loaded patch, a second Harmony call + GetComponent<Piece> per piece) runs here, its value tested first.
+                Paragon.CraftBatch4.OnWake(__instance);
                 ZNetView nview = __instance.GetComponent<ZNetView>();
                 if (nview == null || !nview.IsValid() || !nview.GetZDO().GetBool(MarkKey)) return;
                 Dress(__instance.gameObject);

@@ -36,6 +36,15 @@ namespace FiresRPGClasses.Combat
             // so a test need not wait out a cooldown an earlier one started: a cheat, like the ones above.
             new Terminal.ConsoleCommand("class_cooldown_reset", "[nodeId|all] - make a class skill (or every one) ready now (cheat)",
                 args => Run(args, "class_cooldown_reset", CooldownResetCommand), isCheat: true);
+            // 0.1.207 ([lead] 10-30, Studio walk-mode hotbar icons): a test character gets a real class bar the way a player builds
+            // one - the Classes window's learn button (TalentRules.TryLearn) then its drag to the bar (BarController.TrySlotSkill /
+            // TrySlotUltimate); nothing new writes the bar.
+            new Terminal.ConsoleCommand("class_slot", "[front|back] [slot 1-8] [weapon prefab|nodeId] - put a carried weapon (slot 1) or a learned class skill on the bar, as the Classes window does (cheat)",
+                args => Run(args, "class_slot", SlotCommand), isCheat: true);
+            // 0.1.209 (Studio round 5: "mage_infusion can't be learned: Learn a node in the tier above first"): learn one rank of any
+            // class node - the starter tier first - through the Classes window's learn button (TalentRules.TryLearn); nothing is slotted
+            new Terminal.ConsoleCommand("class_learn", "[nodeId] - learn one rank of a class node, as the Classes window's learn button does (cheat)",
+                args => Run(args, "class_learn", LearnCommand), isCheat: true);
             new Terminal.ConsoleCommand("class_set", "[archetype] [front|back] - choose the bar's class, as the Classes window does (cheat)",
                 args => Run(args, "class_set", SetCommand), isCheat: true,
                 optionsFetcher: () => ClassTrees.Archetypes.Select(ClassNames.Of).OrderBy(a => a).ToList());
@@ -88,14 +97,40 @@ namespace FiresRPGClasses.Combat
                 else if (string.Equals(args[2], "back", StringComparison.OrdinalIgnoreCase)) side = BarSide.Back;
                 else return "usage: class_set <archetype> [front|back]";
             }
-            if (BarController.TryChooseArchetype(side, archetype)) return $"{side} bar is now {ClassNames.Of(archetype)}";
-            return $"the {side} bar's weapon doesn't allow {ClassNames.Of(archetype)}; hold one of: {WeaponArchetypes.WeaponsLine(archetype)}";
+            return Why(GodApi.SetArchetype(side.ToString(), args[1]));   // 0.1.210: one implementation (GodApi)
+        }
+
+        // 0.1.210: the console answers with GodApi's "why" (the JSON's state is for the Studio)
+        private static string Why(string json)
+        {
+            try { var o = Newtonsoft.Json.Linq.JObject.Parse(json); return ((bool)o["ok"] ? "" : "refused: ") + (string)o["why"]; } catch { return json; }
+        }
+
+        private static string LearnCommand(Terminal.ConsoleEventArgs args, ClassPlayerData data)
+        {
+            if (args.Length < 2) return "usage: class_learn <nodeId>";
+            return Why(GodApi.Learn(args[1]));
+        }
+
+        private static string SlotCommand(Terminal.ConsoleEventArgs args, ClassPlayerData data)
+        {
+            const string usage = "usage: class_slot <front|back> <slot 1-8> <weapon prefab (slot 1) | nodeId>";
+            if (args.Length < 4 || !int.TryParse(args[2], out int slot)) return usage;
+            BarSide side;
+            if (string.Equals(args[1], "front", StringComparison.OrdinalIgnoreCase)) side = BarSide.Front;
+            else if (string.Equals(args[1], "back", StringComparison.OrdinalIgnoreCase)) side = BarSide.Back;
+            else return usage;
+            string id = args[3];
+            // 0.1.210: one implementation - slot 1 = GodApi.SetWeapon (the drag path), 2-8 = GodApi.SlotSkill (learn if needed, then the bar path)
+            if (slot == BarLayout.WeaponSlot) return Why(GodApi.SetWeapon(side.ToString(), id));
+            if (slot != BarLayout.UltimateSlot && !BarLayout.IsSkillSlot(slot)) return usage;
+            return Why(GodApi.SlotSkill(side.ToString(), slot, id));
         }
 
         private static string LevelCommand(Terminal.ConsoleEventArgs args, ClassPlayerData data)
         {
             if (args.Length < 2 || !int.TryParse(args[1], out int level)) return "usage: class_level <level>";
-            return ClassXp.SetLevelForTest(level);
+            return Why(GodApi.SetLevel(level));
         }
 
         private static string UltimateXpCommand(Terminal.ConsoleEventArgs args, ClassPlayerData data)

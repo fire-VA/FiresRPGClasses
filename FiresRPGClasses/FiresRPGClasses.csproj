@@ -79,7 +79,7 @@
       <Private>False</Private>
     </Reference>
     <Reference Include="FiresUnifiedCore">
-      <HintPath>..\..\_stage_generator\core606\FiresUnifiedCore_0.2.606_scratch.dll</HintPath>
+      <HintPath>libs\FiresUnifiedCore.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Newtonsoft.Json">
@@ -229,6 +229,10 @@
     <Compile Include="Combat\SoftCap.cs" />
     <Compile Include="Combat\BalanceConfig.cs" />
     <Compile Include="Combat\ClassAdminCommands.cs" />
+    <Compile Include="Combat\GodApi.cs" />
+    <Compile Include="Combat\ClassCaster.cs" />
+    <Compile Include="Combat\ClassBodies.cs" />
+    <Compile Include="Combat\CoreSettingsOwned.cs" />
     <Compile Include="Combat\ClassCombatDriver.cs" />
     <Compile Include="Combat\VcsBridge.cs" />
     <Compile Include="Combat\WerewolfConfig.cs" />
@@ -242,6 +246,8 @@
     <Compile Include="Combat\RaceAcquire.cs" />
     <Compile Include="Combat\RaceItems.cs" />
     <Compile Include="Combat\ClassMovement.cs" />
+    <Compile Include="Combat\ClassMovement.Npc.cs" />
+    <Compile Include="Combat\Ring.cs" />
     <Compile Include="Combat\ClassStatsSection.cs" />
     <Compile Include="Combat\MovementClips.cs" />
     <Compile Include="Combat\BarMemory.cs" />
@@ -312,6 +318,12 @@
     <EmbeddedResource Include="Icons\Fantasy\cls_berserker_leap.png" />
     <EmbeddedResource Include="Icons\Fantasy\cls_berserker_pain_fuels_me.png" />
     <EmbeddedResource Include="Icons\Fantasy\cls_berserker_rage.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_vampire_bat_form.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_vampire_life_drain.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_vampire_night_stalker.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_vampire_mesmerise.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_vampire_blood_frenzy.png" />
+    <EmbeddedResource Include="Icons\Fantasy\cls_vampire_crimson_tide.png" />
     <EmbeddedResource Include="Icons\Fantasy\cls_berserker_rampage.png" />
     <EmbeddedResource Include="Icons\Fantasy\cls_berserker_thick_skull.png" />
     <EmbeddedResource Include="Icons\Fantasy\cls_berserker_warcry.png" />
@@ -494,6 +506,12 @@
     <EmbeddedResource Include="Icons\Line\cls_berserker_leap.png" />
     <EmbeddedResource Include="Icons\Line\cls_berserker_pain_fuels_me.png" />
     <EmbeddedResource Include="Icons\Line\cls_berserker_rage.png" />
+    <EmbeddedResource Include="Icons\Line\cls_vampire_bat_form.png" />
+    <EmbeddedResource Include="Icons\Line\cls_vampire_life_drain.png" />
+    <EmbeddedResource Include="Icons\Line\cls_vampire_night_stalker.png" />
+    <EmbeddedResource Include="Icons\Line\cls_vampire_mesmerise.png" />
+    <EmbeddedResource Include="Icons\Line\cls_vampire_blood_frenzy.png" />
+    <EmbeddedResource Include="Icons\Line\cls_vampire_crimson_tide.png" />
     <EmbeddedResource Include="Icons\Line\cls_berserker_rampage.png" />
     <EmbeddedResource Include="Icons\Line\cls_berserker_thick_skull.png" />
     <EmbeddedResource Include="Icons\Line\cls_berserker_warcry.png" />

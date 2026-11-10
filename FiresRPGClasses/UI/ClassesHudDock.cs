@@ -242,7 +242,7 @@ namespace FiresRPGClasses.UI
                         && w > 0f && h > 0f)
                         s_size[p[0]] = new Vector2(w, h);
                 }
-                FiresRPGClassesPlugin.Log?.LogInfo($"[HUD] {s_size.Count} saved HUD size(s) read from {FilePath}");
+                FiresRPGClassesPlugin.Log?.LogDebug($"[HUD] {s_size.Count} saved HUD size(s) read from {FilePath}");
             }
             catch (Exception e) { FiresRPGClassesPlugin.Log?.LogWarning($"[HUD] HUD sizes not read: {e.Message}"); }
         }

@@ -589,7 +589,7 @@ namespace FiresRPGClasses.UI
                 string msg = $"[Paragon] labels: tree {_tree} figure {fig}: {labels - dropped}/{labels} placed at {_map.rect.width:0}x{_map.rect.height:0}" +
                     (fallbackNames.Count > 0 ? $"; fitted by fallback: {string.Join(", ", fallbackNames)}" : "") +
                     (dropped > 0 ? $"; DROPPED {dropped}: {string.Join(", ", droppedNames)} (hover names them)" : "");
-                if (dropped > 0) FiresRPGClassesPlugin.Log?.LogWarning(msg); else FiresRPGClassesPlugin.Log?.LogInfo(msg);
+                if (dropped > 0) FiresRPGClassesPlugin.Log?.LogWarning(msg); else FiresRPGClassesPlugin.Log?.LogDebug(msg);
             }
         }
 
@@ -622,7 +622,7 @@ namespace FiresRPGClasses.UI
             if (_sideLogged != key)
             {
                 _sideLogged = key;
-                { string msg = $"[Paragon] side panel: content {used:0} of {inner:0} ({fit}, description x{_descMul:0.##}{(_descMaxLines > 0 ? ", 2 lines max" : "")}) for '{_selected}'"; if (used > inner) FiresRPGClassesPlugin.Log?.LogWarning(msg); else FiresRPGClassesPlugin.Log?.LogInfo(msg); }   // visible at the default log level
+                { string msg = $"[Paragon] side panel: content {used:0} of {inner:0} ({fit}, description x{_descMul:0.##}{(_descMaxLines > 0 ? ", 2 lines max" : "")}) for '{_selected}'"; if (used > inner) FiresRPGClassesPlugin.Log?.LogWarning(msg); else FiresRPGClassesPlugin.Log?.LogDebug(msg); }   // visible at the default log level
             }
         }
         private string _sideLogged;

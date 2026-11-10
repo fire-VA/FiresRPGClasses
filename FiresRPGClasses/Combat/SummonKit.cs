@@ -108,7 +108,7 @@ namespace FiresRPGClasses.Combat
             }
             if (made == 0) return Refuse(player, node, why ?? "nothing answered the call");
             player.UseEitr(eitr);
-            FiresRPGClassesPlugin.Log.LogInfo($"[SummonKit] {node.Id}: {made} x {rung.Prefab} (scale {rung.Scale:0.##}, {seconds:0} s, cap {cap}, now {SummonApi.MyCount})");
+            FiresRPGClassesPlugin.Log.LogDebug($"[SummonKit] {node.Id}: {made} x {rung.Prefab} (scale {rung.Scale:0.##}, {seconds:0} s, cap {cap}, now {SummonApi.MyCount})");
             return true;
         }
 

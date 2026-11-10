@@ -366,7 +366,7 @@ namespace FiresRPGClasses.Combat
         private static Vector3 Away(Character from, Character to)
         {
             Vector3 away = to.transform.position - from.transform.position;
-            away.y = 0f;
+            away = Ring.Flat(away, to.transform.position);   // off the halo ring: away.y = 0
             return away.sqrMagnitude > 0.01f ? away.normalized : from.transform.forward;
         }
 
@@ -402,13 +402,14 @@ namespace FiresRPGClasses.Combat
         private static void PlayHowlSound(Vector3 at)
         {
             if (ZNetScene.instance == null) return;
+            Quaternion rot = Ring.InField(at) ? Quaternion.FromToRotation(Vector3.up, Ring.Up(at)) : Quaternion.identity;   // off the halo ring: identity
             // The Bjorn's ALERT roar - vanilla Bjorn.MonsterAI.m_alertedEffects plays sfx_bear_idle (Unbjorn:
             // sfx_unbjorn_idle). Played by its own prefab name, a local sound effect like EffectList.Create spawns.
             foreach (string sfx in HowlSfx)
             {
                 GameObject prefab = ZNetScene.instance.GetPrefab(sfx);
                 if (prefab == null) continue;
-                UnityEngine.Object.Instantiate(prefab, at, Quaternion.identity);
+                UnityEngine.Object.Instantiate(prefab, at, rot);
                 Log($"Howl sound: {sfx}");
                 return;
             }
@@ -419,7 +420,7 @@ namespace FiresRPGClasses.Combat
                 foreach (EffectList list in new[] { ai.m_alertedEffects, ai.m_idleSound })
                 {
                     if (list?.m_effectPrefabs == null || list.m_effectPrefabs.Length == 0) continue;
-                    list.Create(at, Quaternion.identity);
+                    list.Create(at, rot);
                     return;
                 }
             }

@@ -205,7 +205,15 @@ namespace FiresRPGClasses.Combat
             if (inside.Count == 0)
             {
                 Vector2 offset = Random.insideUnitCircle * volley.Radius;
-                AbilityRPCManager.SpawnFX(volley.Point + new Vector3(offset.x, 0f, offset.y), "vfx_arrowhit");
+                Vector3 scatter = new Vector3(offset.x, 0f, offset.y);   // off the halo ring: world XZ, unchanged
+                if (Ring.InField(volley.Point))
+                {
+                    Vector3 up = Ring.Up(volley.Point);
+                    Vector3 t1 = Vector3.ProjectOnPlane(Mathf.Abs(Vector3.Dot(up, Vector3.forward)) < 0.9f ? Vector3.forward : Vector3.right, up).normalized;
+                    Vector3 t2 = Vector3.Cross(up, t1);
+                    scatter = t1 * offset.x + t2 * offset.y;
+                }
+                AbilityRPCManager.SpawnFX(volley.Point + scatter, "vfx_arrowhit");
                 return;
             }
             Character struck = inside[Random.Range(0, inside.Count)];
@@ -421,7 +429,7 @@ namespace FiresRPGClasses.Combat
         private static HitData HitFrom(Character caster, Character enemy)
         {
             Vector3 away = enemy.transform.position - caster.transform.position;
-            away.y = 0f;
+            away = Ring.Flat(away, enemy.transform.position);   // off the halo ring: away.y = 0
             var hit = new HitData
             {
                 m_point = enemy.GetCenterPoint(),
